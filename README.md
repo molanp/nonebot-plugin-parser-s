@@ -265,6 +265,9 @@ parser_delay_send_emoji="🎬"
 
 # [可选] 触发延迟发送视频的表情ID列表，用于监听group_msg_emoji_like事件
 parser_delay_send_emoji_ids='["128077"]'
+
+# [可选] 是否开启懒下载模式，仅在用户请求时才下载视频
+parser_delay_send_lazy_download=False
 ```
 
 </details>
