@@ -285,15 +285,14 @@ async def delay_media_trigger_handler():
                 sent = True
         except Exception as e:
             logger.error(f"发送延迟媒体失败: {e}")
-    
+
     # 清空当前结果的媒体内容
     result.media_contents.clear()
-    
+
     if sent:
-        await UniMessage("媒体内容已发送").send()
+        logger.debug(f"已延迟发送媒体内容")
     else:
-        await UniMessage("发送媒体内容失败").send()
-    
+        logger.debug(f"延迟发发送媒体内容失败")
     return sent
 
 
