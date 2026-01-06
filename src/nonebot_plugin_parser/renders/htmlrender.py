@@ -109,7 +109,7 @@ class HtmlRenderer(ImageRenderer):
             # 生成二维码
             qr = qrcode.QRCode(
                 version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                error_correction=1,  # ERROR_CORRECT_L 的数值
                 box_size=10,
                 border=4,
             )
@@ -119,7 +119,7 @@ class HtmlRenderer(ImageRenderer):
             
             # 保存二维码到内存
             buffer = BytesIO()
-            img.save(buffer, format="PNG")
+            img.save(buffer, format="PNG")  # type: ignore
             buffer.seek(0)
             
             # 生成临时文件路径
