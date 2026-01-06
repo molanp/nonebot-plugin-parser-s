@@ -28,6 +28,7 @@ class Author(Struct):
     mid: int
     pub_time: str
     pub_ts: int
+    views_text: str | None = None
 
 
 class Image(Struct):

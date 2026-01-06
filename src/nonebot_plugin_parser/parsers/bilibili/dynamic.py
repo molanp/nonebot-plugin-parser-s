@@ -11,6 +11,7 @@ class AuthorInfo(Struct):
     mid: int
     pub_time: str
     pub_ts: int
+    views_text: str | None = None
 
 
 class VideoArchive(Struct):
