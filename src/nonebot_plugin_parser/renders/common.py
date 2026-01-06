@@ -375,7 +375,7 @@ class CommonRenderer(ImageRenderer):
         try:
             qr = qrcode.QRCode(
                 version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,  # type: ignore[attr-defined]
                 box_size=10,
                 border=4,
             )
