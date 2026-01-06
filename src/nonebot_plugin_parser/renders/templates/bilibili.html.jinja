@@ -484,18 +484,55 @@
             {% endif %}
 
             {# --- 统计数据 --- #}
-            {% if stats and not is_repost %}
-            <div class="stats-container">
-                <div class="stat-item"><div class="stat-icon play"><i class="fas fa-eye"></i></div><div class="stat-content"><div class="stat-value">{{ stats.play or '-' }}</div><div class="stat-label">播放</div></div></div>
-                <div class="stat-item"><div class="stat-icon like"><i class="fas fa-thumbs-up"></i></div><div class="stat-content"><div class="stat-value">{{ stats.like or '-' }}</div><div class="stat-label">点赞</div></div></div>
-                <div class="stat-item"><div class="stat-icon reply"><i class="fas fa-comment"></i></div><div class="stat-content"><div class="stat-value">{{ stats.reply or '-' }}</div><div class="stat-label">评论</div></div></div>
-                <div class="stat-item"><div class="stat-icon fav"><i class="fas fa-star"></i></div><div class="stat-content"><div class="stat-value">{{ stats.favorite or '-' }}</div><div class="stat-label">收藏</div></div></div>
-                <div class="stat-item"><div class="stat-icon share"><i class="fas fa-share"></i></div><div class="stat-content"><div class="stat-value">{{ stats.share or '-' }}</div><div class="stat-label">分享</div></div></div>
-                <div class="stat-item">
-                    <div class="stat-icon coin">{% if stats.coin %}<i class="fas fa-coins"></i>{% else %}<i class="fas fa-comment-dots"></i>{% endif %}</div>
-                    <div class="stat-content"><div class="stat-value">{{ stats.coin or stats.danmaku or '-' }}</div><div class="stat-label">{{ '硬币' if stats.coin else '弹幕' }}</div></div>
+            {% if stats and not is_repost %} 
+            {% set stat_items = [] %}
+            
+            {# 按照顺序：播放 弹幕 硬币 点赞 收藏 评论 分享 #}
+            {# 只添加存在的统计项 #}
+            {% if stats.play is not none and stats.play != '-' %}
+                {% set _ = stat_items.append({'key': 'play', 'value': stats.play, 'label': '播放', 'icon': 'fa-eye', 'color': '#e74c3c'}) %}
+            {% endif %}
+            
+            {% if stats.danmaku is not none and stats.danmaku != '-' %}
+                {% set _ = stat_items.append({'key': 'danmaku', 'value': stats.danmaku, 'label': '弹幕', 'icon': 'fa-comment-dots', 'color': '#3498db'}) %}
+            {% endif %}
+            
+            {% if stats.coin is not none and stats.coin != '-' %}
+                {% set _ = stat_items.append({'key': 'coin', 'value': stats.coin, 'label': '硬币', 'icon': 'fa-coins', 'color': '#f39c12'}) %}
+            {% endif %}
+            
+            {% if stats.like is not none and stats.like != '-' %}
+                {% set _ = stat_items.append({'key': 'like', 'value': stats.like, 'label': '点赞', 'icon': 'fa-thumbs-up', 'color': '#2ecc71'}) %}
+            {% endif %}
+            
+            {% if stats.favorite is not none and stats.favorite != '-' %}
+                {% set _ = stat_items.append({'key': 'favorite', 'value': stats.favorite, 'label': '收藏', 'icon': 'fa-star', 'color': '#9b59b6'}) %}
+            {% endif %}
+            
+            {% if stats.reply is not none and stats.reply != '-' %}
+                {% set _ = stat_items.append({'key': 'reply', 'value': stats.reply, 'label': '评论', 'icon': 'fa-comment', 'color': '#1abc9c'}) %}
+            {% endif %}
+            
+            {% if stats.share is not none and stats.share != '-' %}
+                {% set _ = stat_items.append({'key': 'share', 'value': stats.share, 'label': '分享', 'icon': 'fa-share', 'color': '#34495e'}) %}
+            {% endif %}
+            
+            {# 只在有统计项时显示 #}
+            {% if stat_items %}
+            <div class="stats-container"> 
+                {% for item in stat_items %}
+                <div class="stat-item" style="border-left-color: {{ item.color }};">
+                    <div class="stat-icon" style="background-color: {{ item.color }};">
+                        <i class="fas {{ item.icon }}"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ item.value }}</div>
+                        <div class="stat-label">{{ item.label }}</div>
+                    </div>
                 </div>
+                {% endfor %}
             </div>
+            {% endif %}
             {% endif %}
 
             {# --- 主要标题 --- #}

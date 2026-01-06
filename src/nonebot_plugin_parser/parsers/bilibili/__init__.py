@@ -233,7 +233,11 @@ class BilibiliParser(BaseParser):
                     "like": self._format_stat(m_stat.get("like", {}).get("count", 0)),
                     "reply": self._format_stat(m_stat.get("comment", {}).get("count", 0)),
                     "share": self._format_stat(m_stat.get("forward", {}).get("count", 0)),
+                    "favorite": self._format_stat(m_stat.get("favorite", {}).get("count", 0)),
                 }
+            # 检查是否有浏览量字段
+            if hasattr(dynamic_info.modules, "module_author") and hasattr(dynamic_info.modules.module_author, "views_text"):
+                stats["play"] = dynamic_info.modules.module_author.views_text
         except Exception:
             pass
 
@@ -414,8 +418,12 @@ class BilibiliParser(BaseParser):
                             "like": self._format_stat(st.get("like", {}).get("count", 0)),
                             "reply": self._format_stat(st.get("comment", {}).get("count", 0)),
                             "share": self._format_stat(st.get("forward", {}).get("count", 0)),
+                            "favorite": self._format_stat(st.get("favorite", {}).get("count", 0)),
                         }
-                        break
+                    # 检查是否有浏览量字段
+                    elif module.module_type == "MODULE_TYPE_AUTHOR" and module.module_author:
+                        if hasattr(module.module_author, "views_text") and module.module_author.views_text:
+                            stats["play"] = module.module_author.views_text
         except Exception:
             pass
 
