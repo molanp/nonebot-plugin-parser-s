@@ -157,10 +157,9 @@ class BilibiliParser(BaseParser):
             else:
                 return await DOWNLOADER.streamd(v_url, file_name=output_path.name, ext_headers=self.headers)
         
-        # 创建视频下载任务
-        video_task = asyncio.create_task(download_video())
+        # 创建视频下载内容（传递下载函数而非立即执行）
         video_content = self.create_video_content(
-            video_task,
+            download_video,
             page_info.cover,
             page_info.duration,
         )

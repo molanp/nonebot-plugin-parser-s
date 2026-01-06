@@ -117,18 +117,14 @@ class HtmlRenderer(ImageRenderer):
             qr.make(fit=True)
             img = qr.make_image(fill_color="black", back_color="white")
             
-            # 确保二维码目录存在
-            qr_dir = self.templates_dir / "qr_code"
-            qr_dir.mkdir(parents=True, exist_ok=True)
+            # 将二维码转换为 base64 编码
+            buffer = BytesIO()
+            img.save(buffer, format="PNG")  # type: ignore
+            buffer.seek(0)
+            import base64
+            img_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
             
-            # 生成相对路径和绝对路径
-            qr_rel_path = f"qr_code/qr_{datetime.datetime.now().timestamp()}.png"
-            qr_path = self.templates_dir / qr_rel_path
-            
-            # 保存二维码到文件
-            img.save(qr_path, format="PNG")  # type: ignore
-            
-            # 添加相对路径到模板数据
-            data["qr_code_path"] = qr_rel_path
+            # 添加 base64 编码的图片数据到模板数据
+            data["qr_code_path"] = f"data:image/png;base64,{img_base64}"
         
         return data

@@ -194,7 +194,7 @@ class BaseParser:
 
     def create_video_content(
         self,
-        url_or_task: str | Task[Path],
+        url_or_task: str | Task[Path] | Callable[[], Coroutine[Any, Any, Path]],
         cover_url: str | None = None,
         duration: float = 0.0,
     ):

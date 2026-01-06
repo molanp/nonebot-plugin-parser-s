@@ -61,8 +61,10 @@ class BaseRenderer(ABC):
         for cont in chain(result.contents, result.repost.contents if result.repost else ()):
             match cont:
                 case VideoContent() | AudioContent():
-                    logger.debug(f"处理{type(cont).__name__}，delay_send_media={pconfig.delay_send_media}, lazy_download={pconfig.delay_send_lazy_download}")
-                    if pconfig.delay_send_media:
+                    # 检查是否需要延迟发送或懒下载
+                    need_delay = pconfig.delay_send_media or pconfig.delay_send_lazy_download
+                    logger.debug(f"处理{type(cont).__name__}，need_delay={need_delay}, lazy_download={pconfig.delay_send_lazy_download}")
+                    if need_delay:
                         # 延迟发送模式：缓存MediaContent对象或路径
                         if pconfig.delay_send_lazy_download:
                             # 真正的延迟下载，缓存MediaContent对象，不立即下载

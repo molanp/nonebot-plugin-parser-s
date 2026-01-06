@@ -12,6 +12,13 @@ from nonebot import logger
 from apilmoji import Apilmoji, EmojiCDNSource
 from apilmoji.core import get_font_height
 
+try:
+    import qrcode
+    from qrcode.image.pil import PilImage as QRCodeImage
+except ImportError:
+    qrcode = None
+    QRCodeImage = None
+
 from .base import ParseResult, ImageRenderer
 from ..config import pconfig
 from ..parsers import GraphicsContent
@@ -350,6 +357,39 @@ class CommonRenderer(ImageRenderer):
                 with Image.open(logo_path) as img:
                     cls.platform_logos[str(platform_name)] = img.convert("RGBA")
 
+    @staticmethod
+    def generate_qr_code(url: str, size: int = 200) -> PILImage | None:
+        """生成QR码图片
+
+        Args:
+            url: 要生成QR码的URL
+            size: QR码大小（像素）
+
+        Returns:
+            PIL Image对象，生成失败返回None
+        """
+        if not qrcode:
+            logger.warning("qrcode库未安装，无法生成QR码")
+            return None
+
+        try:
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(url)
+            qr.make(fit=True)
+
+            img = qr.make_image(fill_color="black", back_color="white")
+            if img.size != (size, size):
+                img = img.resize((size, size), Image.Resampling.LANCZOS)
+            return img
+        except Exception as e:
+            logger.error(f"生成QR码失败: {e}")
+            return None
+
     @classmethod
     async def text(
         cls,
@@ -575,6 +615,13 @@ class CommonRenderer(ImageRenderer):
                 )
                 if graphics_section:
                     sections.append(graphics_section)
+
+        # 4. QR码部分
+        if pconfig.append_qrcode and result.url:
+            qr_code = self.generate_qr_code(result.url)
+            if qr_code:
+                qr_height = qr_code.height
+                sections.append(CoverSectionData(height=qr_height, cover_img=qr_code))
 
         # 5. 文本内容
         if result.text:

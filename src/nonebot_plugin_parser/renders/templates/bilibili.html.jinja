@@ -478,8 +478,8 @@
                     </div>
                 </div>
                 <div class="qrcode-placeholder">
-            {% if qr_code_path %}
-                <img src="{{ qr_code_path }}" alt="QR Code" style="width: 121px; height: 121px; border-radius: 8px;" />
+            {% if result.qr_code_path %}
+                <img src="{{ result.qr_code_path }}" alt="QR Code" style="width: 77px; height: 77px; border-radius: 8px;" />
             {% else %}
                 <i class="fas fa-qrcode qrcode-icon"></i>
             {% endif %}
@@ -488,50 +488,50 @@
             {% endif %}
 
             {# --- 统计数据 --- #}
-            {% if stats and not is_repost %} 
+            {% if stats and not is_repost %}
             {% set stat_items = [] %}
-            
+
             {# 按照顺序：播放 弹幕 硬币 点赞 收藏 评论 分享 #}
             {# 只添加有值的统计项，没有值时不显示整个div盒子 #}
-            
+
             {# 播放量 #}
             {% if stats.play and stats.play != '-' %}
                 {% set _ = stat_items.append({'key': 'play', 'value': stats.play, 'label': '播放', 'icon': 'fa-eye', 'color': '#e74c3c'}) %}
             {% endif %}
-            
+
             {# 弹幕数 #}
             {% if stats.danmaku and stats.danmaku != '-' %}
                 {% set _ = stat_items.append({'key': 'danmaku', 'value': stats.danmaku, 'label': '弹幕', 'icon': 'fa-comment-dots', 'color': '#3498db'}) %}
             {% endif %}
-            
+
             {# 硬币数 #}
             {% if stats.coin and stats.coin != '-' %}
                 {% set _ = stat_items.append({'key': 'coin', 'value': stats.coin, 'label': '硬币', 'icon': 'fa-coins', 'color': '#f39c12'}) %}
             {% endif %}
-            
+
             {# 点赞数 #}
             {% if stats.like and stats.like != '-' %}
                 {% set _ = stat_items.append({'key': 'like', 'value': stats.like, 'label': '点赞', 'icon': 'fa-thumbs-up', 'color': '#2ecc71'}) %}
             {% endif %}
-            
+
             {# 收藏数 #}
             {% if stats.favorite and stats.favorite != '-' %}
                 {% set _ = stat_items.append({'key': 'favorite', 'value': stats.favorite, 'label': '收藏', 'icon': 'fa-star', 'color': '#9b59b6'}) %}
             {% endif %}
-            
+
             {# 评论数 #}
             {% if stats.reply and stats.reply != '-' %}
                 {% set _ = stat_items.append({'key': 'reply', 'value': stats.reply, 'label': '评论', 'icon': 'fa-comment', 'color': '#1abc9c'}) %}
             {% endif %}
-            
+
             {# 分享数 #}
             {% if stats.share and stats.share != '-' %}
                 {% set _ = stat_items.append({'key': 'share', 'value': stats.share, 'label': '分享', 'icon': 'fa-share', 'color': '#34495e'}) %}
             {% endif %}
-            
+
             {# 只在有统计项时显示整个统计容器 #}
             {% if stat_items %}
-            <div class="stats-container"> 
+            <div class="stats-container">
                 {% for item in stat_items %}
                 <div class="stat-item" style="border-left-color: {{ item.color }};">
                     <div class="stat-icon" style="background-color: {{ item.color }};">

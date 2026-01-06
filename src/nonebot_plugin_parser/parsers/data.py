@@ -1,26 +1,33 @@
-from typing import Any
+from typing import Any, Callable, Coroutine
 from asyncio import Task
 from pathlib import Path
 from datetime import datetime
 from dataclasses import field, dataclass
 
 
-def repr_path_task(path_task: Path | Task[Path]) -> str:
+def repr_path_task(path_task: Path | Task[Path] | Callable[[], Coroutine[Any, Any, Path]]) -> str:
     if isinstance(path_task, Path):
         return f"path={path_task.name}"
-    else:
+    elif isinstance(path_task, Task):
         return f"task={path_task.get_name()}, done={path_task.done()}"
+    else:
+        return f"callable={path_task.__name__}"
 
 
 @dataclass(repr=False, slots=True)
 class MediaContent:
-    path_task: Path | Task[Path]
+    path_task: Path | Task[Path] | Callable[[], Coroutine[Any, Any, Path]]
 
     async def get_path(self) -> Path:
         if isinstance(self.path_task, Path):
             return self.path_task
-        self.path_task = await self.path_task
-        return self.path_task
+        elif isinstance(self.path_task, Task):
+            self.path_task = await self.path_task
+            return self.path_task
+        else:
+            # 执行可调用对象（coroutine function）
+            self.path_task = await self.path_task()
+            return self.path_task
 
     def __repr__(self) -> str:
         prefix = self.__class__.__name__

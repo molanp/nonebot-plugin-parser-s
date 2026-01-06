@@ -248,13 +248,20 @@ delay_send_matcher = Matcher.new(
 async def delay_media_trigger_handler():
     from ..helper import UniHelper, UniMessage
 
-    # 获取最新的解析结果
+    # 尝试从消息上下文获取相关信息
+    # 首先检查是否有缓存的解析结果
     if not _RESULT_CACHE:
+        await UniMessage("暂无解析结果，请先发送链接").send()
         return
 
-    # 获取最近的解析结果
+    # 优先获取最近的解析结果
     latest_url = next(reversed(_RESULT_CACHE.keys()))
     result = _RESULT_CACHE[latest_url]
+
+    # 检查是否有延迟发送的媒体内容
+    if not result.media_contents:
+        await UniMessage("当前解析结果暂无延迟发送的媒体内容").send()
+        return
 
     # 发送延迟的媒体内容
     sent = False
@@ -281,6 +288,11 @@ async def delay_media_trigger_handler():
     
     # 清空当前结果的媒体内容
     result.media_contents.clear()
+    
+    if sent:
+        await UniMessage("媒体内容已发送").send()
+    else:
+        await UniMessage("发送媒体内容失败").send()
     
     return sent
 
