@@ -6,7 +6,7 @@ from pathlib import Path
 from typing_extensions import override
 from ..config import _nickname, pconfig
 
-from nonebot import require
+from nonebot import require,logger
 
 require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import template_to_pic
@@ -117,17 +117,18 @@ class HtmlRenderer(ImageRenderer):
             qr.make(fit=True)
             img = qr.make_image(fill_color="black", back_color="white")
             
-            # 保存二维码到内存
-            buffer = BytesIO()
-            img.save(buffer, format="PNG")  # type: ignore
-            buffer.seek(0)
+            # 确保二维码目录存在
+            qr_dir = self.templates_dir / "qr_code"
+            qr_dir.mkdir(parents=True, exist_ok=True)
             
-            # 生成临时文件路径
-            qr_path = self.templates_dir / f"qr_{datetime.datetime.now().timestamp()}.png"
-            with open(qr_path, "wb") as f:
-                f.write(buffer.getvalue())
+            # 生成相对路径和绝对路径
+            qr_rel_path = f"qr_code/qr_{datetime.datetime.now().timestamp()}.png"
+            qr_path = self.templates_dir / qr_rel_path
             
-            # 添加二维码路径到模板数据
-            data["qr_code_path"] = qr_path.as_uri()
+            # 保存二维码到文件
+            img.save(qr_path, format="PNG")  # type: ignore
+            
+            # 添加相对路径到模板数据
+            data["qr_code_path"] = qr_rel_path
         
         return data
