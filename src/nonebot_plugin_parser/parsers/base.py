@@ -194,20 +194,35 @@ class BaseParser:
 
     def create_video_content(
         self,
-        url_or_task: str | Task[Path],
+        url_or_task: str | Task[Path] | DownloadTask,
         cover_url: str | None = None,
         duration: float = 0.0,
     ):
         """创建视频内容"""
-        from .data import VideoContent
+        from .data import VideoContent, DownloadTask
 
         cover_task = None
         if cover_url:
             cover_task = DOWNLOADER.download_img(cover_url, ext_headers=self.headers)
+        
+        final_task: Path | Task[Path] | DownloadTask
         if isinstance(url_or_task, str):
-            url_or_task = DOWNLOADER.download_video(url_or_task, ext_headers=self.headers)
+            # 检查是否开启懒下载模式
+            if pconfig.delay_send_media and pconfig.delay_send_lazy_download:
+                # 懒下载模式：创建一个简单的下载函数，直接调用DOWNLOADER.download_video
+                async def download_func():
+                    result = await DOWNLOADER.download_video(url_or_task, ext_headers=self.headers)
+                    return await result
+                # 创建DownloadTask对象，仅在需要时下载
+                final_task = DownloadTask(download_func)
+            else:
+                # 立即下载：创建下载任务
+                final_task = DOWNLOADER.download_video(url_or_task, ext_headers=self.headers)
+        else:
+            # 已经是Task或DownloadTask类型
+            final_task = url_or_task
 
-        return VideoContent(url_or_task, cover_task, duration)
+        return VideoContent(final_task, cover_task, duration)
 
     def create_image_contents(
         self,
@@ -237,16 +252,30 @@ class BaseParser:
 
     def create_audio_content(
         self,
-        url_or_task: str | Task[Path],
+        url_or_task: str | Task[Path] | DownloadTask,
         duration: float = 0.0,
     ):
         """创建音频内容"""
-        from .data import AudioContent
+        from .data import AudioContent, DownloadTask
 
+        final_task: Path | Task[Path] | DownloadTask
         if isinstance(url_or_task, str):
-            url_or_task = DOWNLOADER.download_audio(url_or_task, ext_headers=self.headers)
+            # 检查是否开启懒下载模式
+            if pconfig.delay_send_media and pconfig.delay_send_lazy_download:
+                # 懒下载模式：创建一个简单的下载函数，直接调用DOWNLOADER.download_audio
+                async def download_func():
+                    result = await DOWNLOADER.download_audio(url_or_task, ext_headers=self.headers)
+                    return await result
+                # 创建DownloadTask对象，仅在需要时下载
+                final_task = DownloadTask(download_func)
+            else:
+                # 立即下载：创建下载任务
+                final_task = DOWNLOADER.download_audio(url_or_task, ext_headers=self.headers)
+        else:
+            # 已经是Task或DownloadTask类型
+            final_task = url_or_task
 
-        return AudioContent(url_or_task, duration)
+        return AudioContent(final_task, duration)
 
     def create_graphics_content(
         self,

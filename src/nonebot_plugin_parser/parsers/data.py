@@ -1,26 +1,51 @@
-from typing import Any
-from asyncio import Task
+from typing import Any, Callable, Coroutine
+from asyncio import Task, create_task
 from pathlib import Path
 from datetime import datetime
 from dataclasses import field, dataclass
 
 
-def repr_path_task(path_task: Path | Task[Path]) -> str:
+class DownloadTask:
+    """延迟下载任务，仅在需要时才执行"""
+    
+    def __init__(self, download_func: Callable[..., Coroutine[Any, Any, Path]], *args, **kwargs):
+        self.download_func = download_func
+        self.args = args
+        self.kwargs = kwargs
+        self._task: Task[Path] | None = None
+    
+    async def get_path(self) -> Path:
+        if self._task is None:
+            self._task = create_task(
+                self.download_func(*self.args, **self.kwargs),
+                name=f"download_{self.download_func.__name__}"
+            )
+        return await self._task
+
+
+def repr_path_task(path_task: Path | Task[Path] | DownloadTask) -> str:
     if isinstance(path_task, Path):
         return f"path={path_task.name}"
-    else:
+    elif isinstance(path_task, Task):
         return f"task={path_task.get_name()}, done={path_task.done()}"
+    else:  # DownloadTask
+        return f"download_task={path_task.download_func.__name__}, args={path_task.args}, kwargs={path_task.kwargs}"
 
 
 @dataclass(repr=False, slots=True)
 class MediaContent:
-    path_task: Path | Task[Path]
+    path_task: Path | Task[Path] | DownloadTask
 
     async def get_path(self) -> Path:
         if isinstance(self.path_task, Path):
             return self.path_task
-        self.path_task = await self.path_task
-        return self.path_task
+        elif isinstance(self.path_task, Task):
+            self.path_task = await self.path_task
+            return self.path_task
+        else:  # DownloadTask
+            path = await self.path_task.get_path()
+            self.path_task = path
+            return path
 
     def __repr__(self) -> str:
         prefix = self.__class__.__name__

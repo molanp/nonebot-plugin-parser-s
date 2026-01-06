@@ -142,27 +142,56 @@ class BilibiliParser(BaseParser):
         url = f"https://bilibili.com/{video_info.bvid}"
         url += f"?p={page_info.index + 1}" if page_info.index > 0 else ""
 
-        # 视频下载 task
-        async def download_video():
-            output_path = pconfig.cache_dir / f"{video_info.bvid}-{page_num}.mp4"
-            if output_path.exists():
-                return output_path
-            v_url, a_url = await self.extract_download_urls(video=video, page_index=page_info.index)
-            if page_info.duration > pconfig.duration_maximum:
-                raise DurationLimitException
-            if a_url is not None:
-                return await DOWNLOADER.download_av_and_merge(
-                    v_url, a_url, output_path=output_path, ext_headers=self.headers
-                )
-            else:
-                return await DOWNLOADER.streamd(v_url, file_name=output_path.name, ext_headers=self.headers)
-
-        video_task = asyncio.create_task(download_video())
-        video_content = self.create_video_content(
-            video_task,
-            page_info.cover,
-            page_info.duration,
-        )
+        # 视频下载逻辑
+        video_content = None
+        
+        # 检查是否开启懒下载模式
+        if pconfig.delay_send_media and pconfig.delay_send_lazy_download:
+            # 懒下载模式：创建一个闭包函数，用于后续下载
+            async def lazy_download():
+                output_path = pconfig.cache_dir / f"{video_info.bvid}-{page_num}.mp4"
+                if output_path.exists():
+                    return output_path
+                v_url, a_url = await self.extract_download_urls(video=video, page_index=page_info.index)
+                if page_info.duration > pconfig.duration_maximum:
+                    raise DurationLimitException
+                if a_url is not None:
+                    return await DOWNLOADER.download_av_and_merge(
+                        v_url, a_url, output_path=output_path, ext_headers=self.headers
+                    )
+                else:
+                    return await DOWNLOADER.streamd(v_url, file_name=output_path.name, ext_headers=self.headers)
+            
+            # 直接传递闭包函数，让create_video_content处理懒下载
+            from ..data import DownloadTask
+            video_task = DownloadTask(lazy_download)
+            video_content = self.create_video_content(
+                video_task,
+                page_info.cover,
+                page_info.duration,
+            )
+        else:
+            # 立即下载模式：创建并启动下载任务
+            async def download_video():
+                output_path = pconfig.cache_dir / f"{video_info.bvid}-{page_num}.mp4"
+                if output_path.exists():
+                    return output_path
+                v_url, a_url = await self.extract_download_urls(video=video, page_index=page_info.index)
+                if page_info.duration > pconfig.duration_maximum:
+                    raise DurationLimitException
+                if a_url is not None:
+                    return await DOWNLOADER.download_av_and_merge(
+                        v_url, a_url, output_path=output_path, ext_headers=self.headers
+                    )
+                else:
+                    return await DOWNLOADER.streamd(v_url, file_name=output_path.name, ext_headers=self.headers)
+            
+            video_task = asyncio.create_task(download_video())
+            video_content = self.create_video_content(
+                video_task,
+                page_info.cover,
+                page_info.duration,
+            )
 
         # 提取统计数据
         stats = {}
