@@ -98,6 +98,9 @@ class YtdlpDownloader:
         video_path = pconfig.cache_dir / generate_file_name(url, ".mp4")
         if video_path.exists():
             return video_path
+        
+        # 确保缓存目录存在
+        pconfig.cache_dir.mkdir(parents=True, exist_ok=True)
 
         ydl_opts = self._download_base_opts.copy()
         ydl_opts["outtmpl"] = str(video_path)
@@ -127,6 +130,9 @@ class YtdlpDownloader:
         audio_path = pconfig.cache_dir / f"{file_name}.flac"
         if audio_path.exists():
             return audio_path
+        
+        # 确保缓存目录存在
+        pconfig.cache_dir.mkdir(parents=True, exist_ok=True)
 
         ydl_opts = self._download_base_opts.copy()
         ydl_opts["outtmpl"] = f"{pconfig.cache_dir / file_name}.%(ext)s"
