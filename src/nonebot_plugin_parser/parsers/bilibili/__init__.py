@@ -429,8 +429,13 @@ class BilibiliParser(BaseParser):
             "content_id": str(opus_data.item.id_str),
         }
 
+        # 使用从动态内容中提取的文本作为标题，优先于默认的"xxx的动态-哔哩哔哩"
+        # 如果有提取到文本内容，使用它作为标题
+        # 否则使用作者名+动态作为标题
+        final_title = full_text if full_text else f"{author_name}的图文动态"
+        
         return self.result(
-            title=opus_data.title or f"{author_name}的图文动态",
+            title=final_title,
             author=author,
             timestamp=opus_data.timestamp,
             contents=contents,
