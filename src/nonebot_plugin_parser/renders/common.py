@@ -14,9 +14,11 @@ from apilmoji.core import get_font_height
 
 try:
     import qrcode
+    from qrcode.constants import ERROR_CORRECT_L
     from qrcode.image.pil import PilImage as QRCodeImage
 except ImportError:
     qrcode = None
+    ERROR_CORRECT_L = None
     QRCodeImage = None
 
 from .base import ParseResult, ImageRenderer
@@ -368,14 +370,14 @@ class CommonRenderer(ImageRenderer):
         Returns:
             PIL Image对象，生成失败返回None
         """
-        if not qrcode:
+        if not qrcode or not ERROR_CORRECT_L:
             logger.warning("qrcode库未安装，无法生成QR码")
             return None
 
         try:
             qr = qrcode.QRCode(
                 version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                error_correction=ERROR_CORRECT_L,
                 box_size=10,
                 border=4,
             )
@@ -383,9 +385,19 @@ class CommonRenderer(ImageRenderer):
             qr.make(fit=True)
 
             img = qr.make_image(fill_color="black", back_color="white")
-            if img.size != (size, size):
-                img = img.resize((size, size), Image.Resampling.LANCZOS)
-            return img
+            # 确保返回PIL Image对象
+            if hasattr(img, "_img") and isinstance(img._img, Image.Image):
+                pil_img = img._img
+            else:
+                # 将qrcode图像转换为PIL Image
+                buffer = BytesIO()
+                img.save(buffer)
+                buffer.seek(0)
+                pil_img = Image.open(buffer)
+            
+            if pil_img.size != (size, size):
+                pil_img = pil_img.resize((size, size), Image.Resampling.LANCZOS)
+            return pil_img
         except Exception as e:
             logger.error(f"生成QR码失败: {e}")
             return None
