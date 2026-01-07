@@ -2,14 +2,11 @@ import json
 import re
 from typing import Optional, Dict, Any, List
 
-from httpx import AsyncClient
-from curl_cffi.requests import AsyncSession
-
 from ..base import BaseParser, handle
 from ..data import Platform, Author, MediaContent, ImageContent, VideoContent
-from ..exception import ParseException
+from ...exception import ParseException
 from ...constants import PlatformEnum
-from ...constants import COMMON_HEADER, COMMON_TIMEOUT
+from ...browser_pool import browser_pool, safe_browser_context
 
 
 class TapTapParser(BaseParser):
@@ -36,27 +33,27 @@ class TapTapParser(BaseParser):
             return value
         return value
     
-    async def _fetch_nuxt_data(self, url: str) -> Optional[list]:
+    async def _fetch_nuxt_data(self, url: str) -> list:
         """获取页面的 Nuxt 数据"""
-        async with AsyncSession(
-            headers=self.headers,
-            verify=False,
-            follow_redirects=True,
-            timeout=COMMON_TIMEOUT,
-            impersonate="chrome131"  # 模拟 Chrome 131 浏览器
-        ) as session:
-            response = await session.get(url)
-            response.raise_for_status()
-            
-            # 提取 __NUXT_DATA__
-            match = re.search(r'<script id="__NUXT_DATA__"[^>]*>(.*?)</script>', response.text, re.DOTALL)
-            if not match:
-                raise ParseException(f"无法找到 Nuxt 数据: {url}")
-            
-            try:
-                return json.loads(match.group(1))
-            except json.JSONDecodeError as e:
-                raise ParseException(f"解析 Nuxt 数据失败: {e}")
+        async with browser_pool.get_browser() as browser:
+            async with safe_browser_context(browser) as (context, page):
+                # 导航到 URL
+                await page.goto(url, wait_until="domcontentloaded")
+                await page.wait_for_timeout(2000)  # 等待 2 秒确保页面完全加载
+                
+                # 获取页面内容
+                response_text = await page.content()
+                
+                # 提取 __NUXT_DATA__
+                match = re.search(r'<script id="__NUXT_DATA__"[^>]*>(.*?)</script>', response_text, re.DOTALL)
+                if not match:
+                    raise ParseException(f"无法找到 Nuxt 数据: {url}")
+                
+                try:
+                    result = json.loads(match.group(1))
+                    return result if isinstance(result, list) else []
+                except json.JSONDecodeError as e:
+                    raise ParseException(f"解析 Nuxt 数据失败: {e}")
     
     async def _parse_post_detail(self, post_id: str) -> Dict[str, Any]:
         """解析动态详情"""
