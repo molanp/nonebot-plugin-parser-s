@@ -1,6 +1,7 @@
 import json
 import re
 from typing import Optional, Dict, Any, List
+from nonebot import logger
 
 from ..base import BaseParser, handle
 from ..data import Platform, Author, MediaContent, ImageContent, VideoContent
@@ -44,6 +45,9 @@ class TapTapParser(BaseParser):
                 # 获取页面内容
                 response_text = await page.content()
                 
+                # 初始化match变量，避免Pylance未绑定警告
+                match = None
+                
                 # 调试：检查页面是否包含 __NUXT_DATA__
                 if "__NUXT_DATA__" not in response_text:
                     # 尝试等待更久，可能是动态加载
@@ -65,6 +69,10 @@ class TapTapParser(BaseParser):
                         raise ParseException(f"无法找到 Nuxt 数据: {url}")
                 
                 try:
+                    # 确保match已经被赋值，否则抛出异常
+                    if not match:
+                        raise ParseException(f"无法找到 Nuxt 数据: {url}")
+                    
                     result = json.loads(match.group(1))
                     return result if isinstance(result, list) else []
                 except json.JSONDecodeError as e:
