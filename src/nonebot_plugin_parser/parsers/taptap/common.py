@@ -314,15 +314,20 @@ class TapTapParser(BaseParser):
         
         # 处理发布时间，转换为时间戳
         timestamp = None
-        if detail['publish_time']:
-            # 尝试解析不同格式的时间字符串
-            try:
-                # 示例：2023-12-25T14:30:00+08:00
-                dt = datetime.fromisoformat(detail['publish_time'].replace('Z', '+00:00'))
-                timestamp = int(dt.timestamp())
-            except (ValueError, TypeError):
-                # 如果解析失败，使用None
-                pass
+        publish_time = detail['publish_time']
+        if publish_time:
+            # 如果已经是整数，直接使用
+            if isinstance(publish_time, int):
+                timestamp = publish_time
+            else:
+                # 尝试解析不同格式的时间字符串
+                try:
+                    # 示例：2023-12-25T14:30:00+08:00
+                    dt = datetime.fromisoformat(str(publish_time).replace('Z', '+00:00'))
+                    timestamp = int(dt.timestamp())
+                except (ValueError, TypeError):
+                    # 如果解析失败，使用None
+                    pass
         
         # 构建解析结果
         result = self.result(
