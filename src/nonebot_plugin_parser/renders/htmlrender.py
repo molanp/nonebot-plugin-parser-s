@@ -35,6 +35,7 @@ class HtmlRenderer(ImageRenderer):
         return await template_to_pic(
             template_path=str(self.templates_dir),
             template_name=template_name,
+            screenshot_timeout=60000,
             templates={
                 "result": template_data,
                 "rendering_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
