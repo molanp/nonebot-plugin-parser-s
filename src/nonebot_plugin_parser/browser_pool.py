@@ -67,7 +67,7 @@ class BrowserPool:
         
         async with self.locks[key]:
             # 检查浏览器连接状态
-            if key not in self.browsers or not await self.browsers[key].is_connected():
+            if key not in self.browsers or not self.browsers[key].is_connected():
                 # 如果已有实例但已断开，先移除
                 if key in self.browsers:
                     try:
@@ -102,7 +102,7 @@ class BrowserPool:
         except Exception as e:
             logger.error(f"浏览器操作出错: {e}")
             # 出错时关闭问题实例
-            if key in self.browsers and await self.browsers[key].is_connected():
+            if key in self.browsers and self.browsers[key].is_connected():
                 try:
                     await self.browsers[key].close()
                 except Exception:
@@ -112,7 +112,7 @@ class BrowserPool:
     
     async def close_all(self):
         for key, browser in list(self.browsers.items()):
-            if await browser.is_connected():
+            if browser.is_connected():
                 try:
                     await browser.close()
                     logger.info(f"关闭浏览器实例: {key}")
