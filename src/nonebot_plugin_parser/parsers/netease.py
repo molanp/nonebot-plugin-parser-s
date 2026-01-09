@@ -11,7 +11,7 @@ from .base import (
     ParseException,
     handle,
 )
-from .data import Platform, AudioContent, ImageContent
+from .data import Platform, MediaContent, AudioContent, ImageContent
 from ..constants import COMMON_HEADER
 
 
@@ -143,7 +143,7 @@ class NCMParser(BaseParser):
         )
         
         # 构建内容列表
-        contents = [cover_content, audio_content]
+        contents: list[MediaContent] = [cover_content, audio_content]
         
         # 构建文本内容
         text = f"{result['audio_info']}"

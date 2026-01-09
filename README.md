@@ -35,6 +35,10 @@
 | youtube | 链接(含短链)                      | ✅​  | ❌️  | ✅​  |
 | tiktok  | 链接                              | ✅​  | ❌️  | ❌️  |
 | twitter | 链接                              | ✅​  | ✅​  | ❌️  |
+| 酷狗音乐 | 链接(分享链接，歌曲链接)          | ❌️  | ❌️  | ✅​  |
+| 网易云音乐 | 链接(分享链接，短链接)            | ❌️  | ❌️  | ✅​  |
+| 汽水音乐 | 链接(分享链接)                    | ❌️  | ❌️  | ✅​  |
+| 酷我音乐 | 链接(分享链接)                    | ❌️  | ❌️  | ✅​  |
 
 支持的链接，可参考 [测试链接](https://github.com/fllesser/nonebot-plugin-parser/blob/master/tests/others/test_urls.md)
 
@@ -221,6 +225,18 @@ parser_proxy=None
 
 # [可选] 音频解析，是否需要上传群文件
 parser_need_upload=False
+
+# [可选] 音频解析，是否发送歌词
+parser_send_lyrics=True
+
+# [可选] 音频解析，是否合并发送消息
+parser_combine_message=True
+
+# [可选] 音频解析，是否优先使用高质量音质
+parser_prefer_high_quality=True
+
+# [可选] 音频解析，超时时间，单位：秒
+parser_audio_timeout=30.0
 
 # [可选] 视频，图片，音频是否使用 base64 发送
 # 注意：编解码和传输 base64 会占用更多的内存,性能和带宽, 甚至可能会使 websocket 连接崩溃

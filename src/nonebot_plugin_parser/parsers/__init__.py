@@ -12,6 +12,8 @@ from .netease import NCMParser as NCMParser
 from ..download import YTDLP_DOWNLOADER
 from .xiaohongshu import XiaoHongShuParser as XiaoHongShuParser
 from .taptap import TapTapParser as TapTapParser
+from .qsmusic import QSMusicParser as QSMusicParser
+from .kuwo import KuWoParser as KuWoParser
 
 if YTDLP_DOWNLOADER is not None:
     from .tiktok import TikTokParser as TikTokParser
@@ -37,6 +39,7 @@ __all__ = [
     "GraphicsContent",
     "ImageContent",
     "KuGouParser",
+    "KuWoParser",
     "NCMParser",
     "ParseResult",
     "Platform",
@@ -51,4 +54,5 @@ __all__ = [
     "KuaiShouParser",
     "XiaoHongShuParser",
     "TapTapParser",
+    "QSMusicParser",
 ]

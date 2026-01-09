@@ -12,7 +12,7 @@ from .base import (
     ParseException,
     handle,
 )
-from .data import Platform, AudioContent, ImageContent
+from .data import Platform, MediaContent, AudioContent, ImageContent
 from ..constants import COMMON_HEADER
 
 
@@ -191,7 +191,7 @@ class KuGouParser(BaseParser):
             
             # 创建封面图片内容
             cover_url = song_details.get("cover", "")
-            contents = []
+            contents: list[MediaContent] = []
             
             if cover_url:
                 from ..download import DOWNLOADER
