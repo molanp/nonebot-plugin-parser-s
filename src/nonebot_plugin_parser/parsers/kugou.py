@@ -37,14 +37,14 @@ class KuGouParser(BaseParser):
                 raise ParseException(f"歌曲搜索接口异常: HTTP {response.status_code}")
                 
             result = response.json()
-                
-                # 处理不同结构的API响应
-                if "data" in result:
-                    return result["data"]  # 新格式: 包含data列表
-                elif "title" in result:
-                    return [result]  # 旧格式: 单首歌曲直接返回
-                else:
-                    raise ParseException("接口返回数据格式未知")
+            
+            # 处理不同结构的API响应
+            if "data" in result:
+                return result["data"]  # 新格式: 包含data列表
+            elif "title" in result:
+                return [result]  # 旧格式: 单首歌曲直接返回
+            else:
+                raise ParseException("接口返回数据格式未知")
     
     def _extract_embedded_info(self, html_text: str) -> dict:
         """提取页面内嵌的歌曲信息"""
@@ -87,7 +87,7 @@ class KuGouParser(BaseParser):
         async with AsyncClient(headers=headers, verify=False, timeout=self.timeout) as client:
             response = await client.get(share_url)
             response.raise_for_status()
-            html_text = response.text()
+            html_text = response.text
             
             # 提取内嵌歌曲信息
             embedded_info = self._extract_embedded_info(html_text)
