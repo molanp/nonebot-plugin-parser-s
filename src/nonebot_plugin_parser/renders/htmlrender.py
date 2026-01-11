@@ -87,9 +87,25 @@ class HtmlRenderer(ImageRenderer):
                 "avatar_path": avatar_path.as_uri() if avatar_path else None,
             }
 
-        cover_path = await result.cover_path
+        # 处理封面路径 - 先从contents中查找图片作为封面
+        cover_path = None
+        contents = []
+        for cont in result.contents:
+            path = await cont.get_path()
+            contents.append({"path": path.as_uri()})
+            # 将第一个图片内容作为封面
+            if not cover_path and hasattr(cont, "__class__") and cont.__class__.__name__ == "ImageContent":
+                cover_path = path
+        
+        # 如果contents中没有图片，尝试使用cover_path属性
+        if not cover_path:
+            cover_path = await result.cover_path
+        
         if cover_path:
             data["cover_path"] = cover_path.as_uri()
+        
+        # 保存所有contents
+        data["contents"] = contents
 
         img_contents = []
         for img in result.img_contents:

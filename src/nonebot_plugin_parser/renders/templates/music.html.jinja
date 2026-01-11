@@ -170,8 +170,8 @@
         
         <div class="header">
             <!-- 专辑图 -->
-            {% if result.contents %}
-                <img src="{{ result.contents[0].path_task.result() if hasattr(result.contents[0].path_task, 'result') else result.contents[0].path_task }}" alt="专辑封面" class="cover">
+            {% if result.cover_path %}
+                <img src="{{ result.cover_path }}" alt="专辑封面" class="cover">
             {% endif %}
             
             <!-- 左上角歌曲信息 -->
