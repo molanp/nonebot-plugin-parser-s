@@ -32,6 +32,8 @@ class Config(BaseModel):
     """youtube cookies"""
     parser_xhs_ck: str | None = None
     """小红书 cookies"""
+    parser_kugou_lzkey: str | None = None
+    """酷狗音乐API密钥"""
     parser_proxy: str | None = None
     """代理"""
     parser_need_upload: bool = False
@@ -240,6 +242,11 @@ class Config(BaseModel):
     def audio_timeout(self) -> float:
         """音频解析超时时间，单位：秒"""
         return self.parser_audio_timeout
+    
+    @property
+    def kugou_lzkey(self) -> str | None:
+        """酷狗音乐API密钥"""
+        return self.parser_kugou_lzkey
 
 
 # 定义插件元数据

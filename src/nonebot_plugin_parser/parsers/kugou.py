@@ -14,21 +14,25 @@ from .base import (
 )
 from .data import Platform, MediaContent, AudioContent, ImageContent
 from ..constants import COMMON_HEADER
+from ..config import pconfig
 
 
 class KuGouParser(BaseParser):
     # 平台信息
     platform: ClassVar[Platform] = Platform(name=PlatformEnum.KUGOU, display_name="酷狗音乐")
-    lzkey = ""
     
     async def search_songs(self, title: str, n: int | None = None) -> list:
         """搜索歌曲函数"""
         from httpx import AsyncClient
         
+        # 检查kugou_lzkey是否已配置
+        if not pconfig.kugou_lzkey:
+            raise ParseException("酷狗音乐API密钥未配置，请在配置文件中设置parser_kugou_lzkey")
+        
         if n is None:
-            api_url = f"https://sdkapi.hhlqilongzhu.cn/api/dgMusic_kugou/?key={self.lzkey}&msg={title}&type=json"
+            api_url = f"https://sdkapi.hhlqilongzhu.cn/api/dgMusic_kugou/?key={pconfig.kugou_lzkey}&msg={title}&type=json"
         else:
-            api_url = f"https://sdkapi.hhlqilongzhu.cn/api/dgMusic_kugou/?key={self.lzkey}&msg={title}&type=json&n={n}"
+            api_url = f"https://sdkapi.hhlqilongzhu.cn/api/dgMusic_kugou/?key={pconfig.kugou_lzkey}&msg={title}&type=json&n={n}"
         
         headers = COMMON_HEADER.copy()
         async with AsyncClient(headers=headers, verify=False, timeout=self.timeout) as client:
