@@ -1,0 +1,9 @@
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# On branch master
+# Changes to be committed:
+#	modified:   src/nonebot_plugin_parser/renders/htmlrender.py
+#
+修复超时媒体解析不发卡片的错误
