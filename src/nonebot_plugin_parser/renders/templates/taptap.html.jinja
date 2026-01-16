@@ -323,9 +323,12 @@
             <img src="{{ cover_url }}" style="width: 100%; height: 100%; object-fit: cover;" alt="Cover">
             <div class="cover-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.3));"></div>
             
-            <!-- 类型标签 -->
+            <!-- 类型标签或SEO关键词 -->
             <div class="tag type-tag" style="position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.6); color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px; display: flex; align-items: center; gap: 5px;">
-                {% if has_video %}
+                {% set has_footer_images = extra.footer_images is defined and extra.footer_images|length > 0 %}
+                {% if has_footer_images and extra.seo_keywords and extra.seo_keywords != '' %}
+                <span>{{ extra.seo_keywords }}</span>
+                {% elif has_video %}
                 <i class="fas fa-video"></i>
                 <span>视频</span>
                 {% else %}

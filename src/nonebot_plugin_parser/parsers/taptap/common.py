@@ -198,6 +198,18 @@ class TapTapParser(BaseParser):
             topic = moment_data.get("topic", {})
             result["title"] = topic.get("title", "TapTap 动态分享")
             
+            # 提取SEO关键词，用于左上角文本展示
+            seo = moment_data.get("seo", {})
+            result["seo_keywords"] = seo.get("keywords", "")
+            
+            # 提取footer_images中的图片
+            footer_images = topic.get("footer_images", [])
+            result["footer_images"] = footer_images
+            for img_item in footer_images:
+                original_url = img_item.get("original_url")
+                if original_url and original_url not in result["images"]:
+                    result["images"].append(original_url)
+            
             # 提取创建时间和发布时间
             result["created_time"] = moment_data.get("created_time", "")
             result["publish_time"] = moment_data.get("publish_time", "")
@@ -742,7 +754,9 @@ class TapTapParser(BaseParser):
                 'created_time': detail.get('created_time', ''),
                 'publish_time': detail.get('publish_time', ''),
                 'video_cover': detail.get('video_cover', ''),
-                'app': detail.get('app', {})  # 添加游戏信息
+                'app': detail.get('app', {}),  # 添加游戏信息
+                'seo_keywords': detail.get('seo_keywords', ''),  # 添加SEO关键词
+                'footer_images': detail.get('footer_images', [])  # 添加footer_images
             }
         )
         
