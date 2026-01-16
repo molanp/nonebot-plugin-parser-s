@@ -1,4 +1,5 @@
 import re
+import asyncio
 from typing import TypeVar
 from pathlib import Path
 
@@ -296,6 +297,21 @@ async def handle_group_msg_emoji_like(event):
                 logger.warning(f"Failed to send fail reaction: {e}")
             return
 
+        # 检查media_contents是否为空
+        if not result.media_contents:
+            logger.debug(f"消息ID {liked_message_id} 对应的解析结果中没有延迟发送的媒体内容")
+            # 发送"失败"的表情（使用用户指定的表情ID 10060）
+            try:
+                if liked_message_id:
+                    await message_reaction("10060", message_id=str(liked_message_id))
+            except Exception as e:
+                logger.warning(f"Failed to send fail reaction: {e}")
+            # 从缓存中移除消息ID，因为没有媒体需要发送
+            if str(liked_message_id) in _MSG_ID_RESULT_MAP:
+                del _MSG_ID_RESULT_MAP[str(liked_message_id)]
+                logger.debug(f"从_MSG_ID_RESULT_MAP中移除消息ID: {liked_message_id}（没有延迟媒体）")
+            return
+
         # 发送延迟的媒体内容
         sent = False
         remaining_media = []
@@ -304,76 +320,69 @@ async def handle_group_msg_emoji_like(event):
         for media_type, media_item in result.media_contents:
             try:
                 path = None
+                is_media_ready = False
+                
+                # 检查媒体是否已经准备好发送
                 if isinstance(media_item, Path):
                     # 已经是 Path 类型，直接使用
                     path = media_item
+                    is_media_ready = True
                     logger.debug(f"发送已下载的延迟媒体: {path}")
                 else:
-                    # 是 MediaContent 类型，尝试获取 Path
-                    # 检查媒体内容是否已经下载完成
-                    if isinstance(media_item.path_task, Path):
-                        # 已经下载完成
-                        path = media_item.path_task
-                        logger.debug(f"发送已下载完成的延迟媒体: {path}")
-                    else:
-                        # 尚未下载完成，启动下载任务并等待
-                        logger.debug(f"媒体尚未下载完成，启动下载任务")
-                        # 发送"正在下载"的表情反馈（使用用户指定的表情ID 282）
+                    # 是 MediaContent 类型，使用get_path()方法统一处理下载状态
+                    try:
+                        path = await media_item.get_path()
+                        is_media_ready = True
+                        logger.debug(f"获取延迟媒体路径成功: {path}")
+                    except Exception as e:
+                        logger.error(f"获取延迟媒体路径失败: {e}")
+                        # 添加到剩余媒体列表，以便后续重试
+                        remaining_media.append((media_type, media_item))
+                        continue
+                
+                if is_media_ready and path:
+                    if media_type == VideoContent:
                         try:
-                            if liked_message_id:
-                                await message_reaction("282", message_id=str(liked_message_id))
+                            # 尝试直接发送视频
+                            await UniMessage(UniHelper.video_seg(path)).send()
+                            # 如果需要上传视频文件，且没有因为大小问题发送失败
+                            if pconfig.need_upload_video:
+                                await UniMessage(UniHelper.file_seg(path)).send()
+                            current_sent = True
                         except Exception as e:
-                            logger.warning(f"Failed to send downloading reaction: {e}")
-                        
-                        # 等待下载完成
+                            # 直接发送失败，可能是因为文件太大，尝试使用群文件发送
+                            logger.debug(f"直接发送视频失败，尝试使用群文件发送: {e}")
+                            try:
+                                await UniMessage(UniHelper.file_seg(path)).send()
+                                current_sent = True
+                            except Exception as file_e:
+                                logger.error(f"使用群文件发送视频失败: {file_e}")
+                                current_sent = False
+                    elif media_type == AudioContent:
                         try:
-                            path = await media_item.get_path()
-                            logger.debug(f"下载完成并发送延迟媒体: {path}")
-                        except Exception as download_e:
-                            logger.error(f"下载延迟媒体失败: {download_e}")
-                            # 添加到剩余媒体列表，以便后续重试
-                            remaining_media.append((media_type, media_item))
-                            continue
-                
-                if media_type == VideoContent:
-                    try:
-                        # 尝试直接发送视频
-                        await UniMessage(UniHelper.video_seg(path)).send()
-                        # 如果需要上传视频文件，且没有因为大小问题发送失败
-                        if pconfig.need_upload_video:
-                            await UniMessage(UniHelper.file_seg(path)).send()
-                        current_sent = True
-                    except Exception as e:
-                        # 直接发送失败，可能是因为文件太大，尝试使用群文件发送
-                        logger.debug(f"直接发送视频失败，尝试使用群文件发送: {e}")
-                        try:
-                            await UniMessage(UniHelper.file_seg(path)).send()
+                            # 尝试直接发送音频
+                            await UniMessage(UniHelper.record_seg(path)).send()
+                            # 如果需要上传音频文件，且没有因为大小问题发送失败
+                            if pconfig.need_upload_audio:
+                                await UniMessage(UniHelper.file_seg(path)).send()
                             current_sent = True
-                        except Exception as file_e:
-                            logger.error(f"使用群文件发送视频失败: {file_e}")
-                            current_sent = False
-                elif media_type == AudioContent:
-                    try:
-                        # 尝试直接发送音频
-                        await UniMessage(UniHelper.record_seg(path)).send()
-                        # 如果需要上传音频文件，且没有因为大小问题发送失败
-                        if pconfig.need_upload_audio:
-                            await UniMessage(UniHelper.file_seg(path)).send()
-                        current_sent = True
-                    except Exception as e:
-                        # 直接发送失败，可能是因为文件太大，尝试使用群文件发送
-                        logger.debug(f"直接发送音频失败，尝试使用群文件发送: {e}")
-                        try:
-                            await UniMessage(UniHelper.file_seg(path)).send()
-                            current_sent = True
-                        except Exception as file_e:
-                            logger.error(f"使用群文件发送音频失败: {file_e}")
-                            current_sent = False
-                
-                if current_sent:
-                    sent = True
+                        except Exception as e:
+                            # 直接发送失败，可能是因为文件太大，尝试使用群文件发送
+                            logger.debug(f"直接发送音频失败，尝试使用群文件发送: {e}")
+                            try:
+                                await UniMessage(UniHelper.file_seg(path)).send()
+                                current_sent = True
+                            except Exception as file_e:
+                                logger.error(f"使用群文件发送音频失败: {file_e}")
+                                current_sent = False
+                    
+                    if current_sent:
+                        sent = True
+                    else:
+                        # 发送失败，添加到剩余媒体列表，以便后续重试
+                        remaining_media.append((media_type, media_item))
                 else:
-                    # 发送失败，添加到剩余媒体列表，以便后续重试
+                    # 媒体未准备好，添加到剩余媒体列表
                     remaining_media.append((media_type, media_item))
             except Exception as e:
                 logger.error(f"发送延迟媒体失败: {e}")
@@ -383,15 +392,18 @@ async def handle_group_msg_emoji_like(event):
         # 更新媒体内容列表，保留未发送成功的媒体
         result.media_contents = remaining_media
         
+        logger.debug(f"处理完成，剩余媒体数量: {len(remaining_media)}")
+        
         # 只有当所有媒体都发送成功时，才从缓存中移除消息ID
         if not remaining_media:
             # 从缓存中移除已处理的消息ID，避免重复发送
             if str(liked_message_id) in _MSG_ID_RESULT_MAP:
                 del _MSG_ID_RESULT_MAP[str(liked_message_id)]
-                logger.debug(f"从_MSG_ID_RESULT_MAP中移除消息ID: {liked_message_id}")
+                logger.debug(f"从_MSG_ID_RESULT_MAP中移除消息ID: {liked_message_id}（所有媒体发送成功）")
         else:
             # 如果还有未发送成功的媒体，更新缓存中的解析结果
             _MSG_ID_RESULT_MAP[str(liked_message_id)] = result
+            logger.debug(f"更新_MSG_ID_RESULT_MAP中的消息ID: {liked_message_id}（剩余{len(remaining_media)}个媒体）")
 
         # 发送对应的表情
         if sent:
