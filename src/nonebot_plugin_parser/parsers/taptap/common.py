@@ -208,11 +208,22 @@ class TapTapParser(BaseParser):
             result["author"]["name"] = user_data.get("name", "")
             result["author"]["avatar"] = user_data.get("avatar", "")
             
-            # 提取游戏信息
+            # 提取作者游戏信息
             app_data = author_data.get("app", {})
             result["author"]["app_title"] = app_data.get("title", "")
             app_icon = app_data.get("icon", {})
             result["author"]["app_icon"] = app_icon.get("original_url", "")
+            
+            # 提取帖子游戏信息
+            moment_app = moment_data.get("app", {})
+            if moment_app:
+                result["app"] = {
+                    "title": moment_app.get("title", ""),
+                    "icon": moment_app.get("icon", {}).get("original_url", ""),
+                    "rating": moment_app.get("stat", {}).get("rating", {}).get("score", ""),
+                    "latest_score": moment_app.get("stat", {}).get("rating", {}).get("latest_score", ""),
+                    "tags": moment_app.get("tags", [])
+                }
             
             # 提取统计信息
             stats_data = moment_data.get("stat", {})
@@ -235,7 +246,8 @@ class TapTapParser(BaseParser):
                     video_cover = thumbnail.get("original_url")
                     if video_cover:
                         result["video_cover"] = video_cover
-                        result["images"].append(video_cover)
+                        # 不再将视频封面添加到图片列表中，避免重复显示
+                        # result["images"].append(video_cover)
                 
                 # 使用video_id获取视频链接
                 play_info_url = f"https://www.taptap.cn/video/v1/play-info"
@@ -729,7 +741,8 @@ class TapTapParser(BaseParser):
                 'author': detail.get('author', {}),
                 'created_time': detail.get('created_time', ''),
                 'publish_time': detail.get('publish_time', ''),
-                'video_cover': detail.get('video_cover', '')
+                'video_cover': detail.get('video_cover', ''),
+                'app': detail.get('app', {})  # 添加游戏信息
             }
         )
         

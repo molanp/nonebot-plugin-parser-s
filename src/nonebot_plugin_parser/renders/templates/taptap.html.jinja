@@ -325,10 +325,14 @@
                     <div class="author-details">
                         <h3>{{ result.author.name or author_data.name }}</h3>
                         <div class="author-meta">
-                            {% if result.timestamp %}
+                            {% if result.formatted_datetime %}
+                            <span class="time-text">{{ result.formatted_datetime }}</span>
+                            {% elif result.timestamp %}
                             <span class="time-text">{{ result.formatted_datetime }}</span>
                             {% elif author_data.created_time %}
                             <span class="time-text">{{ (author_data.created_time|int)|datetimeformat }}</span>
+                            {% elif author_data.publish_time %}
+                            <span class="time-text">{{ (author_data.publish_time|int)|datetimeformat }}</span>
                             {% endif %}
                             {% if author_data.app_title %}
                             <span class="info-badge">
@@ -345,6 +349,39 @@
                 {% else %}
                     <i class="fas fa-qrcode qrcode-icon"></i>
                 {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {# --- 游戏信息 --- #}
+            {% if result.extra.app %}
+            {% set app = result.extra.app %}
+            <div style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #4ecdc4;">
+                <div style="display: flex; align-items: flex-start; gap: 15px;">
+                    {% if app.icon %}
+                    <img src="{{ app.icon }}" style="width: 60px; height: 60px; border-radius: 8px; object-fit: cover;">
+                    {% endif %}
+                    <div style="flex: 1;">
+                        <h4 style="font-size: 16px; color: #2c3e50; margin-bottom: 8px;">{{ app.title }}</h4>
+                        {% if app.rating %}
+                        <div style="display: flex; gap: 12px; margin-bottom: 8px;">
+                            <span style="font-size: 14px; color: #e67e22; font-weight: 600;">当前评分: {{ app.rating }}</span>
+                            {% if app.latest_score %}
+                            <span style="font-size: 14px; color: #2ecc71; font-weight: 600;">历史最高分: {{ app.latest_score }}</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        {% if app.tags %}
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            {% for tag in app.tags[:5] %}
+                            <span style="font-size: 12px; color: #3498db; background-color: #e3f2fd; padding: 2px 8px; border-radius: 12px;">{{ tag.value }}</span>
+                            {% endfor %}
+                            {% if app.tags|length > 5 %}
+                            <span style="font-size: 12px; color: #95a5a6; padding: 2px 8px;">+{{ app.tags|length - 5 }}</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
             {% endif %}
@@ -407,47 +444,49 @@
             {% endif %}
 
             {# --- 内容媒体展示 --- #}
-            {% if result.extra.images or result.extra.video_cover %}
-                {% set has_video = result.extra.video_cover and result.extra.video_cover != '' %}
-                {% set imgs = result.extra.images %}
-                {% set count = imgs|length if imgs else 0 %}
-                {% if count > 0 or has_video %}
-                    <div class="images-container">
-                        <div class="images-header">
-                            {% if has_video %}
-                            <i class="fas fa-video" style="color:#e74c3c"></i> 视频内容
-                            {% else %}
-                            <i class="fas fa-images" style="color:#2ecc71"></i> 内容图片
-                            {% endif %}
-                        </div>
-                        
-                        {% set grid_class = 'single' %}
-                        {% if count == 2 %}{% set grid_class = 'double' %}
-                        {% elif count == 4 %}{% set grid_class = 'quad' %}
-                        {% elif count >= 3 %}{% set grid_class = 'nine' %}
-                        {% endif %}
-
-                        <div class="images-grid {{ grid_class }}">
-                            {% if has_video %}
-                            <div class="image-item">
-                                <img src="{{ result.extra.video_cover }}" style="object-fit: cover; width: 100%; height: 100%;">
-                                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.6); border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-play" style="color: white; font-size: 24px; margin-left: 5px;"></i>
-                                </div>
-                            </div>
-                            {% endif %}
-                            
-                            {% for image in imgs[:9] %}
-                            <div class="image-item">
-                                <img src="{{ image }}">
-                                {% if loop.last and count > 9 %}
-                                <div class="more-count">+{{ count - 9 }}</div>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
+            {% set has_video = result.extra.video_cover and result.extra.video_cover != '' %}
+            {% set imgs = result.extra.images %}
+            {% set count = imgs|length if imgs else 0 %}
+            
+            {# 视频内容展示 #}
+            {% if has_video %}
+            <div class="images-container">
+                <div class="images-header">
+                    <i class="fas fa-video" style="color:#e74c3c"></i> 视频内容
+                </div>
+                <div class="images-grid single">
+                    <div class="image-item">
+                        <img src="{{ result.extra.video_cover }}" style="object-fit: cover; width: 100%; height: 100%;">
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.6); border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-play" style="color: white; font-size: 24px; margin-left: 5px;"></i>
                         </div>
                     </div>
+                </div>
+            </div>
+            {% elif count > 0 %}
+            {# 图片内容展示，当没有视频时才显示 #}
+            <div class="images-container">
+                <div class="images-header">
+                    <i class="fas fa-images" style="color:#2ecc71"></i> 内容图片
+                </div>
+                
+                {% set grid_class = 'single' %}
+                {% if count == 2 %}{% set grid_class = 'double' %}
+                {% elif count == 4 %}{% set grid_class = 'quad' %}
+                {% elif count >= 3 %}{% set grid_class = 'nine' %}
                 {% endif %}
+
+                <div class="images-grid {{ grid_class }}">
+                    {% for image in imgs[:9] %}
+                    <div class="image-item">
+                        <img src="{{ image }}">
+                        {% if loop.last and count > 9 %}
+                        <div class="more-count">+{{ count - 9 }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
             {% endif %}
         </div>
 
