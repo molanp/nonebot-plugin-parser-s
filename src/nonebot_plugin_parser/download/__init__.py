@@ -274,7 +274,7 @@ class StreamDownloader:
         async with self.client.stream("GET", url, headers=fetch_headers, timeout=10, follow_redirects=True) as resp:
             if resp.status_code != 200:
                 raise Exception(f"请求失败: {resp.status_code}")
-            return await resp.atext()
+            return await resp.text()
     
     async def _has_ffmpeg(self) -> bool:
         try:
