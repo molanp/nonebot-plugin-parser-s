@@ -297,16 +297,192 @@
             gap: 8px; 
             align-items: center;
         }
+        
+        /* 评论区域 */
+        .comments-section {
+            padding: 0 30px 30px;
+        }
+        
+        .comments-header {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark-color);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .comments-header i {
+            color: var(--secondary-color);
+        }
+        
+        .comment-item {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px dashed #eee;
+        }
+        
+        .comment-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .comment-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        
+        .comment-content {
+            flex: 1;
+        }
+        
+        .comment-author-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .comment-author {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--dark-color);
+        }
+        
+        .comment-time {
+            font-size: 12px;
+            color: var(--gray-color);
+        }
+        
+        .comment-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #444;
+            margin-bottom: 10px;
+            word-wrap: break-word;
+        }
+        
+        .comment-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 12px;
+            color: var(--gray-color);
+        }
+        
+        .comment-stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        /* 回复区域 */
+        .comment-replies {
+            margin-left: 63px;
+            margin-top: 15px;
+        }
+        
+        .reply-item {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed #f0f0f0;
+        }
+        
+        .reply-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .reply-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        
+        .reply-content {
+            flex: 1;
+        }
+        
+        .reply-author-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+        
+        .reply-author {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--dark-color);
+        }
+        
+        .reply-time {
+            font-size: 11px;
+            color: var(--gray-color);
+        }
+        
+        .reply-text {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #444;
+            margin-bottom: 8px;
+            word-wrap: break-word;
+        }
+        
+        /* 表情样式 */
+        .comment-text img,
+        .reply-text img {
+            display: inline-block;
+            vertical-align: middle;
+            width: 20px;
+            height: 20px;
+            margin: 0 2px;
+        }
     </style>
 </head>
 <body>
 
+    {# === 宏定义：解析评论内容 === #}
+    {% macro parse_comment_content(content_json) %}
+    {% set text = "" %}
+    {% if content_json %}
+        {% for paragraph in content_json %}
+            {% if paragraph.type == "paragraph" %}
+                {% for child in paragraph.children %}
+                    {% if child.text %}
+                        {% set text = text + child.text %}
+                    {% endif %}
+                    {% if child.type == "tap_emoji" and child.info and child.info.img %}
+                        {% set img_url = child.info.img.url %}
+                        {% set text = text + '<img src="' + img_url + '" alt="emoji" style="display:inline-block;vertical-align:middle;width:20px;height:20px;margin:0 2px;">' %}
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    {{ text | safe }}
+    {% endmacro %}
+    
     {# === 宏定义：渲染卡片 === #}
     {% macro render_card(result) %}
     
     {# 变量定义 #}
     {% set extra = result.extra if result.extra else {} %}
     {% set stats = extra.stats if extra.stats else {} %}
+    {% set comments = extra.comments if extra.comments else [] %}
 
     <div class="card">
         <div class="decorative-stripe"></div>
@@ -519,6 +695,72 @@
             </div>
             {% endif %}
         </div>
+        
+        {# --- 评论区域 --- #}
+        {% if comments and comments|length > 0 %}
+        <div class="comments-section">
+            <div class="comments-header">
+                <i class="fas fa-comments"></i> 评论 ({{ comments|length }})
+            </div>
+            
+            {% for comment in comments %}
+            <div class="comment-item">
+                <img src="{{ comment.author.avatar }}" alt="用户头像" class="comment-avatar">
+                <div class="comment-content">
+                    <div class="comment-author-row">
+                        <span class="comment-author">{{ comment.author.name }}</span>
+                        <span class="comment-time">{{ (comment.created_time|int)|datetimeformat }}</span>
+                    </div>
+                    <div class="comment-text">
+                        {{ parse_comment_content(comment.contents.json) }}
+                    </div>
+                    <div class="comment-stats">
+                        {% if comment.ups %}
+                        <span class="comment-stat">
+                            <i class="fas fa-thumbs-up"></i>
+                            <span>{{ comment.ups }}</span>
+                        </span>
+                        {% endif %}
+                        {% if comment.comments %}
+                        <span class="comment-stat">
+                            <i class="fas fa-reply"></i>
+                            <span>{{ comment.comments }}</span>
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    {# 回复列表 #}
+                    {% if comment.child_posts and comment.child_posts|length > 0 %}
+                    <div class="comment-replies">
+                        {% for reply in comment.child_posts %}
+                        <div class="reply-item">
+                            <img src="{{ reply.author.avatar }}" alt="回复者头像" class="reply-avatar">
+                            <div class="reply-content">
+                                <div class="reply-author-row">
+                                    <span class="reply-author">{{ reply.author.name }}</span>
+                                    <span class="reply-time">{{ (reply.created_time|int)|datetimeformat }}</span>
+                                </div>
+                                <div class="reply-text">
+                                    {{ parse_comment_content(reply.contents.json) }}
+                                </div>
+                                <div class="comment-stats">
+                                    {% if reply.ups %}
+                                    <span class="comment-stat">
+                                        <i class="fas fa-thumbs-up"></i>
+                                        <span>{{ reply.ups }}</span>
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
 
         {# --- 底部 --- #}
         <div class="footer-section">

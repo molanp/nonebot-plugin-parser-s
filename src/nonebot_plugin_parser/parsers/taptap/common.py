@@ -157,6 +157,29 @@ class TapTapParser(BaseParser):
             logger.error(f"[TapTap] API请求失败: {e}")
             return None
     
+    async def _fetch_comments(self, post_id: str) -> Optional[List[Dict[str, Any]]]:
+        """从TapTap API获取评论数据"""
+        api_url = "https://www.taptap.cn/webapiv2/moment-comment/v1/by-moment"
+        params = {
+            "moment_id": post_id,
+            "sort": "rank",
+            "order": "desc",
+            "regulate_all": "false",
+            "X-UA": "V=1&PN=WebApp&LANG=zh_CN&VN_CODE=102&LOC=CN&PLT=PC&DS=Android&UID=f69478c8-27a3-4581-877b-45ade0e61b0b&OS=Windows&OSV=10&DT=PC"
+        }
+        
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(api_url, params=params, headers=self.headers)
+                response.raise_for_status()
+                data = response.json()
+                if data.get("success") and data.get("data"):
+                    return data["data"].get("list", [])
+                return []
+        except Exception as e:
+            logger.error(f"[TapTap] 获取评论数据失败: {e}")
+            return None
+    
     async def _parse_post_detail(self, post_id: str) -> Dict[str, Any]:
         """解析动态详情"""
         url = f"{self.base_url}/moment/{post_id}"
@@ -184,7 +207,8 @@ class TapTapParser(BaseParser):
                 "views": 0,
                 "plays": 0
             },
-            "video_cover": ""
+            "video_cover": "",
+            "comments": []
         }
         
         # 首先尝试使用API获取数据
@@ -620,7 +644,18 @@ class TapTapParser(BaseParser):
                 if context:
                     await context.close()
         
-        logger.debug(f"解析结果: videos={len(result['videos'])}, images={len(result['images'])}")
+        # 获取评论数据
+        comments = await self._fetch_comments(post_id)
+        if comments:
+            # 只保留前10条评论
+            top_comments = comments[:10]
+            for comment in top_comments:
+                # 只保留每条评论的前5条回复
+                if 'child_posts' in comment:
+                    comment['child_posts'] = comment['child_posts'][:5]
+            result['comments'] = top_comments
+        
+        logger.debug(f"解析结果: videos={len(result['videos'])}, images={len(result['images'])}, comments={len(result['comments'])}")
         return result
     
     async def _parse_user_latest_post(self, user_id: str) -> Optional[Dict[str, Any]]:
@@ -756,7 +791,8 @@ class TapTapParser(BaseParser):
                 'video_cover': detail.get('video_cover', ''),
                 'app': detail.get('app', {}),  # 添加游戏信息
                 'seo_keywords': detail.get('seo_keywords', ''),  # 添加SEO关键词
-                'footer_images': detail.get('footer_images', [])  # 添加footer_images
+                'footer_images': detail.get('footer_images', []),  # 添加footer_images
+                'comments': detail.get('comments', [])  # 添加评论数据
             }
         )
         
