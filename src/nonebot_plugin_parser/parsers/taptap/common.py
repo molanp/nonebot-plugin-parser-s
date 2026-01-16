@@ -241,11 +241,20 @@ class TapTapParser(BaseParser):
         
         # 尝试提取视频 ID
         video_id = None
+        
+        # 首先，查找所有包含视频封面的对象（这是最可靠的视频标识）
+        video_cover_items = []
+        for i, item in enumerate(data):
+            if isinstance(item, dict) and 'original_url' in item:
+                img_url = self._resolve_nuxt_value(data, item['original_url'])
+                if isinstance(img_url, str) and 'video-picture' in img_url:
+                    video_cover_items.append((i, item))
+        
+        # 提取图片
         for item in data:
             if not isinstance(item, dict):
                 continue
             
-            # 提取图片
             if 'original_url' in item:
                 img_url = self._resolve_nuxt_value(data, item['original_url'])
                 if img_url and isinstance(img_url, str) and img_url.startswith('http'):
@@ -260,57 +269,107 @@ class TapTapParser(BaseParser):
                 if isinstance(video_url, str) and ('.mp4' in video_url or '.m3u8' in video_url) and video_url.startswith('http'):
                     if video_url not in result['videos']:
                         result['videos'].append(video_url)
+        
+        # 处理视频封面相关的视频 ID
+        for idx, video_cover_item in video_cover_items:
+            logger.debug(f"找到视频封面 item: {idx}, {video_cover_item.keys()}")
             
-            # 深度搜索视频 ID
-            def deep_search_video_id(obj, path=""):
+            # 情况1: 当前 item 包含 video 字段，指向视频对象
+            if 'video' in video_cover_item:
+                video_ref = video_cover_item['video']
+                video_obj = self._resolve_nuxt_value(data, video_ref)
+                logger.debug(f"解析到视频对象: {video_obj}")
+                
+                if isinstance(video_obj, dict):
+                    # 视频对象中直接包含 video_id
+                    if 'video_id' in video_obj:
+                        video_id = str(video_obj['video_id'])
+                        break
+                    # 视频对象中包含 id
+                    elif 'id' in video_obj:
+                        video_id = str(video_obj['id'])
+                        break
+                elif isinstance(video_obj, (str, int)):
+                    # 直接是视频 ID
+                    video_id = str(video_obj)
+                    break
+            
+            # 情况2: 查找当前 item 的父对象
+            # 遍历所有可能的父对象，查找包含当前视频封面的视频对象
+            for i, item in enumerate(data):
+                if isinstance(item, dict):
+                    # 递归检查对象中是否包含当前视频封面的引用
+                    def check_contains_cover(obj, cover_idx=idx):
+                        if isinstance(obj, dict):
+                            for k, v in obj.items():
+                                if v == cover_idx:
+                                    return True
+                                if check_contains_cover(v, cover_idx):
+                                    return True
+                        elif isinstance(obj, list):
+                            for v in obj:
+                                if v == cover_idx:
+                                    return True
+                                if check_contains_cover(v, cover_idx):
+                                    return True
+                        return False
+                    
+                    # 检查当前 item 是否包含视频封面的引用
+                    if check_contains_cover(item):
+                        logger.debug(f"找到包含视频封面引用的父对象: {i}, {item.keys()}")
+                        # 从父对象中提取视频 ID
+                        if 'video_id' in item:
+                            video_id = str(item['video_id'])
+                            break
+                        elif 'id' in item:
+                            video_id = str(item['id'])
+                            break
+            
+            # 如果已经找到视频 ID，退出循环
+            if video_id:
+                break
+        
+        # 如果还没找到视频 ID，尝试深度搜索
+        if not video_id:
+            logger.debug("深度搜索视频 ID...")
+            
+            def deep_search_video_id(obj):
                 """深度搜索视频 ID"""
                 nonlocal video_id
-                if video_id:  # 已经找到，直接返回
+                if video_id:
                     return
                 
                 if isinstance(obj, dict):
-                    # 检查当前对象是否包含 video_id
+                    # 查找 video_id 字段
                     if 'video_id' in obj:
                         val = obj['video_id']
                         if isinstance(val, (str, int)):
-                            video_id = str(val)
-                            return
-                    # 检查是否是视频对象
-                    if any(k in obj for k in ['play_url', 'video_info', 'video_detail']) and 'id' in obj:
+                            # 过滤掉小数字 ID
+                            try:
+                                if int(val) > 10000:
+                                    video_id = str(val)
+                                    return
+                            except ValueError:
+                                pass
+                    # 查找包含视频信息的对象
+                    elif any(k in obj for k in ['play_url', 'video_info', 'video_detail']) and 'id' in obj:
                         val = obj['id']
                         if isinstance(val, (str, int)):
                             try:
-                                int(val)
-                                video_id = str(val)
-                                return
+                                if int(val) > 10000:
+                                    video_id = str(val)
+                                    return
                             except ValueError:
                                 pass
-                    # 递归搜索所有值
+                    # 递归搜索
                     for k, v in obj.items():
-                        deep_search_video_id(v, f"{path}.{k}")
+                        deep_search_video_id(v)
                 elif isinstance(obj, list):
-                    # 递归搜索列表中的所有元素
-                    for i, v in enumerate(obj):
-                        deep_search_video_id(v, f"{path}[{i}]")
+                    for v in obj:
+                        deep_search_video_id(v)
             
-            # 深度搜索当前 item 中的视频 ID
-            deep_search_video_id(item)
-            
-            # 检查是否是视频相关的对象（通过封面图判断）
-            if 'original_url' in item:
-                img_url = self._resolve_nuxt_value(data, item['original_url'])
-                if isinstance(img_url, str) and 'video-picture' in img_url:
-                    # 这是视频封面，尝试从当前 item 或其父对象中找到视频 ID
-                    if 'video' in item:
-                        video_obj = self._resolve_nuxt_value(data, item['video'])
-                        if isinstance(video_obj, dict) and 'id' in video_obj:
-                            video_id = str(video_obj['id'])
-                        elif isinstance(video_obj, (str, int)):
-                            video_id = str(video_obj)
-                    elif 'source' in item:
-                        source = self._resolve_nuxt_value(data, item['source'])
-                        if isinstance(source, dict) and 'id' in source:
-                            video_id = str(source['id'])
+            # 对整个数据进行深度搜索
+            deep_search_video_id(data)
         
         # 如果找到了视频 ID，尝试通过 API 获取视频信息
         if video_id:
