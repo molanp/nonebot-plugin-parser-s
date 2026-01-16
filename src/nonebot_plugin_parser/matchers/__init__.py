@@ -299,17 +299,8 @@ async def handle_group_msg_emoji_like(event):
 
         # 检查media_contents是否为空
         if not result.media_contents:
-            logger.debug(f"消息ID {liked_message_id} 对应的解析结果中没有延迟发送的媒体内容")
-            # 发送"失败"的表情（使用用户指定的表情ID 10060）
-            try:
-                if liked_message_id:
-                    await message_reaction("10060", message_id=str(liked_message_id))
-            except Exception as e:
-                logger.warning(f"Failed to send fail reaction: {e}")
-            # 从缓存中移除消息ID，因为没有媒体需要发送
-            if str(liked_message_id) in _MSG_ID_RESULT_MAP:
-                del _MSG_ID_RESULT_MAP[str(liked_message_id)]
-                logger.debug(f"从_MSG_ID_RESULT_MAP中移除消息ID: {liked_message_id}（没有延迟媒体）")
+            logger.debug(f"消息ID {liked_message_id} 对应的解析结果中当前没有延迟发送的媒体内容，等待媒体下载完成")
+            # 不发送失败表情，也不移除消息ID，等待媒体下载完成
             return
 
         # 发送延迟的媒体内容
