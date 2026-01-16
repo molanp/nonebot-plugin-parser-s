@@ -184,7 +184,7 @@ class StreamDownloader:
                         for retry in range(3):
                             try:
                                 async with self.client.stream("GET", ts_url, headers=ts_headers, timeout=15, follow_redirects=True) as resp:
-                                    if resp.status == 200:
+                                    if resp.status_code == 200:
                                         async for chunk in resp.aiter_bytes():
                                             await f.write(chunk)
                                             downloaded_bytes += len(chunk)
@@ -210,12 +210,12 @@ class StreamDownloader:
                 logger.success(f"[StreamDownloader] m3u8 视频下载完成: {final_video_path}")
                 return final_video_path
             else:
-                return None
+                raise Exception("视频下载失败，最终文件不存在或大小过小")
         
         except Exception as e:
             logger.error(f"[StreamDownloader] m3u8 视频下载流程出错: {e}")
             await safe_unlink(temp_ts_path)
-            return None
+            raise DownloadException(f"视频下载失败: {e}")
     
     async def _smart_parse_m3u8(self, m3u8_url: str) -> list[str]:
         """智能解析 m3u8，支持 Master Playlist (嵌套) 和 Media Playlist"""
@@ -270,10 +270,11 @@ class StreamDownloader:
             fetch_headers["Referer"] = "https://www.taptap.cn/"
             fetch_headers["Origin"] = "https://www.taptap.cn"
         
-        async with self.client.get(url, headers=fetch_headers, timeout=10, follow_redirects=True) as resp:
-            if resp.status != 200:
-                raise Exception(f"请求失败: {resp.status}")
-            return await resp.text()
+        # 使用 stream 方法而不是 get 方法，因为 stream 方法返回的对象支持 async with
+        async with self.client.stream("GET", url, headers=fetch_headers, timeout=10, follow_redirects=True) as resp:
+            if resp.status_code != 200:
+                raise Exception(f"请求失败: {resp.status_code}")
+            return await resp.atext()
     
     async def _has_ffmpeg(self) -> bool:
         try:

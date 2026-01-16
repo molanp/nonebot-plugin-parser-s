@@ -238,9 +238,14 @@ class TapTapParser(BaseParser):
         # 图片处理
         images = []
         img_blacklist = ['appicon', 'avatars', 'logo', 'badge', 'emojis', 'market']
+        
+        # 尝试提取视频 ID
+        video_id = None
         for item in data:
             if not isinstance(item, dict):
                 continue
+            
+            # 提取图片
             if 'original_url' in item:
                 img_url = self._resolve_nuxt_value(data, item['original_url'])
                 if img_url and isinstance(img_url, str) and img_url.startswith('http'):
@@ -255,8 +260,91 @@ class TapTapParser(BaseParser):
                 if isinstance(video_url, str) and ('.mp4' in video_url or '.m3u8' in video_url) and video_url.startswith('http'):
                     if video_url not in result['videos']:
                         result['videos'].append(video_url)
+            
+            # 深度搜索视频 ID
+            def deep_search_video_id(obj, path=""):
+                """深度搜索视频 ID"""
+                nonlocal video_id
+                if video_id:  # 已经找到，直接返回
+                    return
+                
+                if isinstance(obj, dict):
+                    # 检查当前对象是否包含 video_id
+                    if 'video_id' in obj:
+                        val = obj['video_id']
+                        if isinstance(val, (str, int)):
+                            video_id = str(val)
+                            return
+                    # 检查是否是视频对象
+                    if any(k in obj for k in ['play_url', 'video_info', 'video_detail']) and 'id' in obj:
+                        val = obj['id']
+                        if isinstance(val, (str, int)):
+                            try:
+                                int(val)
+                                video_id = str(val)
+                                return
+                            except ValueError:
+                                pass
+                    # 递归搜索所有值
+                    for k, v in obj.items():
+                        deep_search_video_id(v, f"{path}.{k}")
+                elif isinstance(obj, list):
+                    # 递归搜索列表中的所有元素
+                    for i, v in enumerate(obj):
+                        deep_search_video_id(v, f"{path}[{i}]")
+            
+            # 深度搜索当前 item 中的视频 ID
+            deep_search_video_id(item)
+            
+            # 检查是否是视频相关的对象（通过封面图判断）
+            if 'original_url' in item:
+                img_url = self._resolve_nuxt_value(data, item['original_url'])
+                if isinstance(img_url, str) and 'video-picture' in img_url:
+                    # 这是视频封面，尝试从当前 item 或其父对象中找到视频 ID
+                    if 'video' in item:
+                        video_obj = self._resolve_nuxt_value(data, item['video'])
+                        if isinstance(video_obj, dict) and 'id' in video_obj:
+                            video_id = str(video_obj['id'])
+                        elif isinstance(video_obj, (str, int)):
+                            video_id = str(video_obj)
+                    elif 'source' in item:
+                        source = self._resolve_nuxt_value(data, item['source'])
+                        if isinstance(source, dict) and 'id' in source:
+                            video_id = str(source['id'])
+        
+        # 如果找到了视频 ID，尝试通过 API 获取视频信息
+        if video_id:
+            logger.info(f"找到视频 ID: {video_id}, 尝试通过 API 获取视频信息")
+            try:
+                # 构建 API URL
+                api_url = f"https://www.taptap.cn/webapiv2/video/info?video_id={video_id}"
+                
+                # 创建 httpx 客户端
+                import httpx
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(api_url, headers=self.headers, timeout=10)
+                    response.raise_for_status()
+                    video_info = response.json().get('data', {})
+                    
+                    logger.debug(f"API 返回的 video_info: {video_info}")
+                    
+                    # 提取视频链接
+                    if video_info and isinstance(video_info, dict):
+                        play_url = video_info.get('play_url', {})
+                        if isinstance(play_url, dict):
+                            # 获取不同格式的视频链接
+                            for url_key in ['url', 'url_h265']:
+                                if url_key in play_url:
+                                    video_url = play_url[url_key]
+                                    if isinstance(video_url, str) and video_url.startswith('http'):
+                                        if video_url not in result['videos']:
+                                            result['videos'].append(video_url)
+                                            logger.info(f"成功获取视频链接: {video_url}")
+            except Exception as e:
+                logger.error(f"通过 API 获取视频信息失败: {e}")
         
         result["images"] = images
+        logger.debug(f"解析结果: videos={len(result['videos'])}, images={len(images)}")
         return result
     
     async def _parse_user_latest_post(self, user_id: str) -> Optional[Dict[str, Any]]:
