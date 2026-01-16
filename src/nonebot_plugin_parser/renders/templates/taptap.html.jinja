@@ -374,6 +374,18 @@
             color: var(--gray-color);
         }
         
+        .comment-honor {
+            font-size: 12px;
+            color: var(--secondary-color);
+            margin-left: 8px;
+        }
+        
+        .comment-meta {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+        
         .comment-text {
             font-size: 15px;
             line-height: 1.6;
@@ -717,16 +729,29 @@
                     <div class="comment-author-row">
                         <div class="comment-author-section">
                             <span class="comment-author">{{ comment.author.name }}</span>
+                            
+                            {# 徽章展示 #}
                             {% if comment.author.badges and comment.author.badges|length > 0 %}
                                 {% for badge in comment.author.badges %}
                                     {% if badge.icon and badge.icon.small %}
-                                        <img src="{{ badge.icon.small }}" alt="徽章" class="comment-badge">
+                                        <img src="{{ badge.icon.small }}" alt="徽章" class="comment-badge" title="{{ badge.title }}">
                                     {% endif %}
                                 {% endfor %}
+                            {% endif %}
+                            
+                            {# 荣誉/称号展示 #}
+                            {% if comment.author.honor_title %}
+                                <span class="comment-honor">{{ comment.author.honor_title }}</span>
                             {% endif %}
                         </div>
                         <span class="comment-time">{{ comment.formatted_time }}</span>
                     </div>
+                    
+                    {# 个性签名/其他信息展示 #}
+                    {% if comment.author.description %}
+                        <div class="comment-meta">{{ comment.author.description }}</div>
+                    {% endif %}
+                    
                     <div class="comment-text">
                         {{ comment.content }}
                     </div>
@@ -755,16 +780,29 @@
                                 <div class="comment-author-row">
                                     <div class="comment-author-section">
                                         <span class="comment-author">{{ reply.author.name }}</span>
+                                        
+                                        {# 回复者徽章展示 #}
                                         {% if reply.author.badges and reply.author.badges|length > 0 %}
                                             {% for badge in reply.author.badges %}
                                                 {% if badge.icon and badge.icon.small %}
-                                                    <img src="{{ badge.icon.small }}" alt="徽章" class="comment-badge">
+                                                    <img src="{{ badge.icon.small }}" alt="徽章" class="comment-badge" title="{{ badge.title }}">
                                                 {% endif %}
                                             {% endfor %}
+                                        {% endif %}
+                                        
+                                        {# 回复者荣誉/称号展示 #}
+                                        {% if reply.author.honor_title %}
+                                            <span class="comment-honor">{{ reply.author.honor_title }}</span>
                                         {% endif %}
                                     </div>
                                     <span class="comment-time">{{ reply.formatted_time }}</span>
                                 </div>
+                                
+                                {# 回复者个性签名/其他信息展示 #}
+                                {% if reply.author.description %}
+                                    <div class="comment-meta">{{ reply.author.description }}</div>
+                                {% endif %}
+                                
                                 <div class="comment-text">
                                     {{ reply.content }}
                                 </div>
