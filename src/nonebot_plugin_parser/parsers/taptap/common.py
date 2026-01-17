@@ -347,6 +347,16 @@ class TapTapParser(BaseParser):
             # 处理评论数据，提取纯文本内容
             processed_comments = []
             for comment in comments[:10]:  # 只保留前10条评论
+                # 获取评论时间
+                created_time = comment.get("created_time") or comment.get("updated_time")
+                formatted_time = ""
+                if created_time:
+                    try:
+                        dt = datetime.fromtimestamp(created_time)
+                        formatted_time = dt.strftime('%Y-%m-%d %H:%M')
+                    except (ValueError, TypeError):
+                        formatted_time = ""
+                
                 processed_comment = {
                     "id": comment.get("id", ""),
                     "author": {
@@ -356,7 +366,8 @@ class TapTapParser(BaseParser):
                         "badges": comment.get("author", {}).get("badges", [])
                     },
                     "content": "",
-                    "formatted_time": comment.get("updated_time", ""),
+                    "created_time": created_time,
+                    "formatted_time": formatted_time,
                     "ups": comment.get("ups", 0),
                     "comments": comment.get("comments", 0),
                     "child_posts": []
@@ -379,6 +390,16 @@ class TapTapParser(BaseParser):
                 # 处理回复
                 if 'child_posts' in comment:
                     for reply in comment['child_posts'][:5]:  # 只保留前5条回复
+                        # 获取回复时间
+                        reply_created_time = reply.get("created_time") or reply.get("updated_time")
+                        reply_formatted_time = ""
+                        if reply_created_time:
+                            try:
+                                dt = datetime.fromtimestamp(reply_created_time)
+                                reply_formatted_time = dt.strftime('%Y-%m-%d %H:%M')
+                            except (ValueError, TypeError):
+                                reply_formatted_time = ""
+                        
                         processed_reply = {
                             "id": reply.get("id", ""),
                             "author": {
@@ -388,7 +409,8 @@ class TapTapParser(BaseParser):
                                 "badges": reply.get("author", {}).get("badges", [])
                             },
                             "content": "",
-                            "formatted_time": reply.get("formatted_time", ""),
+                            "created_time": reply_created_time,
+                            "formatted_time": reply_formatted_time,
                             "ups": reply.get("ups", 0)
                         }
                         
@@ -849,20 +871,8 @@ class TapTapParser(BaseParser):
         formatted_publish_time = format_time(detail.get('publish_time'))
         formatted_created_time = format_time(detail.get('created_time'))
         
-        # 格式化评论时间
-        formatted_comments = []
-        for comment in detail.get('comments', []):
-            formatted_comment = comment.copy()
-            formatted_comment['formatted_time'] = format_time(comment.get('created_time'))
-            
-            # 格式化回复时间
-            formatted_replies = []
-            for reply in comment.get('child_posts', []):
-                formatted_reply = reply.copy()
-                formatted_reply['formatted_time'] = format_time(reply.get('created_time'))
-                formatted_replies.append(formatted_reply)
-            formatted_comment['child_posts'] = formatted_replies
-            formatted_comments.append(formatted_comment)
+        # 评论时间已经在_fetch_comments中格式化好了，这里直接使用
+        formatted_comments = detail.get('comments', [])
         
         # 构建解析结果
         result = self.result(
