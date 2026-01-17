@@ -330,6 +330,19 @@ class TapTapParser(BaseParser):
                                 if original_url:
                                     # 将表情转换为HTML img标签，与文字一起渲染
                                     text_parts.append(f'<img src="{original_url}" alt="表情" style="width: 20px; height: 20px; vertical-align: middle; margin: 0 2px; object-fit: contain;">')
+                            # 处理话题标签
+                            elif child.get("type") == "hashtag":
+                                tag_text = child.get("text", "")
+                                if tag_text:
+                                    web_url = child.get("info", {}).get("web_url", "")
+                                    if web_url:
+                                        # 移除URL中的空格
+                                        web_url = web_url.strip()
+                                        # 将话题标签转换为HTML超链接
+                                        text_parts.append(f'<a href="{web_url}" style="color: #3498db; text-decoration: none; background-color: #f0f8ff; padding: 2px 6px; border-radius: 4px; font-weight: 500; margin: 0 2px;">{tag_text}</a>')
+                                    else:
+                                        # 如果没有URL，只显示标签文本
+                                        text_parts.append(f'<span style="color: #3498db; background-color: #f0f8ff; padding: 2px 6px; border-radius: 4px; font-weight: 500; margin: 0 2px;">{tag_text}</span>')
                 
                 elif item_type == "image":
                     image_info = content_item.get("info", {}).get("image", {})
