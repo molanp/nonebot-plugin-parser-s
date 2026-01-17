@@ -786,14 +786,8 @@
                             <span class="comment-author-name">{{ comment.author.name }}</span>
                             
                             {# 徽章展示 #}
-                            {% if comment.author.badges and comment.author.badges|length > 0 %}
-                                {% for badge in comment.author.badges %}
-                                    {% if badge.title %}
-                                        <span class="comment-badge" style="background-color: {{ badge.style.background_color }}; color: {{ badge.style.font_color }};">
-                                            {{ badge.title }}
-                                        </span>
-                                    {% endif %}
-                                {% endfor %}
+                            {% if comment.author.processed_badges %}
+                                <span class="comment-badges">{{ comment.author.processed_badges | safe }}</span>
                             {% endif %}
                             
                             {# 荣誉/称号展示 #}
@@ -848,14 +842,8 @@
                                         <span class="reply-author-name">{{ reply.author.name }}</span>
                                         
                                         {# 回复者徽章展示 #}
-                                        {% if reply.author.badges and reply.author.badges|length > 0 %}
-                                            {% for badge in reply.author.badges %}
-                                                {% if badge.title %}
-                                                    <span class="comment-badge" style="background-color: {{ badge.style.background_color }}; color: {{ badge.style.font_color }};">
-                                                        {{ badge.title }}
-                                                    </span>
-                                                {% endif %}
-                                            {% endfor %}
+                                        {% if reply.author.processed_badges %}
+                                            <span class="comment-badges">{{ reply.author.processed_badges | safe }}</span>
                                         {% endif %}
                                         
                                         {# 回复者荣誉/称号展示 #}

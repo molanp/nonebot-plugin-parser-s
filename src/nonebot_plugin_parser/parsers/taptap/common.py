@@ -387,13 +387,28 @@ class TapTapParser(BaseParser):
                     except (ValueError, TypeError):
                         formatted_time = ""
                 
+                # 处理作者徽章，转换为HTML标签
+                author = comment.get("author", {})
+                badges = author.get("badges", [])
+                
+                # 创建处理后的徽章HTML
+                processed_badges = []
+                for badge in badges:
+                    if badge.get("title"):
+                        # 如果有徽章图片，显示图片+文字，否则只显示文字
+                        if badge.get("icon", {}).get("small"):
+                            badge_icon = badge["icon"]["small"]
+                            processed_badges.append(f'<img src="{badge_icon}" alt="{badge["title"]}" title="{badge["title"]}" style="width: 16px; height: 16px; vertical-align: middle; margin: 0 2px; object-fit: contain;">')
+                        processed_badges.append(f'<span class="badge-text" style="color: #3498db; font-size: 12px; margin: 0 2px;">{badge["title"]}</span>')
+                
                 processed_comment = {
                     "id": comment.get("id", ""),
                     "author": {
-                        "id": comment.get("author", {}).get("id", ""),
-                        "name": comment.get("author", {}).get("name", ""),
-                        "avatar": comment.get("author", {}).get("avatar", ""),
-                        "badges": comment.get("author", {}).get("badges", [])
+                        "id": author.get("id", ""),
+                        "name": author.get("name", ""),
+                        "avatar": author.get("avatar", ""),
+                        "badges": badges,
+                        "processed_badges": "".join(processed_badges)  # 添加处理后的徽章HTML
                     },
                     "content": "",
                     "created_time": created_time,
@@ -430,13 +445,28 @@ class TapTapParser(BaseParser):
                             except (ValueError, TypeError):
                                 reply_formatted_time = ""
                         
+                        # 处理回复者徽章，转换为HTML标签
+                        reply_author = reply.get("author", {})
+                        reply_badges = reply_author.get("badges", [])
+                        
+                        # 创建处理后的徽章HTML
+                        processed_reply_badges = []
+                        for badge in reply_badges:
+                            if badge.get("title"):
+                                # 如果有徽章图片，显示图片+文字，否则只显示文字
+                                if badge.get("icon", {}).get("small"):
+                                    badge_icon = badge["icon"]["small"]
+                                    processed_reply_badges.append(f'<img src="{badge_icon}" alt="{badge["title"]}" title="{badge["title"]}" style="width: 16px; height: 16px; vertical-align: middle; margin: 0 2px; object-fit: contain;">')
+                                processed_reply_badges.append(f'<span class="badge-text" style="color: #3498db; font-size: 12px; margin: 0 2px;">{badge["title"]}</span>')
+                        
                         processed_reply = {
                             "id": reply.get("id", ""),
                             "author": {
-                                "id": reply.get("author", {}).get("id", ""),
-                                "name": reply.get("author", {}).get("name", ""),
-                                "avatar": reply.get("author", {}).get("avatar", ""),
-                                "badges": reply.get("author", {}).get("badges", [])
+                                "id": reply_author.get("id", ""),
+                                "name": reply_author.get("name", ""),
+                                "avatar": reply_author.get("avatar", ""),
+                                "badges": reply_badges,
+                                "processed_badges": "".join(processed_reply_badges)  # 添加处理后的徽章HTML
                             },
                             "content": "",
                             "created_time": reply_created_time,
