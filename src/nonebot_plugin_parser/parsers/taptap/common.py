@@ -857,6 +857,191 @@ class TapTapParser(BaseParser):
             return None
         return max(candidates, key=lambda x: int(x['id']))
     
+    async def _fetch_review_comments(self, review_id: str) -> List[Dict[str, Any]]:
+        """获取评论的评论列表"""
+        api_url = f"https://www.taptap.cn/webapiv2/review-comment/v1/by-review"
+        params = {
+            "review_id": review_id,
+            "show_top": "true",
+            "regulate_all": "false",
+            "order": "asc",
+            "X-UA": "V=1&PN=WebApp&LANG=zh_CN&VN_CODE=102&LOC=CN&PLT=PC&DS=Android&UID=f69478c8-27a3-4581-877b-45ade0e61b0b&OS=Windows&OSV=10&DT=PC"
+        }
+        
+        comments = []
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(api_url, params=params, headers=self.headers)
+                response.raise_for_status()
+                api_data = response.json()
+                
+                if api_data and api_data.get("success"):
+                    data = api_data.get("data", {})
+                    comment_list = data.get("list", [])
+                    
+                    for comment in comment_list:
+                        # 格式化时间
+                        created_time = comment.get("created_time")
+                        formatted_time = ""
+                        if created_time:
+                            try:
+                                dt = datetime.fromtimestamp(created_time)
+                                formatted_time = dt.strftime('%Y-%m-%d %H:%M')
+                            except (ValueError, TypeError):
+                                formatted_time = ""
+                        
+                        # 处理作者徽章
+                        author = comment.get("author", {})
+                        badges = author.get("badges", [])
+                        processed_badges = []
+                        for badge in badges:
+                            if badge.get("title"):
+                                if badge.get("icon", {}).get("small"):
+                                    badge_icon = badge["icon"]["small"]
+                                    processed_badges.append(f'<img src="{badge_icon}" alt="{badge["title"]}" title="{badge["title"]}" style="width: 16px; height: 16px; vertical-align: middle; margin: 0 2px; object-fit: contain;">')
+                                processed_badges.append(f'<span class="badge-text" style="color: #3498db; font-size: 12px; margin: 0 2px;">{badge["title"]}</span>')
+                        
+                        processed_comment = {
+                            "id": comment.get("id", ""),
+                            "author": {
+                                "id": author.get("id", ""),
+                                "name": author.get("name", ""),
+                                "avatar": author.get("avatar", ""),
+                                "badges": badges,
+                                "processed_badges": "".join(processed_badges)
+                            },
+                            "content": comment.get("contents", {}).get("text", ""),
+                            "created_time": created_time,
+                            "formatted_time": formatted_time,
+                            "ups": comment.get("ups", 0),
+                            "comments": 0,
+                            "child_posts": []
+                        }
+                        
+                        comments.append(processed_comment)
+                    
+                    logger.info(f"[TapTap] 获取评论的评论成功: {len(comments)} 条")
+        except Exception as e:
+            logger.error(f"[TapTap] 获取评论的评论失败: {e}")
+        
+        return comments
+    
+    async def _parse_review_detail(self, review_id: str) -> Dict[str, Any]:
+        """解析评论详情"""
+        url = f"{self.base_url}/review/{review_id}"
+        
+        # 初始化结果结构
+        result = {
+            "id": review_id,
+            "url": url,
+            "title": "TapTap 评论详情",
+            "summary": "",
+            "content_items": [],
+            "images": [],
+            "videos": [],
+            "video_id": None,
+            "video_duration": None,
+            "author": {
+                "name": "",
+                "avatar": "",
+                "app_title": "",
+                "app_icon": "",
+                "honor_title": "",
+                "honor_obj_id": "",
+                "honor_obj_type": ""
+            },
+            "created_time": "",
+            "publish_time": "",
+            "stats": {
+                "likes": 0,
+                "comments": 0,
+                "shares": 0,
+                "views": 0,
+                "plays": 0
+            },
+            "video_cover": "",
+            "comments": [],
+            "seo_keywords": "",
+            "footer_images": [],
+            "app": {}
+        }
+        
+        # 从API获取评论详情
+        api_url = f"https://www.taptap.cn/webapiv2/review/v2/detail"
+        params = {
+            "id": review_id,
+            "X-UA": "V=1&PN=WebApp&LANG=zh_CN&VN_CODE=102&LOC=CN&PLT=PC&DS=Android&UID=f69478c8-27a3-4581-877b-45ade0e61b0b&OS=Windows&OSV=10&DT=PC"
+        }
+        
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(api_url, params=params, headers=self.headers)
+                response.raise_for_status()
+                api_data = response.json()
+                
+                if api_data and api_data.get("success"):
+                    data = api_data.get("data", {})
+                    moment_data = data.get("moment", {})
+                    review_data = moment_data.get("review", {})
+                    app_data = moment_data.get("app", {})
+                    author_data = moment_data.get("author", {})
+                    user_data = author_data.get("user", {})
+                    
+                    # 作者信息
+                    result["author"]["name"] = user_data.get("name", "")
+                    result["author"]["avatar"] = user_data.get("avatar", "")
+                    
+                    # 评论内容
+                    result["summary"] = review_data.get("contents", {}).get("text", "")
+                    
+                    # 评论图片
+                    for img_item in review_data.get("images", []):
+                        original_url = img_item.get("original_url")
+                        if original_url:
+                            result["images"].append(original_url)
+                    
+                    # 发布时间
+                    result["created_time"] = moment_data.get("created_time", "")
+                    result["publish_time"] = moment_data.get("publish_time", "")
+                    
+                    # 统计信息
+                    stat_data = moment_data.get("stat", {})
+                    result["stats"]["likes"] = stat_data.get("ups", 0)
+                    result["stats"]["views"] = stat_data.get("pv_total", 0)
+                    result["stats"]["comments"] = stat_data.get("comments", 0) or 0
+                    
+                    # 游戏信息
+                    result["app"] = {
+                        "title": app_data.get("title", ""),
+                        "icon": app_data.get("icon", {}).get("original_url", ""),
+                        "rating": app_data.get("stat", {}).get("rating", {}).get("score", ""),
+                        "tags": app_data.get("tags", [])
+                    }
+                    
+                    # 评论额外信息
+                    result["extra"]["extra"] = {
+                        "review": review_data,
+                        "author": {
+                            "device": moment_data.get("device", ""),
+                            "released_time": moment_data.get("release_time", "")
+                        },
+                        "ratings": review_data.get("ratings", []),
+                        "stage": review_data.get("stage", 0),
+                        "stage_label": review_data.get("stage_label", "")
+                    }
+                    
+                    # 获取评论的评论
+                    result["comments"] = await self._fetch_review_comments(review_id)
+                    
+                    logger.info(f"[TapTap] 评论详情解析成功: {result['author']['name']} - {result['app']['title']}")
+                else:
+                    logger.error(f"[TapTap] 评论详情API获取失败")
+        except Exception as e:
+            logger.error(f"[TapTap] 解析评论详情失败: {e}")
+            raise ParseException(f"获取评论详情失败: {url}")
+        
+        return result
+    
     @handle(keyword="taptap.cn/user", pattern=r"taptap\.cn/user/(\d+)")
     async def handle_user(self, matched):
         """处理用户链接，返回最新动态"""
@@ -898,6 +1083,13 @@ class TapTapParser(BaseParser):
             text=f"查看话题详情: {url}",
             url=url
         )
+    
+    @handle(keyword="taptap.cn/review", pattern=r"taptap\.cn/review/(\d+)")
+    async def handle_review(self, matched):
+        """处理评论详情链接"""
+        review_id = matched.group(1)
+        detail = await self._parse_review_detail(review_id)
+        return self._build_result(detail)
     
     def _build_result(self, detail: Dict[str, Any]):
         """构建解析结果"""

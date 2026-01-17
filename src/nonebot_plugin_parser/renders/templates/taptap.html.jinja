@@ -623,6 +623,42 @@
                             {% elif result.extra.formatted_created_time %}
                             <span class="time-text">{{ result.extra.formatted_created_time }}</span>
                             {% endif %}
+                            
+                            {# 关注按钮（评论详情特定）#}
+                            {% if result.extra.extra and result.extra.extra.review %}
+                            <span style="margin-left: 10px; padding: 4px 12px; background-color: #3498db; color: white; border-radius: 16px; font-size: 12px; font-weight: 500; cursor: pointer; margin-right: 8px;">
+                                关注
+                            </span>
+                            
+                            {# 游戏状态（评论详情特定）#}
+                            {% if result.extra.extra.stage_label %}
+                            <span style="margin-right: 8px; padding: 4px 12px; background-color: #e8f4f8; color: #3498db; border-radius: 16px; font-size: 12px; font-weight: 500;">
+                                {{ result.extra.extra.stage_label }}
+                            </span>
+                            {% endif %}
+                            
+                            {# 推荐情况（评论详情特定）#}
+                            <span style="margin-right: 8px; padding: 4px 12px; background-color: #eafaf1; color: #2ecc71; border-radius: 16px; font-size: 12px; font-weight: 500;">
+                                推荐:
+                            </span>
+                            
+                            {# 各项评分（评论详情特定）#}
+                            {% if result.extra.extra.ratings %}
+                            {% for rating in result.extra.extra.ratings %}
+                            <span style="margin-right: 4px; padding: 2px 8px; background-color: #f0f8ff; color: #3498db; border-radius: 12px; font-size: 11px;">
+                                {{ rating.label }}
+                            </span>
+                            {% endfor %}
+                            {% endif %}
+                            
+                            {# 设备信息（评论详情特定）#}
+                            {% if result.extra.extra.author.device %}
+                            <span style="margin-right: 8px; font-size: 11px; color: var(--gray-color);">
+                                来自 {{ result.extra.extra.author.device }}
+                            </span>
+                            {% endif %}
+                            {% endif %}
+                            
                             {% if author_data.app_title %}
                             <span class="info-badge">
                                 {% if author_data.app_icon %}<img src="{{ author_data.app_icon }}" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;">{% endif %}
