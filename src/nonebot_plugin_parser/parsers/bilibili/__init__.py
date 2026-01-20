@@ -241,10 +241,11 @@ class BilibiliParser(BaseParser):
         if not image_urls:
             # 使用相对路径，让渲染器可以找到默认图片
             import os
-            default_image_path = os.path.join(os.path.dirname(__file__), '../../renders/resources/QIQI.jpg')
-            if os.path.exists(default_image_path):
-                # 添加默认图片到contents
-                contents.append(ImageContent(lambda: default_image_path))
+            from pathlib import Path
+            default_image_path = Path(os.path.dirname(__file__)).parent.parent / 'renders' / 'resources' / 'QIQI.jpg'
+            if default_image_path.exists():
+                # 添加默认图片到contents，直接使用Path对象
+                contents.append(ImageContent(default_image_path))
         else:
             # 下载主体图片
             for image_url in image_urls:
