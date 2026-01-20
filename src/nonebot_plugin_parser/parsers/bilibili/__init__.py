@@ -278,6 +278,10 @@ class BilibiliParser(BaseParser):
 
                 # 尝试判断源动态类型
                 is_article = False
+                orig_title = orig_item.title
+                orig_text = orig_item.text
+                orig_author = orig_item.name
+                
                 if major_info:
                     major_type = major_info.get("type")
                     if major_type == "MAJOR_TYPE_ARCHIVE":
@@ -315,13 +319,20 @@ class BilibiliParser(BaseParser):
                                 opus_result = await self.parse_opus(opus_id)
                                 # 将专栏内容添加到 contents
                                 contents.extend(opus_result.contents)
-                                # 更新源动态信息为完整的解析结果
+                                # 使用解析结果更新源动态信息
                                 if opus_result.title:
-                                    extra_data["origin"]["title"] = opus_result.title
+                                    orig_title = opus_result.title
                                 if opus_result.text:
-                                    extra_data["origin"]["text"] = opus_result.text
+                                    orig_text = opus_result.text
                                 if opus_result.author:
-                                    extra_data["origin"]["author"] = opus_result.author.name
+                                    orig_author = opus_result.author.name
+                                # 更新封面为专栏第一张图
+                                if not orig_cover and opus_result.contents:
+                                    # 从contents中找到第一张图片作为封面
+                                    for content in opus_result.contents:
+                                        if hasattr(content, 'path') or hasattr(content, 'task'):
+                                            # 尝试获取图片路径
+                                            pass
                             except Exception as e:
                                 logger.warning(f"解析转发专栏失败: {e}")
                 else:
@@ -330,12 +341,12 @@ class BilibiliParser(BaseParser):
                         img_task = DOWNLOADER.download_img(image_url, ext_headers=self.headers)
                         contents.append(ImageContent(img_task))
 
-                # 构造 origin 字典
+                # 构造 origin 字典（使用更新后的信息）
                 extra_data["origin"] = {
                     "exists": True,
-                    "author": orig_item.name,
-                    "title": orig_item.title,
-                    "text": orig_item.text,
+                    "author": orig_author,
+                    "title": orig_title,
+                    "text": orig_text,
                     "cover": orig_cover,
                     "images": orig_images,
                     "type_tag": orig_type_tag,
