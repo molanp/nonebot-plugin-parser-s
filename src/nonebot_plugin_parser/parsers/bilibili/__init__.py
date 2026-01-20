@@ -357,7 +357,11 @@ class BilibiliParser(BaseParser):
         # 如果标题和文本内容一致，则将文本置空，避免重复展示
         final_text = dynamic_text if dynamic_text and dynamic_text != dynamic_title else None
         
+        # 构建动态URL，用于二维码生成（使用t.bilibili.com格式）
+        dynamic_url = f"https://t.bilibili.com/{dynamic_id}"
+        
         return self.result(
+            url=dynamic_url,
             title=dynamic_title,
             text=final_text,
             timestamp=dynamic_info.timestamp,
@@ -373,7 +377,7 @@ class BilibiliParser(BaseParser):
             opus_id (int): 图文动态 id
         """
         opus = Opus(opus_id, await self.credential)
-        return await self._parse_opus_obj(opus)
+        return await self._parse_opus_obj(opus, opus_id)
 
     async def parse_read_with_opus(self, read_id: int):
         """解析专栏信息, 使用 Opus 接口
@@ -384,9 +388,12 @@ class BilibiliParser(BaseParser):
         from bilibili_api.article import Article
 
         article = Article(read_id)
-        return await self._parse_opus_obj(await article.turn_to_opus())
+        bili_opus = await article.turn_to_opus()
+        # 从 opus 对象获取 id
+        opus_id = getattr(bili_opus, '_opus_id', None) or getattr(bili_opus, 'id', read_id)
+        return await self._parse_opus_obj(bili_opus, int(opus_id))
 
-    async def _parse_opus_obj(self, bili_opus: Opus):
+    async def _parse_opus_obj(self, bili_opus: Opus, opus_id: int | None = None):
         """解析图文动态信息
 
         Args:
@@ -514,7 +521,14 @@ class BilibiliParser(BaseParser):
         # 如果标题和文本内容一致，则将文本置空
         final_text = full_text if full_text and full_text != final_title else None
         
+        # 构建图文动态URL，用于二维码生成
+        if opus_id:
+            opus_url = f"https://www.bilibili.com/opus/{opus_id}"
+        else:
+            opus_url = None
+        
         return self.result(
+            url=opus_url,
             title=final_title,
             author=author,
             timestamp=opus_data.timestamp,
