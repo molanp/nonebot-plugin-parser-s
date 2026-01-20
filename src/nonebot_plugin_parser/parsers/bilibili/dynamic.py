@@ -51,6 +51,7 @@ class DynamicMajor(Struct):
     type: str
     archive: VideoArchive | None = None
     opus: OpusContent | None = None
+    draw: dict[str, Any] | None = None
 
     @property
     def title(self) -> str | None:
@@ -71,8 +72,14 @@ class DynamicMajor(Struct):
     @property
     def image_urls(self) -> list[str]:
         """获取图片URL列表"""
-        if self.type == "MAJOR_TYPE_OPUS" and self.opus:
+        # 优先从opus获取图片
+        if self.type == "MAJOR_TYPE_OPUS" and self.opus and self.opus.pics:
             return [pic.url for pic in self.opus.pics]
+        # 从draw类型获取图片
+        elif self.type == "MAJOR_TYPE_DRAW" and self.draw:
+            pictures = self.draw.get("pictures", [])
+            return [pic.get("img_src", "") for pic in pictures if pic.get("img_src")]
+        # 从视频archive获取封面
         elif self.type == "MAJOR_TYPE_ARCHIVE" and self.archive and self.archive.cover:
             return [self.archive.cover]
         return []
@@ -82,6 +89,10 @@ class DynamicMajor(Struct):
         """获取封面URL"""
         if self.type == "MAJOR_TYPE_ARCHIVE" and self.archive:
             return self.archive.cover
+        # 如果是图文动态，返回第一张图片作为封面
+        image_urls = self.image_urls
+        if image_urls:
+            return image_urls[0]
         return None
 
 
@@ -176,19 +187,63 @@ class DynamicInfo(Struct):
     @property
     def image_urls(self) -> list[str]:
         """获取图片URL列表"""
+        # 1. 优先从major_info获取图片
         major_info = self.modules.major_info
         if major_info:
             major = convert(major_info, DynamicMajor)
-            return major.image_urls
+            major_images = major.image_urls
+            if major_images:
+                return major_images
+        
+        # 2. 处理分享图片的动态，可能直接包含图片信息
+        # 检查是否为图文动态类型
+        if self.type == "DYNAMIC_TYPE_DRAW" and self.modules.module_dynamic:
+            # 从module_dynamic中查找图片信息
+            dynamic_data = self.modules.module_dynamic
+            
+            # 检查是否有pictures字段
+            if isinstance(dynamic_data, dict):
+                # 尝试从不同位置获取图片
+                if "pics" in dynamic_data:
+                    # 直接的pics字段
+                    return [pic.get("url", "") for pic in dynamic_data["pics"] if pic.get("url")]
+                elif "major" in dynamic_data:
+                    major = dynamic_data["major"]
+                    if isinstance(major, dict):
+                        # 检查major是否包含图片信息
+                        if "pics" in major:
+                            return [pic.get("url", "") for pic in major["pics"] if pic.get("url")]
+                        elif "draw" in major and isinstance(major["draw"], dict):
+                            draw = major["draw"]
+                            if "pictures" in draw:
+                                return [pic.get("img_src", "") for pic in draw["pictures"] if pic.get("img_src")]
+        
+        # 3. 如果是转发动态，检查orig字段
+        if self.orig:
+            return self.orig.image_urls
+        
         return []
 
     @property
     def cover_url(self) -> str | None:
         """获取封面URL"""
+        # 1. 优先从major_info获取封面
         major_info = self.modules.major_info
         if major_info:
             major = convert(major_info, DynamicMajor)
-            return major.cover_url
+            cover = major.cover_url
+            if cover:
+                return cover
+        
+        # 2. 从图片列表中获取第一张作为封面
+        image_urls = self.image_urls
+        if image_urls:
+            return image_urls[0]
+        
+        # 3. 如果是转发动态，检查orig字段
+        if self.orig:
+            return self.orig.cover_url
+        
         return None
 
 
