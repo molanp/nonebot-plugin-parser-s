@@ -155,8 +155,21 @@ class BaseRenderer(ABC):
             result.media_contents = media_contents
 
         if forwardable_segs:
+            # 添加原始动态的文本
             if result.text:
                 forwardable_segs.append(result.text)
+            
+            # 添加转发内容的标题和文本
+            if result.repost:
+                repost_text = []
+                if result.repost.title:
+                    repost_text.append(result.repost.title)
+                if result.repost.text:
+                    repost_text.append(result.repost.text)
+                
+                # 如果有转发内容的文本，添加到 forwardable_segs
+                if repost_text:
+                    forwardable_segs.append("\n".join(repost_text))
 
             if pconfig.need_forward_contents or len(forwardable_segs) > 4:
                 forward_msg = UniHelper.construct_forward_message(forwardable_segs + dynamic_segs)

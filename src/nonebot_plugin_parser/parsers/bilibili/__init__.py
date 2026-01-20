@@ -269,6 +269,7 @@ class BilibiliParser(BaseParser):
         }
 
         # --- 新增：处理转发内容 (叠加到 extra) ---
+        repost_result = None
         if dynamic_info.type == "DYNAMIC_TYPE_FORWARD" and dynamic_info.orig:
             orig_item = dynamic_info.orig
 
@@ -316,20 +317,20 @@ class BilibiliParser(BaseParser):
                         if match:
                             opus_id = int(match.group(1))
                             try:
-                                opus_result = await self.parse_opus(opus_id)
+                                repost_result = await self.parse_opus(opus_id)
                                 # 将专栏内容添加到 contents
-                                contents.extend(opus_result.contents)
+                                contents.extend(repost_result.contents)
                                 # 使用解析结果更新源动态信息
-                                if opus_result.title:
-                                    orig_title = opus_result.title
-                                if opus_result.text:
-                                    orig_text = opus_result.text
-                                if opus_result.author:
-                                    orig_author = opus_result.author.name
+                                if repost_result.title:
+                                    orig_title = repost_result.title
+                                if repost_result.text:
+                                    orig_text = repost_result.text
+                                if repost_result.author:
+                                    orig_author = repost_result.author.name
                                 # 更新封面为专栏第一张图
-                                if not orig_cover and opus_result.contents:
+                                if not orig_cover and repost_result.contents:
                                     # 从contents中找到第一张图片作为封面
-                                    for content in opus_result.contents:
+                                    for content in repost_result.contents:
                                         if hasattr(content, 'path') or hasattr(content, 'task'):
                                             # 尝试获取图片路径
                                             pass
@@ -379,6 +380,7 @@ class BilibiliParser(BaseParser):
             author=author,
             contents=contents,
             extra=extra_data,
+            repost=repost_result,
         )
 
     async def parse_opus(self, opus_id: int):
