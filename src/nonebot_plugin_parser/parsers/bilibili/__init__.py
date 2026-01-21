@@ -432,7 +432,44 @@ class BilibiliParser(BaseParser):
         dynamic_url = f"https://t.bilibili.com/{dynamic_id}"
         
         # 获取评论数据 - _fetch_comments方法已经处理好所有数据
-        comments = await self._fetch_comments(dynamic_id, 17)  # type=17 表示动态（纯文字动态&分享）
+        comments = None
+        # 尝试从原始动态数据中获取评论参数
+        basic_info = dynamic_info_data.get("item", {}).get("basic", {})
+        comment_id_str = basic_info.get("comment_id_str")
+        comment_type = basic_info.get("comment_type")
+        
+        # 检查major_info，判断动态类型
+        major_info = dynamic_info.modules.major_info if hasattr(dynamic_info.modules, "major_info") else {}
+        major_type = major_info.get("type") if isinstance(major_info, dict) else None
+        
+        # 根据动态类型选择正确的评论参数
+        if comment_id_str and comment_type:
+            # 使用动态数据中提供的comment_id_str和comment_type
+            comments = await self._fetch_comments(int(comment_id_str), comment_type)
+            logger.debug(f"[BiliParser] 使用动态数据中提供的评论参数: oid={comment_id_str}, type={comment_type}")
+        elif major_type == "MAJOR_TYPE_ARCHIVE" and major_info:
+            # 视频动态，使用视频的aid作为oid，type=1
+            archive_data = major_info.get("archive", {})
+            aid = archive_data.get("aid")
+            if aid:
+                comments = await self._fetch_comments(int(aid), 1)  # type=1 表示视频
+                logger.debug(f"[BiliParser] 使用视频aid作为评论参数: oid={aid}, type=1")
+        elif major_type == "MAJOR_TYPE_OPUS" and major_info:
+            # 图文动态，使用opus_id作为oid，type=12
+            opus_data = major_info.get("opus", {})
+            opus_id = opus_data.get("id") or opus_data.get("opus_id")
+            if opus_id:
+                comments = await self._fetch_comments(int(opus_id), 12)  # type=12 表示专栏
+                logger.debug(f"[BiliParser] 使用opus_id作为评论参数: oid={opus_id}, type=12")
+        elif major_type == "MAJOR_TYPE_DRAW" and major_info:
+            # 图片动态，使用动态id作为oid，type=11
+            comments = await self._fetch_comments(dynamic_id, 11)  # type=11 表示相簿（图片动态）
+            logger.debug(f"[BiliParser] 使用动态id作为图片动态评论参数: oid={dynamic_id}, type=11")
+        else:
+            # 默认情况，使用动态id作为oid，type=17
+            comments = await self._fetch_comments(dynamic_id, 17)  # type=17 表示动态（纯文字动态&分享）
+            logger.debug(f"[BiliParser] 使用默认评论参数: oid={dynamic_id}, type=17")
+        
         if comments:
             extra_data["comments"] = comments
             logger.debug(f"[BiliParser] 成功获取 {len(comments)} 条动态评论")
@@ -607,8 +644,35 @@ class BilibiliParser(BaseParser):
         opus_url = f"https://www.bilibili.com/opus/{opus_id}" if opus_id else None
         
         # 获取评论数据 - _fetch_comments方法已经处理好所有数据
+        comments = None
+        # 获取opus原始数据，用于提取评论参数
+        opus_info = await bili_opus.get_info() if hasattr(bili_opus, "get_info") else {}
+        # 确保opus_info是字典类型
+        opus_info = opus_info if isinstance(opus_info, dict) else {}
+        # 尝试从原始opus数据中获取评论参数
+        comment_id_str = None
+        comment_type = None
+        item_info = opus_info.get("item", {})
+        # 确保item_info是字典类型
+        item_info = item_info if isinstance(item_info, dict) else {}
+        basic_info = item_info.get("basic", {})
+        # 确保basic_info是字典类型
+        basic_info = basic_info if isinstance(basic_info, dict) else {}
+        comment_id_str = basic_info.get("comment_id_str")
+        comment_type = basic_info.get("comment_type")
+        
         content_id = str(opus_data.item.id_str)
-        comments = await self._fetch_comments(int(content_id), 12)  # type=12 表示专栏
+        
+        # 根据opus类型选择正确的评论参数
+        if comment_id_str and comment_type:
+            # 使用opus数据中提供的comment_id_str和comment_type
+            comments = await self._fetch_comments(int(comment_id_str), comment_type)
+            logger.debug(f"[BiliParser] 使用opus数据中提供的评论参数: oid={comment_id_str}, type={comment_type}")
+        else:
+            # 默认为图文动态，使用content_id作为oid，type=12
+            comments = await self._fetch_comments(int(content_id), 12)  # type=12 表示专栏/图文
+            logger.debug(f"[BiliParser] 使用content_id作为opus评论参数: oid={content_id}, type=12")
+        
         if comments:
             extra_data["comments"] = comments
             logger.debug(f"[BiliParser] 成功获取 {len(comments)} 条专栏/图文评论")
@@ -956,74 +1020,77 @@ class BilibiliParser(BaseParser):
                     logger.debug(f"[Bilibili] 兜底评论API返回: {fallback_data}")
                     
                     if fallback_data.get("code") == 0 and fallback_data.get("data"):
-                        fallback_replies = fallback_data["data"].get("replies", [])
-                        logger.debug(f"[Bilibili] 获得兜底评论: {len(fallback_replies)}条")
-                        
-                        # 处理评论数据，直接封装为前端可直接使用的格式
+                        data = fallback_data["data"]
                         processed_comments = []
-                        for comment in fallback_replies[:10]:
-                            # 处理评论内容，包括图片
-                            content = comment.get("content", {})
-                            message = content.get("message", "")
-                            
-                            # 处理评论中的图片
-                            processed_content = message
-                            if content.get("pictures"):
-                                for picture in content["pictures"]:
-                                    img_src = picture.get("img_src", "")
-                                    if img_src:
-                                        processed_content += f'<img src="{img_src}" style="max-width: 100%; height: auto; border-radius: 8px; margin: 5px 0;">'
-                            
-                            # 格式化时间戳为可读时间
-                            import datetime
-                            created_time = comment.get("ctime", 0)
-                            formatted_time = datetime.datetime.fromtimestamp(created_time).strftime("%Y-%m-%d %H:%M:%S")
-                            
-                            # 处理子回复
-                            child_posts = []
-                            if comment.get("replies"):
-                                for reply in comment["replies"][:5]:  # 最多显示5条回复
-                                    reply_content = reply.get("content", {})
-                                    reply_message = reply_content.get("message", "")
+                        # 确保data是字典类型
+                        if isinstance(data, dict):
+                            fallback_replies = data.get("replies", [])
+                            logger.debug(f"[Bilibili] 获得兜底评论: {len(fallback_replies)}条")
+                            # 确保fallback_replies是列表类型
+                            if isinstance(fallback_replies, list):
+                                for comment in fallback_replies[:10]:
+                                    # 处理评论内容，包括图片
+                                    content = comment.get("content", {})
+                                    message = content.get("message", "")
                                     
-                                    # 处理回复中的图片
-                                    processed_reply_content = reply_message
-                                    if reply_content.get("pictures"):
-                                        for picture in reply_content["pictures"]:
+                                    # 处理评论中的图片
+                                    processed_content = message
+                                    if content.get("pictures"):
+                                        for picture in content["pictures"]:
                                             img_src = picture.get("img_src", "")
                                             if img_src:
-                                                processed_reply_content += f'<img src="{img_src}" style="max-width: 100%; height: auto; border-radius: 6px; margin: 4px 0;">'
+                                                processed_content += f'<img src="{img_src}" style="max-width: 100%; height: auto; border-radius: 8px; margin: 5px 0;">'
                                     
-                                    # 格式化回复时间
-                                    reply_created_time = reply.get("ctime", 0)
-                                    reply_formatted_time = datetime.datetime.fromtimestamp(reply_created_time).strftime("%Y-%m-%d %H:%M:%S")
+                                    # 格式化时间戳为可读时间
+                                    import datetime
+                                    created_time = comment.get("ctime", 0)
+                                    formatted_time = datetime.datetime.fromtimestamp(created_time).strftime("%Y-%m-%d %H:%M:%S")
                                     
-                                    child_posts.append({
-                                        "id": reply.get("rpid_str", ""),
+                                    # 处理子回复
+                                    child_posts = []
+                                    if comment.get("replies"):
+                                        for reply in comment["replies"][:5]:  # 最多显示5条回复
+                                            reply_content = reply.get("content", {})
+                                            reply_message = reply_content.get("message", "")
+                                            
+                                            # 处理回复中的图片
+                                            processed_reply_content = reply_message
+                                            if reply_content.get("pictures"):
+                                                for picture in reply_content["pictures"]:
+                                                    img_src = picture.get("img_src", "")
+                                                    if img_src:
+                                                        processed_reply_content += f'<img src="{img_src}" style="max-width: 100%; height: auto; border-radius: 6px; margin: 4px 0;">'
+                                            
+                                            # 格式化回复时间
+                                            reply_created_time = reply.get("ctime", 0)
+                                            reply_formatted_time = datetime.datetime.fromtimestamp(reply_created_time).strftime("%Y-%m-%d %H:%M:%S")
+                                            
+                                            child_posts.append({
+                                                "id": reply.get("rpid_str", ""),
+                                                "author": {
+                                                    "id": reply.get("mid", ""),
+                                                    "name": reply.get("member", {}).get("uname", ""),
+                                                    "avatar": reply.get("member", {}).get("avatar", "")
+                                                },
+                                                "content": processed_reply_content,
+                                                "created_time": reply_formatted_time,
+                                                "like": reply.get("like", 0)
+                                            })
+                                    
+                                    # 封装评论数据
+                                    processed_comments.append({
+                                        "id": comment.get("rpid_str", ""),
                                         "author": {
-                                            "id": reply.get("mid", ""),
-                                            "name": reply.get("member", {}).get("uname", ""),
-                                            "avatar": reply.get("member", {}).get("avatar", "")
+                                            "id": comment.get("mid", ""),
+                                            "name": comment.get("member", {}).get("uname", ""),
+                                            "avatar": comment.get("member", {}).get("avatar", "")
                                         },
-                                        "content": processed_reply_content,
-                                        "created_time": reply_formatted_time,
-                                        "like": reply.get("like", 0)
+                                        "content": processed_content,
+                                        "created_time": formatted_time,
+                                        "like": comment.get("like", 0),
+                                        "replies_count": comment.get("count", 0),
+                                        "child_posts": child_posts
                                     })
-                            
-                            # 封装评论数据
-                            processed_comments.append({
-                                "id": comment.get("rpid_str", ""),
-                                "author": {
-                                    "id": comment.get("mid", ""),
-                                    "name": comment.get("member", {}).get("uname", ""),
-                                    "avatar": comment.get("member", {}).get("avatar", "")
-                                },
-                                "content": processed_content,
-                                "created_time": formatted_time,
-                                "like": comment.get("like", 0),
-                                "replies_count": comment.get("count", 0),
-                                "child_posts": child_posts
-                            })
                         
                         return processed_comments
                     logger.debug(f"[Bilibili] 兜底评论API返回数据为空或错误: code={fallback_data.get('code')}, message={fallback_data.get('message')}")
