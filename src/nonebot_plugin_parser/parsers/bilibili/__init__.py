@@ -430,7 +430,7 @@ class BilibiliParser(BaseParser):
         dynamic_url = f"https://t.bilibili.com/{dynamic_id}"
         
         # 获取评论数据 - _fetch_comments方法已经处理好所有数据
-        comments = await self._fetch_comments(dynamic_id, 11)  # type=11 表示动态
+        comments = await self._fetch_comments(dynamic_id, 17)  # type=17 表示动态（纯文字动态&分享）
         if comments:
             extra_data["comments"] = comments
             logger.debug(f"[BiliParser] 成功获取 {len(comments)} 条动态评论")
@@ -603,7 +603,7 @@ class BilibiliParser(BaseParser):
         
         # 获取评论数据 - _fetch_comments方法已经处理好所有数据
         content_id = str(opus_data.item.id_str)
-        comments = await self._fetch_comments(int(content_id), 17)  # type=17 表示专栏/图文
+        comments = await self._fetch_comments(int(content_id), 12)  # type=12 表示专栏
         if comments:
             extra_data["comments"] = comments
             logger.debug(f"[BiliParser] 成功获取 {len(comments)} 条专栏/图文评论")
