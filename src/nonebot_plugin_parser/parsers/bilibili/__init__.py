@@ -98,7 +98,41 @@ class BilibiliParser(BaseParser):
         """解析专栏信息"""
         read_id = int(searched.group("read_id"))
         return await self.parse_read(read_id)
-
+    
+    XOR_CODE = 23442827791579
+    MASK_CODE = 2251799813685247
+    MAX_AID = 1 << 51
+    ALPHABET = "FcwAPNKTMug3GV5Lj7EJnHpWsx4tb8haYeviqBz6rkCy12mUSDQX9RdoZf"
+    ENCODE_MAP = (8, 7, 0, 5, 1, 3, 2, 4, 6)
+    DECODE_MAP = tuple(reversed(ENCODE_MAP))
+    
+    BASE = len(ALPHABET)
+    PREFIX = "BV1"
+    PREFIX_LEN = len(PREFIX)
+    CODE_LEN = len(ENCODE_MAP)
+    
+    @classmethod
+    def av2bv(cls, aid: int) -> str:
+        """将AV号转换为BV号"""
+        bvid = [""] * 9
+        tmp = (cls.MAX_AID | aid) ^ cls.XOR_CODE
+        for i in range(cls.CODE_LEN):
+            bvid[cls.ENCODE_MAP[i]] = cls.ALPHABET[tmp % cls.BASE]
+            tmp //= cls.BASE
+        return cls.PREFIX + "".join(bvid)
+    
+    @classmethod
+    def bv2av(cls, bvid: str) -> int:
+        """将BV号转换为AV号"""
+        assert bvid[:cls.PREFIX_LEN] == cls.PREFIX
+        
+        bvid = bvid[cls.PREFIX_LEN:]
+        tmp = 0
+        for i in range(cls.CODE_LEN):
+            idx = cls.ALPHABET.index(bvid[cls.DECODE_MAP[i]])
+            tmp = tmp * cls.BASE + idx
+        return (tmp & cls.MASK_CODE) ^ cls.XOR_CODE
+    
     async def parse_video(
         self,
         *,
@@ -177,25 +211,13 @@ class BilibiliParser(BaseParser):
         except Exception as e:
             logger.warning(f"[BiliParser] 统计数据提取异常: {e}")
 
-        # 构造 extra_data
-        extra_data = {
-            "info": ai_summary,
-            "stats": stats,
-            "type": "video",
-            "type_tag": "视频",
-            "type_icon": "fa-circle-play",
-            "author_id": str(video_info.owner.mid),
-            "content_id": video_info.bvid,
-        }
-        logger.debug(f"Video extra data: {extra_data}")
-
         # 获取评论数据 - 使用bvid对应的aid或直接使用bvid作为oid
         # 由于VideoInfo没有aid属性，我们需要从原始视频对象获取或使用其他方式
         # 对于视频评论，oid可以是aid或bvid对应的数值，这里使用bvid的数值形式
-        video_oid = int(video_info.bvid.replace('BV', ''), 36)  # 将BV号转换为数值
-        comments = await self._fetch_comments(video_oid, 1)  # type=1 表示视频
+        comments = await self._fetch_comments(self.bv2av(video_info.bvid), 1)  # type=1 表示视频
+        logger.debug(str(comments)[:210])
+        processed_comments = []
         if comments:
-            processed_comments = []
             for comment in comments:
                 # 处理评论数据
                 content = comment.get("content", {})
@@ -249,10 +271,22 @@ class BilibiliParser(BaseParser):
                             "like": reply.get("like", 0)
                         }
                         processed_comment["child_posts"].append(processed_reply)
-                
+                logger.debug(f"当前评论：{processed_comment}")
                 processed_comments.append(processed_comment)
-            extra_data["comments"] = processed_comments
-        
+
+        # 构造 extra_data
+        extra_data = {
+            "info": ai_summary,
+            "stats": stats,
+            "type": "video",
+            "type_tag": "视频",
+            "type_icon": "fa-circle-play",
+            "author_id": str(video_info.owner.mid),
+            "content_id": video_info.bvid,
+            "comments": processed_comments
+        }
+        logger.debug(f"Video extra data: {extra_data}")
+
         return self.result(
             url=url,
             title=page_info.title,

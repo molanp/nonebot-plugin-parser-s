@@ -823,9 +823,18 @@
         </div>
         
         {# --- 评论区域 --- #}
-        {% set comments = result.comments if result.comments else [] %}
-        {% if not comments and extra.comments %}
+        {% set comments = [] %}
+        
+        {# 首先检查当前卡片是否有评论 #}
+        {% if result.comments %}
+            {% set comments = result.comments %}
+        {% elif extra.comments %}
             {% set comments = extra.comments %}
+        {% endif %}
+        
+        {# 然后检查转发的内容是否有评论（如果是转发的视频/动态） #}
+        {% if not comments and repost and repost.extra and repost.extra.comments %}
+            {% set comments = repost.extra.comments %}
         {% endif %}
         
         {% if comments and comments|length > 0 %}
@@ -848,7 +857,7 @@
                         <div class="comment-author-info">
                             <span class="comment-author-name">{{ comment.author.name }}</span>
                         </div>
-                        <span class="comment-time">{{ comment.created_time|strftime('%Y-%m-%d %H:%M') if comment.created_time else '' }}</span>
+                        <span class="comment-time">{{ comment.created_time if comment.created_time else '' }}</span>
                     </div>
                     
                     {# 评论内容 #}
@@ -889,7 +898,7 @@
                                     <div class="reply-author-info">
                                         <span class="reply-author-name">{{ reply.author.name }}</span>
                                     </div>
-                                    <span class="reply-time">{{ reply.created_time|strftime('%Y-%m-%d %H:%M') if reply.created_time else '' }}</span>
+                                    <span class="reply-time">{{ reply.created_time if reply.created_time else '' }}</span>
                                 </div>
                                 
                                 {# 回复内容 #}
