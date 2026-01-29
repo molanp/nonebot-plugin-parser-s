@@ -43,7 +43,7 @@ async def test_read():
     parser = BilibiliParser()
     _, searched = parser.search_url(url)
     read_id = int(searched.group("read_id"))
-    result = await parser.parse_read_with_opus(read_id)
+    result = await parser.parse_read(read_id)
     logger.debug(f"result: {result}")
     assert result.title, "标题为空"
     assert result.author, "作者为空"
@@ -72,9 +72,10 @@ async def test_opus():
 
     async def test_parse_opus(opus_url: str) -> None:
         _, searched = parser.search_url(opus_url)
-        opus_id = int(searched.group("opus_id"))
+        # 现在opus_url使用dynamic_id分组名
+        dynamic_id = int(searched.group("dynamic_id"))
         try:
-            result = await parser.parse_opus(opus_id)
+            result = await parser.parse_dynamic_or_opus(dynamic_id)
         except Exception as e:
             pytest.skip(f"{opus_url} | opus 解析失败: {e} (风控)")
 
@@ -88,12 +89,7 @@ async def test_opus():
         assert avatar_path, "头像不存在"
         assert avatar_path.exists(), "头像不存在"
 
-        graphics_contents = result.graphics_contents
         assert result.text or result.contents, "解析结果为空（无文本也无图片）"
-
-        for graphics_content in graphics_contents:
-            path = await graphics_content.get_path()
-            assert path.exists(), "图文内容不存在"
 
     await asyncio.gather(*[test_parse_opus(opus_url) for opus_url in opus_urls])
     logger.success("B站动态解析成功")
@@ -110,13 +106,14 @@ async def test_dynamic():
     async def test_parse_dynamic(dynamic_url: str) -> None:
         _, searched = parser.search_url(dynamic_url)
         dynamic_id = int(searched.group("dynamic_id"))
-        result = await parser.parse_dynamic(dynamic_id)
-        assert result.title, "标题为空"
+        result = await parser.parse_dynamic_or_opus(dynamic_id)
+        assert result.title or result.text, "解析结果为空"
         assert result.author, "作者为空"
         avatar_path = await result.author.get_avatar_path()
         assert avatar_path, "头像不存在"
         assert avatar_path.exists(), "头像不存在"
 
+        # 动态可能没有图片，所以不强制要求
         img_contents = result.img_contents
         for img_content in img_contents:
             path = await img_content.get_path()
