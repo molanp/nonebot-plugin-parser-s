@@ -353,9 +353,9 @@ class TapTapParser(BaseParser):
                             paragraph_text.append(child)
                     # 拼接当前段落内容，并添加换行符
                     if paragraph_text:
-                        text_parts.append("" .join(paragraph_text))
+                        text_parts.append("".join(paragraph_text))
                         # 添加换行符，区分不同段落
-                        text_parts.append("<br>")
+                        text_parts.append("\n")
 
                 elif item_type == "image":
                     image_info = content_item.get("info", {}).get("image", {})
@@ -364,9 +364,9 @@ class TapTapParser(BaseParser):
                         result["images"].append(original_url)
             
 
-            # 合并文本部分，赋值给result.text
+            # 合并文本部分，直接使用\n作为换行符
             if text_parts:
-                result["text"] = "".join(text_parts)
+                result["text"] = ("".join(text_parts)).replace("<br>", "\n").replace("<br />", "\n")
             
             api_success = True
             logger.debug(f"API解析结果: videos={len(result['videos'])}, images={len(result['images'])}, content_items={len(result['content_items'])}, text={result['text']}")
