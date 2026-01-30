@@ -364,8 +364,12 @@ class TapTapParser(BaseParser):
                         result["images"].append(original_url)
             
 
+            # 合并文本部分，赋值给result.text
+            if text_parts:
+                result["text"] = "".join(text_parts)
+            
             api_success = True
-            logger.debug(f"API解析结果: videos={len(result['videos'])}, images={len(result['images'])}, content_items={len(result['content_items'])}")
+            logger.debug(f"API解析结果: videos={len(result['videos'])}, images={len(result['images'])}, content_items={len(result['content_items'])}, text={result['text']}")
         else:
             logger.error(f"[TapTap] API获取数据失败，准备使用浏览器解析")
             api_success = False
