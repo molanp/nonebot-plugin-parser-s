@@ -26,6 +26,8 @@
 | 汽水音乐   | 链接(分享链接)                    | ❌️   | ❌️            | ✅​    |
 | 酷我音乐   | 链接(分享链接)                    | ❌️   | ❌️            | ✅​    |
 | 百度贴吧   | 链接                              | 没写 | ✅​(图文帖子) | 不存在 |
+| TapTap  | 链接(游戏详情、帖子链接)              | ✅  | ✅  | ❌️  |
+| 今日头条 | 链接(视频链接)                    | ✅  | ❌️  | ❌️  |
 
 支持的链接，可参考 [测试链接](https://github.com/fllesser/nonebot-plugin-parser/blob/master/tests/others/test_urls.md)
 
