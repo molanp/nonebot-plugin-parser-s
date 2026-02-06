@@ -37,22 +37,25 @@ class TiebaParser(BaseParser):
 
         author = self.create_author(
             name=author_info.get("nameShow") or author_info.get("name"),
-            avatar_url=f"https://gss0.baidu.com/7Ls0a8Sm2Q5IlBGlnYG/sys/portrait/item/{author_info['portrait']}",
+            avatar_url=f"http://tb.himg.baidu.com/sys/portraith/item/{author_info['portrait']}",
         )
 
         # 主楼正文内容（图文混排）
         contents: list[MediaContent] = []
         text_parts = []
-        for item in post["content"]:
-            if item["type"] in [0, 40]:  # 文字
-                text_parts.append(item["text"])
-            elif item["type"] == 2:
+        content_list = post["content"]
+        for item in content_list:
+            content_type = item["type"]
+
+            if content_type in [0, 40]:
+                text = item["text"].replace("\n", "<br>")
+                text_parts.append(text)
+            elif content_type == 2:
                 text_parts.append(f"[{item['c']}]")
-            elif item["type"] == 3:  # 图片
+            elif content_type == 3:
                 contents.append(
                     self.create_graphics_content(image_url=item["originSrc"])
                 )
-
         extra = {
             "forum": {
                 "name": data["forum"]["name"],
