@@ -48,7 +48,7 @@ class TiebaParser(BaseParser):
             content_type = item["type"]
 
             if content_type in [0, 40]:
-                text = item["text"].replace("\n", "<br>")
+                text = item["text"]
                 text_parts.append(text)
             elif content_type == 2:
                 text_parts.append(f"[{item['c']}]")

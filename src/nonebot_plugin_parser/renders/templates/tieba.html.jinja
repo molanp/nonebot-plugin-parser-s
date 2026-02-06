@@ -104,7 +104,7 @@
     {% endif %}
 
     {% if result.text %}
-    <div class="text">{{ result.text | safe}}</div>
+    <div class="text">{{ result.text | e | replace("\n", "<br>") | safe }}</div>
     {% endif %}
 
     {% if result.img_contents %}
