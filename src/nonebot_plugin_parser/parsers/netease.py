@@ -125,7 +125,7 @@ class NCMParser(BaseParser):
             raise ParseException("所有音质解析均失败")
 
         except Exception as e:
-            raise ParseException(f"网易云音乐解析失败: {e}")
+            raise ParseException(f"网易云音乐解析失败: {e}") from e
 
     @handle("music.163.com", r"https?://[^\s]*?music\.163\.com.*?(?:id=\d+|song/\d+)")
     @handle("163cn.tv", r"https?://[^\s]*?163cn\.tv/[a-zA-Z0-9]+")

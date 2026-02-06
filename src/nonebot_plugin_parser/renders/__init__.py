@@ -1,10 +1,9 @@
-from .base import BaseRenderer
-from .htmlrender import HtmlRenderer
+from .base import Renderer
 
-RENDERER = HtmlRenderer()
+RENDERER = Renderer()
 
 
-def get_renderer(platform: str) -> BaseRenderer:
+def get_renderer(platform: str) -> Renderer:
     """根据平台名称获取对应的 Renderer 类"""
     return RENDERER
 

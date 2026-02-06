@@ -42,12 +42,12 @@ class PlayInfo(Struct):
 
     @property
     def cover_url(self) -> str:
-        return "https:" + self.cover_image
+        return f"https:{self.cover_image}"
 
     @property
     def video_url(self) -> str:
         url = next(iter(self.urls.values()), None)
-        return "https:" + url if url else self.stream_url
+        return f"https:{url}" if url else self.stream_url
 
 
 class Data(Struct):

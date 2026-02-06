@@ -11,7 +11,9 @@ class KuaiShouParser(BaseParser):
     """快手解析器"""
 
     # 平台信息
-    platform: ClassVar[Platform] = Platform(name=PlatformEnum.KUAISHOU, display_name="快手")
+    platform: ClassVar[Platform] = Platform(
+        name=PlatformEnum.KUAISHOU, display_name="快手"
+    )
 
     def __init__(self):
         super().__init__()
@@ -19,9 +21,7 @@ class KuaiShouParser(BaseParser):
 
     # https://v.kuaishou.com/2yAnzeZ
     @handle("v.kuaishou", r"v\.kuaishou\.com/[A-Za-z\d._?%&+\-=/#]+")
-    # https://www.kuaishou.com/short-video/3xhjgcmir24m4nm
     @handle("kuaishou", r"(?:www\.)?kuaishou\.com/[A-Za-z\d._?%&+\-=/#]+")
-    # https://v.m.chenzhongtech.com/fw/photo/3xburnkmj3auazc
     @handle("chenzhongtech", r"(?:v\.m\.)?chenzhongtech\.com/fw/[A-Za-z\d._?%&+\-=/#]+")
     async def _parse_v_kuaishou(self, searched: re.Match[str]):
         from . import states
@@ -36,7 +36,9 @@ class KuaiShouParser(BaseParser):
         # /fw/long-video/ 返回结果不一样, 统一替换为 /fw/photo/ 请求
         real_url = real_url.replace("/fw/long-video/", "/fw/photo/")
 
-        async with AsyncClient(headers=self.ios_headers, timeout=self.timeout) as client:
+        async with AsyncClient(
+            headers=self.ios_headers, timeout=self.timeout
+        ) as client:
             response = await client.get(real_url)
             response.raise_for_status()
             response_text = response.text
@@ -47,7 +49,7 @@ class KuaiShouParser(BaseParser):
         if not matched:
             raise ParseException("failed to parse video JSON info from HTML")
 
-        raw = matched.group(1).strip()
+        raw = matched[1].strip()
         data_map = states.decoder.decode(raw)
 
         photo = next((d.photo for d in data_map.values() if d.photo is not None), None)
@@ -59,7 +61,9 @@ class KuaiShouParser(BaseParser):
 
         # 添加视频内容
         if video_url := photo.video_url:
-            contents.append(self.create_video_content(video_url, photo.cover_url, photo.duration))
+            contents.append(
+                self.create_video_content(video_url, photo.cover_url, photo.duration)
+            )
 
         # 添加图片内容
         if img_urls := photo.img_urls:

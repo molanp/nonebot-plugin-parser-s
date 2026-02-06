@@ -245,7 +245,7 @@ class WeiBoParser(BaseParser):
         """将微博 mid 转换为 id"""
         from math import ceil
 
-        mid = str(mid)[::-1]  # 反转输入字符串
+        mid = mid[::-1]
         size = ceil(len(mid) / 7)  # 计算每个块的大小
         result = []
 

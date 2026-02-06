@@ -115,34 +115,44 @@ class OpusItem(Struct):
 
     @property
     def name_avatar(self) -> tuple[str, str]:
-        author_module = next(module.module_author for module in self.item.modules if module.module_author)
+        author_module = next(
+            module.module_author for module in self.item.modules if module.module_author
+        )
         return author_module.name, author_module.face
 
     @property
     def timestamp(self) -> int | None:
         """获取发布时间戳"""
-        for module in self.item.modules:
-            if module.module_type == "MODULE_TYPE_AUTHOR" and module.module_author:
-                return module.module_author.pub_ts
-        return None
+        return next(
+            (
+                module.module_author.pub_ts
+                for module in self.item.modules
+                if module.module_type == "MODULE_TYPE_AUTHOR" and module.module_author
+            ),
+            None,
+        )
 
     def gen_text_img(self) -> Generator[TextNode | ImageNode, None, None]:
         """生成图文节点（保持顺序）"""
         for module in self.item.modules:
             # 处理标题模块
-            if module.module_type == "MODULE_TYPE_TITLE" and hasattr(module, "module_title") and module.module_title:
-                text_content = module.module_title.get("text", "").strip()
-                if text_content:
+            if (
+                module.module_type == "MODULE_TYPE_TITLE"
+                and hasattr(module, "module_title")
+                and module.module_title
+            ):
+                if text_content := module.module_title.get("text", "").strip():
                     yield TextNode(text=text_content)
-            
+
             # 处理内容模块
             if module.module_type == "MODULE_TYPE_CONTENT" and module.module_content:
                 for paragraph in module.module_content.paragraphs:
                     # 处理文本段落
                     if paragraph.text and paragraph.text.nodes:
-                        text_content = self._extract_text_from_nodes(paragraph.text.nodes)
-                        text_content = text_content.strip()
-                        if text_content:
+                        text_content = self._extract_text_from_nodes(
+                            paragraph.text.nodes
+                        )
+                        if text_content := text_content.strip():
                             yield TextNode(text=text_content)
 
                     # 处理图片段落
@@ -164,10 +174,8 @@ class OpusItem(Struct):
             elif node.get("type") == "TEXT_NODE_TYPE_PLAIN":
                 # 普通文本类型
                 text_content += node.get("content", "")
-            else:
-                # 其他类型的文本节点，尝试获取文本内容
-                if isinstance(node.get("word"), dict):
-                    text_content += node["word"].get("words", "")
-                elif isinstance(node.get("text"), str):
-                    text_content += node["text"]
+            elif isinstance(node.get("word"), dict):
+                text_content += node["word"].get("words", "")
+            elif isinstance(node.get("text"), str):
+                text_content += node["text"]
         return text_content

@@ -2,7 +2,7 @@ import asyncio
 from typing import TYPE_CHECKING
 from pathlib import Path
 
-import yt_dlp
+import yt_dlp  # pyright: ignore[reportMissingModuleSource]
 from msgspec import Struct, convert
 
 from .task import auto_task
@@ -39,7 +39,7 @@ class YtdlpDownloader:
 
     def __init__(self):
         if TYPE_CHECKING:
-            from yt_dlp import _Params
+            from yt_dlp import _Params  # pyright: ignore[reportMissingModuleSource]
 
         self._video_info_mapping = LimitedSizeDict[str, VideoInfo]()
         self._extract_base_opts: _Params = {
@@ -52,7 +52,9 @@ class YtdlpDownloader:
             self._download_base_opts["proxy"] = proxy
             self._extract_base_opts["proxy"] = proxy
 
-    async def extract_video_info(self, url: str, cookiefile: Path | None = None) -> VideoInfo:
+    async def extract_video_info(
+        self, url: str, cookiefile: Path | None = None
+    ) -> VideoInfo:
         """get video info by url
 
         Args:
@@ -98,15 +100,19 @@ class YtdlpDownloader:
         video_path = pconfig.cache_dir / generate_file_name(url, ".mp4")
         if video_path.exists():
             return video_path
-        
+
         # 确保缓存目录存在
         pconfig.cache_dir.mkdir(parents=True, exist_ok=True)
 
         ydl_opts = self._download_base_opts.copy()
         ydl_opts["outtmpl"] = str(video_path)
         ydl_opts["merge_output_format"] = "mp4"
-        ydl_opts["format"] = f"bv[filesize<={duration // 10 + 10}M]+ba/b[filesize<={duration // 8 + 10}M]"
-        ydl_opts["postprocessors"] = [{"key": "FFmpegVideoConvertor", "preferedformat": "mp4"}]
+        ydl_opts["format"] = (
+            f"bv[filesize<={duration // 10 + 10}M]+ba/b[filesize<={duration // 8 + 10}M]"
+        )
+        ydl_opts["postprocessors"] = [
+            {"key": "FFmpegVideoConvertor", "preferedformat": "mp4"}
+        ]
 
         if cookiefile:
             ydl_opts["cookiefile"] = str(cookiefile)
@@ -130,7 +136,7 @@ class YtdlpDownloader:
         audio_path = pconfig.cache_dir / f"{file_name}.flac"
         if audio_path.exists():
             return audio_path
-        
+
         # 确保缓存目录存在
         pconfig.cache_dir.mkdir(parents=True, exist_ok=True)
 

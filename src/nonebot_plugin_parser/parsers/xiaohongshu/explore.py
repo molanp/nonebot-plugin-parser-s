@@ -35,9 +35,7 @@ class NoteDetail(Struct):
 
     @property
     def video_url(self) -> str | None:
-        if self.type != "video" or not self.video:
-            return None
-        return self.video.video_url
+        return None if self.type != "video" or not self.video else self.video.video_url
 
 
 class NoteDetailWrapper(Struct):

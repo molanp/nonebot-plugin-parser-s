@@ -44,9 +44,7 @@ def is_enabled(session: Session = UniSession()) -> bool:
         return True
 
     group_key = get_group_key(session)
-    if group_key in _DISABLED_GROUPS_SET:
-        return False
-    return True
+    return group_key not in _DISABLED_GROUPS_SET
 
 
 @on_command("开启解析", rule=to_me(), permission=SUPERUSER | ADMIN(), block=True).handle()

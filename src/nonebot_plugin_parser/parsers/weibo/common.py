@@ -74,9 +74,7 @@ class WeiboData(Struct):
     def cover_url(self) -> str | None:
         if self.page_info is None:
             return None
-        if self.page_info.page_pic:
-            return self.page_info.page_pic.url
-        return None
+        return self.page_info.page_pic.url if self.page_info.page_pic else None
 
     @property
     def video_url(self) -> str | None:
@@ -86,9 +84,7 @@ class WeiboData(Struct):
 
     @property
     def image_urls(self) -> list[str]:
-        if self.pics:
-            return [x.large.url for x in self.pics]
-        return []
+        return [x.large.url for x in self.pics] if self.pics else []
 
     @property
     def url(self) -> str:

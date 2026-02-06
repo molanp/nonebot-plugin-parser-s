@@ -79,10 +79,10 @@ class DouyinParser(BaseParser):
         )
         matched = pattern.search(text)
 
-        if not matched or not matched.group(1):
+        if not matched or not matched[1]:
             raise ParseException("can't find _ROUTER_DATA in html")
 
-        video_data = video.decoder.decode(matched.group(1).strip()).video_data
+        video_data = video.decoder.decode(matched[1].strip()).video_data
         # 使用新的简洁构建方式
         contents = []
 

@@ -80,7 +80,7 @@ class AcfunParser(BaseParser):
         if not matched:
             raise ParseException("解析 acfun 视频信息失败")
 
-        raw = str(matched.group(1))
+        raw = str(matched[1])
         raw = re.sub(r'\\{1,4}"', '"', raw)
         raw = raw.replace('"{', "{").replace('}"', "}")
         return video.decoder.decode(raw)
@@ -113,16 +113,17 @@ class AcfunParser(BaseParser):
             ):
                 total_size = 0
                 with DOWNLOADER.get_progress_bar(file_name) as bar:
+                    task_id = bar.task_ids[0]
                     for url in m3u8_slices:
                         async with client.stream("GET", url) as response:
                             async for chunk in response.aiter_bytes(chunk_size=1024 * 1024):
                                 await f.write(chunk)
                                 total_size += len(chunk)
-                                bar.update(len(chunk))
-        except HTTPError:
+                                bar.advance(task_id, len(chunk))
+        except HTTPError as e:
             video_file.unlink(missing_ok=True)
-            logger.exception("视频下载失败")
-            raise DownloadException("视频下载失败")
+            logger.error("视频下载失败")
+            raise DownloadException("视频下载失败") from e
         return video_file
 
     async def _get_m3u8_slices(self, m3u8_url: str):

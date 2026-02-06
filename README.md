@@ -5,22 +5,8 @@
 
 ## ✨ [Nonebot2](https://github.com/nonebot/nonebot2) 链接分享自动解析插件 ✨
 
-[![LICENSE](https://img.shields.io/github/license/fllesser/nonebot-plugin-parser.svg)](./LICENSE)
-[![pypi](https://img.shields.io/pypi/v/nonebot-plugin-parser.svg)](https://pypi.python.org/pypi/nonebot-plugin-parser)
-[![python](https://img.shields.io/badge/python-3.10|3.11|3.12|3.13|3.14-blue.svg)](https://python.org)
-[![uv](https://img.shields.io/badge/package%20manager-uv-black?style=flat-square&logo=uv)](https://github.com/astral-sh/uv)
-[![ruff](https://img.shields.io/badge/code%20style-ruff-black?style=flat-square&logo=ruff)](https://github.com/astral-sh/ruff)
-<br/>
-[![pre-commit](https://results.pre-commit.ci/badge/github/fllesser/nonebot-plugin-parser/master.svg)](https://results.pre-commit.ci/latest/github/fllesser/nonebot-plugin-parser/master)
-[![codecov](https://codecov.io/gh/fllesser/nonebot-plugin-parser/graph/badge.svg?token=VCS8IHSO7U)](https://codecov.io/gh/fllesser/nonebot-plugin-parser)
-[![qqgroup](https://img.shields.io/badge/QQ%E7%BE%A4-820082006-orange?style=flat-square)](https://qm.qq.com/q/y4T4CjHimc)
-
 </div>
 
-> [!IMPORTANT]
-> **收藏项目**，你将从 GitHub 上无延迟地接收所有发布通知～ ⭐️
-
-<img width="100%" src="https://starify.komoridevs.icu/api/starify?owner=fllesser&repo=nonebot-plugin-parser" alt="starify" />
 
 ## 📖 介绍
 
@@ -68,7 +54,7 @@ parser_bili_ck="SESSDATA=xxxxxxxxxx;ac_time_value=131231241231241"
 # [可选] 允许的 B 站视频编码，越靠前的编码优先级越高
 # 可选 "avc"(H.264，体积较大), "hev"(HEVC), "av01"(AV1)
 # 后两项在不同设备可能有兼容性问题，如需完全避免，可只填一项，如 '["avc"]'
-parser_bili_video_codes='["avc", "av01", "hev"]'
+parser_bili_video_codes=["avc", "av01", "hev"]
 
 # [可选] B 站视频清晰度
 # 360p(16), 480p(32), 720p(64), 1080p(80), 1080p+(112), 1080p_60(116), 4k(120)
@@ -113,8 +99,7 @@ parser_max_size=90
 # [可选] 全局禁止的解析
 # 示例 parser_disabled_platforms=["bilibili", "douyin"] 表示禁止了哔哩哔哩和抖音
 # 可选值: ["bilibili", "douyin", "kuaishou", "twitter", "youtube", "acfun", "tiktok", "weibo", "xiaohongshu"]
-parser_disabled_platforms='["twitter"]'
-
+parser_disabled_platforms=["twitter"]
 
 # [可选] 是否在解析结果中附加原始URL
 parser_append_url=False
@@ -129,7 +114,7 @@ parser_delay_send_media=False
 parser_delay_send_emoji="🎬"
 
 # [可选] 触发延迟发送视频的表情ID列表，用于监听group_msg_emoji_like事件
-parser_delay_send_emoji_ids='["128077"]'
+parser_delay_send_emoji_ids=["128077"]
 
 # [可选] 是否开启懒下载模式，仅在用户请求时才下载视频
 parser_delay_send_lazy_download=False
@@ -298,4 +283,6 @@ real_url = await self.get_redirect_url(
 ## 🎉 致谢
 
 [nonebot-plugin-resolver](https://github.com/zhiyu1998/nonebot-plugin-resolver)
+[nonebot-plugin-parser](https://github.com/fllesser/nonebot-plugin-parser)
+[nonebot-plugin-parser-m](https://github.com/LoCCai/nonebot-plugin-parser-m)
 [parse-video-py](https://github.com/wujunwei928/parse-video-py)

@@ -94,9 +94,7 @@ class DynamicMajor(Struct):
             return self.archive.cover
         # 如果是图文动态，返回第一张图片作为封面
         image_urls = self.image_urls
-        if image_urls:
-            return image_urls[0]
-        return None
+        return image_urls[0] if image_urls else None
 
 
 class DynamicModule(Struct):
@@ -161,14 +159,11 @@ class DynamicInfo(Struct):
     @property
     def title(self) -> str | None:
         """获取标题"""
-        major_info = self.modules.major_info
-        if major_info:
+        if major_info := self.modules.major_info:
             major = convert(major_info, DynamicMajor)
             return major.title
         # 如果是转发动态且没有 major title，可以返回默认值
-        if self.type == "DYNAMIC_TYPE_FORWARD":
-            return "转发动态"
-        return None
+        return "转发动态" if self.type == "DYNAMIC_TYPE_FORWARD" else None
 
     @property
     def text(self) -> str | None:
@@ -178,13 +173,10 @@ class DynamicInfo(Struct):
         if self.modules.module_dynamic:
             desc = self.modules.module_dynamic.get("desc")
             if desc and isinstance(desc, dict):
-                text_content = desc.get("text")
-                if text_content:
+                if text_content := desc.get("text"):
                     return text_content
 
-        # 如果没有直接的 desc 文本，尝试从 major 中获取 (例如纯视频投稿的简介)
-        major_info = self.modules.major_info
-        if major_info:
+        if major_info := self.modules.major_info:
             major = convert(major_info, DynamicMajor)
             return major.text
 
@@ -193,12 +185,9 @@ class DynamicInfo(Struct):
     @property
     def image_urls(self) -> list[str]:
         """获取图片URL列表"""
-        # 1. 优先从major_info获取图片
-        major_info = self.modules.major_info
-        if major_info:
+        if major_info := self.modules.major_info:
             major = convert(major_info, DynamicMajor)
-            major_images = major.image_urls
-            if major_images:
+            if major_images := major.image_urls:
                 return major_images
 
         # 2. 处理分享图片的动态，可能直接包含图片信息
@@ -212,17 +201,29 @@ class DynamicInfo(Struct):
                 # 尝试从不同位置获取图片
                 if "pics" in dynamic_data:
                     # 直接的pics字段
-                    return [pic.get("url", "") for pic in dynamic_data["pics"] if pic.get("url")]
+                    return [
+                        pic.get("url", "")
+                        for pic in dynamic_data["pics"]
+                        if pic.get("url")
+                    ]
                 elif "major" in dynamic_data:
                     major = dynamic_data["major"]
                     if isinstance(major, dict):
                         # 检查major是否包含图片信息
                         if "pics" in major:
-                            return [pic.get("url", "") for pic in major["pics"] if pic.get("url")]
+                            return [
+                                pic.get("url", "")
+                                for pic in major["pics"]
+                                if pic.get("url")
+                            ]
                         elif "draw" in major and isinstance(major["draw"], dict):
                             draw = major["draw"]
                             if "pictures" in draw:
-                                return [pic.get("img_src", "") for pic in draw["pictures"] if pic.get("img_src")]
+                                return [
+                                    pic.get("img_src", "")
+                                    for pic in draw["pictures"]
+                                    if pic.get("img_src")
+                                ]
 
         # 3. 转发动态时，如果主体没有图片，不再从orig获取图片
         # 直接返回空列表，后续会使用默认图片
@@ -231,21 +232,14 @@ class DynamicInfo(Struct):
     @property
     def cover_url(self) -> str | None:
         """获取封面URL"""
-        # 1. 优先从major_info获取封面
-        major_info = self.modules.major_info
-        if major_info:
+        if major_info := self.modules.major_info:
             major = convert(major_info, DynamicMajor)
-            cover = major.cover_url
-            if cover:
+            if cover := major.cover_url:
                 return cover
 
         # 2. 从图片列表中获取第一张作为封面
         image_urls = self.image_urls
-        if image_urls:
-            return image_urls[0]
-
-        # 3. 转发动态时，不再从orig获取封面
-        return None
+        return image_urls[0] if image_urls else None
 
 
 class DynamicData(Struct):

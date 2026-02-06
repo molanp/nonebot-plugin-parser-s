@@ -57,8 +57,8 @@ async def exec_ffmpeg_cmd(cmd: list[str]) -> None:
         )
         _, stderr = await process.communicate()
         return_code = process.returncode
-    except FileNotFoundError:
-        raise RuntimeError("ffmpeg 未安装或无法找到可执行文件")
+    except FileNotFoundError as e:
+        raise RuntimeError("ffmpeg 未安装或无法找到可执行文件") from e
 
     if return_code != 0:
         error_msg = stderr.decode().strip()

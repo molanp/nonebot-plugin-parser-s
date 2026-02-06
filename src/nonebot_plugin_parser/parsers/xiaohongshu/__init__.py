@@ -113,11 +113,9 @@ class XiaoHongShuParser(BaseParser):
         raw = self._extract_initial_state_raw(html)
         init_state = discovery.decoder.decode(raw)
         note_data = init_state.noteData.data.noteData
-        preload_data = init_state.noteData.normalNotePreloadData
-
         contents: list[MediaContent] = []
         if video_url := note_data.video_url:
-            if preload_data:
+            if preload_data := init_state.noteData.normalNotePreloadData:
                 img_urls = preload_data.image_urls
             else:
                 img_urls = note_data.image_urls
@@ -137,8 +135,7 @@ class XiaoHongShuParser(BaseParser):
 
     def _extract_initial_state_raw(self, html: str) -> str:
         pattern = r"window\.__INITIAL_STATE__=(.*?)</script>"
-        matched = re.search(pattern, html)
-        if not matched:
+        if matched := re.search(pattern, html):
+            return matched[1].replace("undefined", "null")
+        else:
             raise ParseException("小红书分享链接失效或内容已删除")
-
-        return matched.group(1).replace("undefined", "null")

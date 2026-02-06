@@ -66,8 +66,7 @@ class ArticleInfo(Struct):
             if child.get("type") == "ParagraphNode":
                 # 处理段落节点，提取所有文本内容
                 text_content = self._extract_text_from_children(child.get("children", []))
-                text_content = text_content.strip()
-                if text_content:
+                if text_content := text_content.strip():
                     yield TextNode(text="\n\n" + text_content)
             elif child.get("type") == "ImageNode":
                 # 处理图片节点
