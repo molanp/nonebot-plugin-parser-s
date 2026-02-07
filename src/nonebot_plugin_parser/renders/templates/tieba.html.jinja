@@ -5,83 +5,354 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tieba Post</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body {
-      font-family: "Noto Sans SC", system-ui, sans-serif;
-      background-color: #f5f5f5;
+    :root {
+      --primary-color: #1e88e5;
+      --secondary-color: #42a5f5;
+      --dark-color: #2c3e50;
+      --light-color: #ecf0f1;
+      --gray-color: #95a5a6;
+      --border-radius: 8px;
+      --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    
+    * {
       margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Noto Sans SC", system-ui, sans-serif;
+    }
+    
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      background-color: #f5f5f5;
       padding: 20px;
     }
 
     .card {
+      width: 750px;
       background: #fff;
       border: 1px solid #ddd;
-      border-radius: 6px;
-      padding: 16px;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      position: relative;
       margin-bottom: 20px;
+      box-shadow: var(--box-shadow);
+    }
+
+    .decorative-stripe {
+      position: absolute;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      top: 0;
+      left: 0;
+      z-index: 5;
+    }
+
+    .content-section {
+      padding: 24px;
     }
 
     .header {
       display: flex;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px dashed #eee;
     }
 
     .avatar {
-      width: 48px;
-      height: 48px;
+      width: 56px;
+      height: 56px;
       border-radius: 4px;
-      margin-right: 12px;
+      margin-right: 16px;
+      border: 2px solid #f0f0f0;
     }
 
     .user-info {
       display: flex;
       flex-direction: column;
+      flex: 1;
     }
 
     .username {
       font-size: 16px;
       font-weight: bold;
-      color: #333;
+      color: var(--dark-color);
+      margin-bottom: 4px;
     }
 
     .time {
       font-size: 12px;
-      color: #888;
+      color: var(--gray-color);
+      margin-bottom: 4px;
+    }
+
+    .forum-name {
+      font-size: 13px;
+      color: #555;
+      background-color: #f1f8ff;
+      padding: 2px 8px;
+      border-radius: 6px;
+      align-self: flex-start;
     }
 
     .platform-logo {
-      height: 24px;
-      margin-left: auto;
+      height: 28px;
+      margin-left: 16px;
     }
 
     .title {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: bold;
-      margin: 12px 0;
-      color: #222;
+      margin: 16px 0;
+      color: var(--dark-color);
+      padding-left: 12px;
+      border-left: 4px solid var(--secondary-color);
     }
 
     .text {
       font-size: 15px;
       line-height: 1.6;
       color: #333;
-      margin-bottom: 12px;
+      margin-bottom: 20px;
     }
 
     .image-container {
-      margin: 8px 0;
+      margin: 16px 0;
       text-align: center;
     }
 
     .image-container img {
       max-width: 100%;
       border-radius: 4px;
+      margin-bottom: 8px;
     }
 
-    .forum-name {
+    /* 评论区域 */
+    .comments-section {
+      padding: 0 24px 24px;
+      border-top: 1px solid #eee;
+      margin-top: 20px;
+    }
+    
+    .comments-header {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--dark-color);
+      margin: 20px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .comments-header i {
+      color: var(--secondary-color);
+    }
+    
+    /* 主评论容器 */
+    .comment-container {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px dashed #eee;
+    }
+    
+    .comment-container:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    
+    /* 头像区域 */
+    .comment-avatar-wrapper {
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+    }
+    
+    .comment-avatar {
+      width: 100%;
+      height: 100%;
+      border-radius: 4px;
+      object-fit: cover;
+      border: 2px solid #f0f0f0;
+    }
+    
+    /* 评论内容区域 */
+    .comment-content-wrapper {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    /* 作者信息行 */
+    .comment-author-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .comment-author-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+    
+    .comment-author-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--dark-color);
+      line-height: 1.2;
+    }
+    
+    /* 评论时间 */
+    .comment-time {
+      font-size: 12px;
+      color: var(--gray-color);
+      white-space: nowrap;
+      margin-left: 8px;
+    }
+    
+    /* 评论内容 */
+    .comment-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #444;
+      margin-bottom: 10px;
+      word-wrap: break-word;
+    }
+    
+    /* 统计信息 */
+    .comment-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--gray-color);
+    }
+    
+    .comment-stat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    /* 回复样式 */
+    .comment-replies {
+      margin-top: 15px;
+      margin-left: 12px;
+      padding-left: 48px;
+      border-left: 2px solid #f0f0f0;
+    }
+    
+    .reply-container {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 1px dashed #f0f0f0;
+    }
+    
+    .reply-container:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    
+    /* 回复头像区域 */
+    .reply-avatar-wrapper {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      margin-top: 2px;
+    }
+    
+    .reply-avatar {
+      width: 100%;
+      height: 100%;
+      border-radius: 4px;
+      object-fit: cover;
+      border: 2px solid #f0f0f0;
+    }
+    
+    /* 回复内容区域 */
+    .reply-content-wrapper {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    /* 回复作者信息行 */
+    .reply-author-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    
+    .reply-author-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+    
+    .reply-author-name {
+      font-weight: 600;
       font-size: 13px;
+      color: var(--dark-color);
+      line-height: 1.2;
+    }
+    
+    /* 回复时间 */
+    .reply-time {
+      font-size: 11px;
+      color: var(--gray-color);
+      white-space: nowrap;
+      margin-left: 6px;
+    }
+    
+    /* 回复内容 */
+    .reply-text {
+      font-size: 13px;
+      line-height: 1.5;
       color: #555;
+      margin-bottom: 8px;
+      word-wrap: break-word;
+    }
+
+    /* 底部信息栏 */
+    .footer-section {
+      background-color: var(--dark-color);
+      color: rgba(255,255,255,0.8);
+      padding: 15px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+    
+    .footer-brand {
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: white;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    
+    .footer-info {
+      display: flex;
+      gap: 15px;
+      align-items: center;
     }
   </style>
 </head>
@@ -89,40 +360,146 @@
 <body>
 
   <div class="card">
-    <div class="header">
-      <img src="{{ result.author.avatar_path }}" class="avatar" alt="avatar" />
-      <div class="user-info">
-        <div class="username">{{ result.author.name }}</div>
-        <div class="time">{{ result.formatted_datetime }}</div>
-        <div class="forum-name">{{ result.extra.forum.name }}吧</div>
+    <div class="decorative-stripe"></div>
+    
+    <div class="content-section">
+      <div class="header">
+        <img src="{{ result.author.avatar_path }}" class="avatar" alt="avatar" />
+        <div class="user-info">
+          <div class="username">{{ result.author.name }}</div>
+          <div class="time">{{ result.formatted_datetime }}</div>
+          <div class="forum-name">{{ result.extra.forum.name }}吧</div>
+        </div>
+        <img src="{{ result.platform.logo_path }}" class="platform-logo" alt="{{ result.platform.display_name }}" />
       </div>
-      <img src="{{ result.platform.logo_path }}" class="platform-logo" alt="{{ result.platform.display_name }}" />
+
+      {% if result.title %}
+      <div class="title">{{ result.title }}</div>
+      {% endif %}
+
+      {% if result.text %}
+      <div class="text">{{ result.text | e | replace("\n", "<br>") | safe }}</div>
+      {% endif %}
+
+      {% if result.img_contents %}
+      <div class="image-container">
+        {% for img in result.img_contents %}
+        <img src="{{ img.path }}" alt="image" />
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if result.graphics_contents %}
+      <div class="image-container">
+        {% for g in result.graphics_contents %}
+        <img src="{{ g.path }}" alt="graphics" />
+        {% if g.alt %}<div class="extra-info">{{ g.alt }}</div>{% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
     </div>
 
-    {% if result.title %}
-    <div class="title">{{ result.title }}</div>
-    {% endif %}
-
-    {% if result.text %}
-    <div class="text">{{ result.text | e | replace("\n", "<br>") | safe }}</div>
-    {% endif %}
-
-    {% if result.img_contents %}
-    <div class="image-container">
-      {% for img in result.img_contents %}
-      <img src="{{ img.path }}" alt="image" />
+    <!-- 评论区域 -->
+    {% set comments = result.extra.comments if result.extra.comments else [] %}
+    {% if comments and comments|length > 0 %}
+    <div class="comments-section">
+      <div class="comments-header">
+        <i class="fas fa-comments"></i> 评论 ({{ comments|length }})
+      </div>
+      
+      {% for comment in comments %}
+      <div class="comment-container">
+        <!-- 左侧头像 -->
+        <div class="comment-avatar-wrapper">
+          <img src="{{ comment.author.avatar }}" alt="用户头像" class="comment-avatar">
+        </div>
+        
+        <!-- 右侧内容 -->
+        <div class="comment-content-wrapper">
+          <!-- 作者信息行 -->
+          <div class="comment-author-row">
+            <div class="comment-author-info">
+              <span class="comment-author-name">{{ comment.author.name }}</span>
+            </div>
+            <span class="comment-time">{{ comment.formatted_time }}</span>
+          </div>
+          
+          <!-- 评论内容 -->
+          <div class="comment-text">
+            {{ comment.content | e | replace("\n", "<br>") | safe }}
+          </div>
+          
+          <!-- 统计信息 -->
+          <div class="comment-stats">
+            {% if comment.ups %}
+            <span class="comment-stat">
+              <i class="fas fa-thumbs-up"></i>
+              <span>{{ comment.ups }}</span>
+            </span>
+            {% endif %}
+            {% if comment.comments %}
+            <span class="comment-stat">
+              <i class="fas fa-reply"></i>
+              <span>{{ comment.comments }}</span>
+            </span>
+            {% endif %}
+          </div>
+          
+          <!-- 回复列表 -->
+          {% if comment.child_posts and comment.child_posts|length > 0 %}
+          <div class="comment-replies">
+            {% for reply in comment.child_posts %}
+            <div class="reply-container">
+              <!-- 回复左侧头像 -->
+              <div class="reply-avatar-wrapper">
+                <img src="{{ reply.author.avatar }}" alt="回复者头像" class="reply-avatar">
+              </div>
+              
+              <!-- 回复右侧内容 -->
+              <div class="reply-content-wrapper">
+                <!-- 回复作者信息行 -->
+                <div class="reply-author-row">
+                  <div class="reply-author-info">
+                    <span class="reply-author-name">{{ reply.author.name }}</span>
+                  </div>
+                  <span class="reply-time">{{ reply.formatted_time }}</span>
+                </div>
+                
+                <!-- 回复内容 -->
+                <div class="reply-text">
+                  {{ reply.content | e | replace("\n", "<br>") | safe }}
+                </div>
+                
+                <!-- 回复统计信息 -->
+                <div class="comment-stats">
+                  {% if reply.ups %}
+                  <span class="comment-stat">
+                    <i class="fas fa-thumbs-up"></i>
+                    <span>{{ reply.ups }}</span>
+                  </span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
       {% endfor %}
     </div>
     {% endif %}
 
-    {% if result.graphics_contents %}
-    <div class="image-container">
-      {% for g in result.graphics_contents %}
-      <img src="{{ g.path }}" alt="graphics" />
-      {% if g.alt %}<div class="extra-info">{{ g.alt }}</div>{% endif %}
-      {% endfor %}
+    <!-- 底部 -->
+    <div class="footer-section">
+      <div class="footer-brand">
+        <i class="fas fa-layer-group"></i>
+        <span>百度贴吧 Parser</span>
+      </div>
+      <div class="footer-info">
+        <span>{{ result.url }}</span>
+      </div>
     </div>
-    {% endif %}
   </div>
 </body>
 
