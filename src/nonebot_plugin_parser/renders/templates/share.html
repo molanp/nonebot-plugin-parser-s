@@ -1,0 +1,76 @@
+<style>
+  .text {
+    font-size: 15px;
+    line-height: 1.7;
+    color: #444;
+    white-space: pre-wrap;
+  }
+  .sticker.small {
+    height: 15px;
+  }
+  .sticker.medium {
+    height: 30px;
+  }
+  .sticker.large {
+    height: 45px;
+  }
+  /* 图片展示区域 */
+  .images-container {
+    margin: 20px 0;
+  }
+
+  .images-grid {
+    display: grid;
+    gap: 6px;
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .images-grid.single {
+    grid-template-columns: 1fr;
+  }
+
+  .images-grid.single .image-item {
+    max-height: none;
+    /* 取消高度限制 */
+  }
+
+  .images-grid.double {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .images-grid.double .image-item {
+    aspect-ratio: 16/9;
+  }
+
+  .images-grid.quad {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+
+  .images-grid.quad .image-item {
+    aspect-ratio: 1/1;
+  }
+
+  .images-grid.nine {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .images-grid.nine .image-item {
+    aspect-ratio: 1/1;
+  }
+
+  .image-item {
+    position: relative;
+    overflow: hidden;
+    background: #eee;
+  }
+
+  .image-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+</style>

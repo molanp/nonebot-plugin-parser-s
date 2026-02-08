@@ -1,5 +1,6 @@
 import json
 import asyncio
+import contextlib
 from re import Match
 from typing import Any, ClassVar
 from collections.abc import AsyncGenerator
@@ -22,7 +23,7 @@ from ..base import (
     handle,
     pconfig,
 )
-from ..data import Platform, ImageContent, MediaContent
+from ..data import Platform, ImageContent, MediaContent, GraphicsContent
 from ..cookie import ck2dict
 
 # 选择客户端
@@ -287,8 +288,17 @@ class BilibiliParser(BaseParser):
 
         author = self.create_author(dynamic_info.name, dynamic_info.avatar)
 
+        # 获取标题和文本
+        dynamic_title = dynamic_info.title or "B站动态"
+        dynamic_text = dynamic_info.text
+
+        # 如果标题和文本内容一致，则将文本置空，避免重复展示
+        final_text = (
+            dynamic_text if dynamic_text and dynamic_text != dynamic_title else ""
+        )
+
         # 下载图片
-        contents: list[MediaContent] = []
+        contents: list[MediaContent | str] = [final_text]
         image_urls = dynamic_info.image_urls
 
         # 只下载主体图片，不添加默认图片到contents
@@ -298,7 +308,7 @@ class BilibiliParser(BaseParser):
 
         # 提取当前动态的统计数据
         stats = {}
-        try:
+        with contextlib.suppress(Exception):
             if dynamic_info.modules.module_stat:
                 m_stat = dynamic_info.modules.module_stat
                 stats = {
@@ -321,9 +331,6 @@ class BilibiliParser(BaseParser):
                 views_value = modules.module_author.views_text
                 if views_value is not None:
                     stats["play"] = views_value
-        except Exception:
-            pass
-
         # --- 基础 extra 数据 ---
         extra_data = {
             "stats": stats,
@@ -340,22 +347,15 @@ class BilibiliParser(BaseParser):
             orig_item = dynamic_info.orig
 
             if orig_item.visible:
-                orig_type_tag = "动态"
                 major_info = orig_item.modules.major_info
 
                 # 尝试判断源动态类型
                 is_article = False
-                orig_title = orig_item.title
-                orig_text = orig_item.text
-                orig_author = orig_item.name
                 major_type = None
 
                 if major_info:
                     major_type = major_info.get("type")
-                    if major_type == "MAJOR_TYPE_ARCHIVE":
-                        orig_type_tag = "视频"
-                    elif major_type == "MAJOR_TYPE_OPUS":
-                        orig_type_tag = "图文"
+                    if major_type == "MAJOR_TYPE_OPUS":
                         # 【新增】检查是否是专栏文章
                         opus_data = major_info.get("opus", {})
                         if opus_data and opus_data.get("jump_url"):
@@ -364,9 +364,6 @@ class BilibiliParser(BaseParser):
                             match = re.search(r"/opus/(\d+)", opus_data["jump_url"])
                             if match:
                                 is_article = True
-                                orig_type_tag = "专栏"
-                    elif major_type == "MAJOR_TYPE_DRAW":
-                        orig_type_tag = "图文"
 
                 # 获取源动态封面 (优先取视频封面，否则取第一张图)
                 orig_cover = orig_item.cover_url
@@ -379,83 +376,40 @@ class BilibiliParser(BaseParser):
                     if opus_data and opus_data.get("jump_url"):
                         import re
 
-                        match = re.search(r"/opus/(\d+)", opus_data["jump_url"])
-                        if match:
-                            opus_id = int(match.group(1))
+                        if match := re.search(r"/opus/(\d+)", opus_data["jump_url"]):
+                            opus_id = int(match[1])
                             try:
                                 repost_result = await self.parse_opus(opus_id)
-                                # 使用解析结果更新源动态信息
-                                if repost_result.title:
-                                    orig_title = repost_result.title
-                                if repost_result.text:
-                                    orig_text = repost_result.text
-                                if repost_result.author:
-                                    orig_author = repost_result.author.name
                             except Exception as e:
                                 logger.warning(f"解析转发专栏失败: {e}")
-                # 【新增】如果是视频，使用视频解析获取完整内容
                 elif (
                     major_info
                     and major_type == "MAJOR_TYPE_ARCHIVE"
                     and major_info.get("archive")
                 ):
                     archive_data = major_info.get("archive", {})
-                    bvid = archive_data.get("bvid")
-                    if bvid:
+                    if bvid := archive_data.get("bvid"):
                         try:
                             repost_result = await self.parse_video(bvid=bvid)
-                            # 使用解析结果更新源动态信息
-                            if repost_result.title:
-                                orig_title = repost_result.title
-                            if repost_result.text:
-                                orig_text = repost_result.text
-                            if repost_result.author:
-                                orig_author = repost_result.author.name
                         except Exception as e:
                             logger.warning(f"解析转发视频失败: {e}")
-                # 【新增】如果是动态，使用动态解析获取完整内容
                 elif dynamic_info.orig:
                     try:
                         repost_result = await self.parse_dynamic_or_opus(
                             int(orig_item.id_str)
                         )
-                        # 使用解析结果更新源动态信息
-                        if repost_result.title:
-                            orig_title = repost_result.title
-                        if repost_result.text:
-                            orig_text = repost_result.text
-                        if repost_result.author:
-                            orig_author = repost_result.author.name
                     except Exception as e:
                         logger.warning(f"解析转发动态失败: {e}")
 
-                # 构造 origin 字典（使用更新后的信息）
-                extra_data["origin"] = {
-                    "exists": True,
-                    "author": orig_author,
-                    "title": orig_title,
-                    "text": orig_text,
-                    "cover": orig_cover,
-                    "type_tag": orig_type_tag,
-                    "mid": str(orig_item.modules.module_author.mid),
-                }
             else:
                 # 源动态已失效
-                extra_data["origin"] = {
-                    "exists": False,
-                    "text": "源动态已被删除或不可见",
-                    "author": "未知",
-                    "title": "资源失效",
-                }
-
-        # 获取标题和文本
-        dynamic_title = dynamic_info.title or "B站动态"
-        dynamic_text = dynamic_info.text
-
-        # 如果标题和文本内容一致，则将文本置空，避免重复展示
-        final_text = (
-            dynamic_text if dynamic_text and dynamic_text != dynamic_title else None
-        )
+                # extra_data["origin"] = {
+                #     "exists": False,
+                #     "contents": ["源动态已被删除或不可见"],
+                #     "author": "未知",
+                #     "title": "资源失效",
+                # }
+                pass
 
         # 构建动态URL，用于二维码生成（使用t.bilibili.com格式）
         dynamic_url = f"https://t.bilibili.com/{dynamic_id}"
@@ -485,15 +439,13 @@ class BilibiliParser(BaseParser):
         elif major_type == "MAJOR_TYPE_ARCHIVE" and major_info:
             # 视频动态，使用视频的aid作为oid，type=1
             archive_data = major_info.get("archive", {})
-            aid = archive_data.get("aid")
-            if aid:
+            if aid := archive_data.get("aid"):
                 comments = await self._fetch_comments(int(aid), 1)  # type=1 表示视频
                 logger.debug(f"[BiliParser] 使用视频aid作为评论参数: oid={aid}, type=1")
         elif major_type == "MAJOR_TYPE_OPUS" and major_info:
             # 图文动态，使用opus_id作为oid，type=12
             opus_data = major_info.get("opus", {})
-            opus_id = opus_data.get("id") or opus_data.get("opus_id")
-            if opus_id:
+            if opus_id := opus_data.get("id") or opus_data.get("opus_id"):
                 comments = await self._fetch_comments(
                     int(opus_id), 12
                 )  # type=12 表示专栏
@@ -594,60 +546,22 @@ class BilibiliParser(BaseParser):
         author = self.create_author(author_name, author_face)
 
         # 按顺序处理图文内容（参考 parse_read 的逻辑）
-        contents: list[MediaContent] = []
-        full_text_list = []
+        contents: list[MediaContent | str] = []
+        full_text = ""
 
         for node in opus_data.gen_text_img():
             if isinstance(node, ImageNode):
-                # 使用 DOWNLOADER 下载并封装为 ImageContent
+                # 使用 DOWNLOADER 下载并封装为 GraphicsContent # 图文不使用九宫格
                 img_task = DOWNLOADER.download_img(node.url, ext_headers=self.headers)
-                contents.append(ImageContent(img_task))
+                contents.append(GraphicsContent(img_task))
 
             elif isinstance(node, TextNode):
-                full_text_list.append(node.text)
-
-        full_text = "\n".join(full_text_list).strip()
-
-        # 如果没有提取到文本，尝试从原始结构体中直接获取
-        if not full_text and hasattr(opus_data.item, "modules"):
-            for module in opus_data.item.modules:
-                # 检查内容模块是否有直接的文本
-                if (
-                    module.module_type == "MODULE_TYPE_CONTENT"
-                    and module.module_content
-                ):
-                    for paragraph in module.module_content.paragraphs:
-                        # 直接检查段落是否有文本属性
-                        if (
-                            hasattr(paragraph, "text")
-                            and paragraph.text
-                            and (
-                                hasattr(paragraph.text, "nodes")
-                                and paragraph.text.nodes
-                            )
-                        ):
-                            for node in paragraph.text.nodes:
-                                if isinstance(node, dict):
-                                    # 检查不同类型的文本节点
-                                    if node.get("type") in [
-                                        "TEXT_NODE_TYPE_WORD",
-                                        "TEXT_NODE_TYPE_RICH",
-                                    ]:
-                                        if isinstance(node.get("word"), dict):
-                                            full_text += node["word"].get("words", "")
-                                    elif node.get("type") == "TEXT_NODE_TYPE_TEXT":
-                                        full_text += node.get("text", "")
-                                    elif node.get("type") == "TEXT_NODE_TYPE_PLAIN":
-                                        full_text += node.get("content", "")
-                                    # 其他可能的文本节点类型
-                                    elif isinstance(node.get("word"), dict):
-                                        full_text += node["word"].get("words", "")
-                                    elif isinstance(node.get("text"), str):
-                                        full_text += node["text"]
+                contents.append(node.text)
+                full_text += node.text
 
         # 提取统计数据
         stats = {}
-        try:
+        with contextlib.suppress(Exception):
             if hasattr(opus_data.item, "modules"):
                 for module in opus_data.item.modules:
                     if module.module_type == "MODULE_TYPE_STAT" and module.module_stat:
@@ -675,9 +589,6 @@ class BilibiliParser(BaseParser):
                             views_value = module.module_author.views_text
                             if views_value is not None:
                                 stats["play"] = views_value
-        except Exception:
-            pass
-
         # 构造 Extra 数据
         extra_data = {
             "stats": stats,
@@ -699,7 +610,6 @@ class BilibiliParser(BaseParser):
 
         # 确定最终标题
         final_title = original_title or full_text or f"{author_name}的哔哩哔哩动态"
-
         # 如果标题和文本内容一致，则将文本置空
         final_text = full_text if full_text and full_text != final_title else None
 
@@ -725,8 +635,6 @@ class BilibiliParser(BaseParser):
         comment_id_str = basic_info.get("comment_id_str")
         comment_type = basic_info.get("comment_type")
 
-        content_id = str(opus_data.item.id_str)
-
         # 根据opus类型选择正确的评论参数
         if comment_id_str and comment_type:
             # 使用opus数据中提供的comment_id_str和comment_type
@@ -735,6 +643,8 @@ class BilibiliParser(BaseParser):
                 f"[BiliParser] 使用opus数据中提供的评论参数: oid={comment_id_str}, type={comment_type}"
             )
         else:
+            content_id = str(opus_data.item.id_str)
+
             # 默认为图文动态，使用content_id作为oid，type=12
             comments = await self._fetch_comments(
                 int(content_id), 12
@@ -752,10 +662,10 @@ class BilibiliParser(BaseParser):
         return self.result(
             url=opus_url,
             title=final_title,
+            text=final_text,
             author=author,
             timestamp=opus_data.timestamp,
             contents=contents,
-            text=final_text,
             extra=extra_data,
         )
 
@@ -777,7 +687,7 @@ class BilibiliParser(BaseParser):
         info_dict = await room.get_room_info()
 
         room_data = convert(info_dict, RoomData)
-        contents: list[MediaContent] = []
+        contents: list[MediaContent | str] = [room_data.detail]
         # 下载封面
         if cover := room_data.cover:
             cover_task = DOWNLOADER.download_img(cover, ext_headers=self.headers)
@@ -1139,7 +1049,7 @@ class BilibiliParser(BaseParser):
                         processed_comments = []
                         # 确保data是字典类型
                         if isinstance(data, dict):
-                            fallback_replies = data.get("replies", [])
+                            fallback_replies = data.get("replies") or []
                             logger.debug(
                                 f"[Bilibili] 获得兜底评论: {len(fallback_replies)}条"
                             )
@@ -1248,10 +1158,10 @@ class BilibiliParser(BaseParser):
                     )
                     return []
                 except Exception as e:
-                    logger.error(f"[Bilibili] 获取兜底评论失败: {e}")
+                    logger.error(f"[Bilibili] 获取兜底评论失败: {e!r}")
                     return None
         except Exception as e:
-            logger.error(f"[Bilibili] 获取热评失败: {e}")
+            logger.error(f"[Bilibili] 获取热评失败: {e!r}")
             return None
 
     @property

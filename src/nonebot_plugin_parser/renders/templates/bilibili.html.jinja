@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bilibili Card</title>
+    {% include "share.html" %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Segoe+UI:wght@400;600;700&display=swap");
@@ -18,23 +20,23 @@
             --box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
             --transition: all 0.3s ease;
         }
-        
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             font-family: 'Segoe UI', 'Noto Sans SC', sans-serif;
         }
-        
+
         body {
             display: flex;
             justify-content: center;
             align-items: flex-start;
             min-height: 100vh;
-            background: transparent; 
+            background: transparent;
             padding: 20px;
         }
-        
+
         .card {
             width: 750px;
             background-color: white;
@@ -43,9 +45,9 @@
             overflow: hidden;
             position: relative;
             margin-bottom: 20px;
-            border: 1px solid rgba(0,0,0,0.02);
+            border: 1px solid rgba(0, 0, 0, 0.02);
         }
-        
+
         /* 装饰性条纹 */
         .decorative-stripe {
             position: absolute;
@@ -56,32 +58,35 @@
             left: 0;
             z-index: 5;
         }
-        
+
         /* 顶部封面区域 */
         .cover-section {
             position: relative;
             width: 100%;
-            max-height: 400px; 
+            max-height: 400px;
             background-color: #f0f2f5;
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        
+
         .cover-image {
             width: 100%;
             height: auto;
             object-fit: cover;
         }
-        
+
         .cover-overlay {
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.05) 70%, rgba(0,0,0,0.3) 100%);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.05) 70%, rgba(0, 0, 0, 0.3) 100%);
             pointer-events: none;
         }
-        
+
         /* 封面上的标签 */
         .tag {
             position: absolute;
@@ -96,15 +101,15 @@
             gap: 6px;
             backdrop-filter: blur(8px);
             background-color: rgba(0, 0, 0, 0.6);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
             z-index: 2;
         }
-        
+
         .type-tag {
             left: 20px;
             border-left: 3px solid var(--primary-color);
         }
-        
+
         .platform-tag {
             right: 20px;
             border-left: 3px solid var(--secondary-color);
@@ -113,21 +118,26 @@
         /* 播放按钮装饰 */
         .play-btn-overlay {
             position: absolute;
-            top: 50%; left: 50%;
+            top: 50%;
+            left: 50%;
             transform: translate(-50%, -50%);
-            width: 64px; height: 64px;
+            width: 64px;
+            height: 64px;
             background: rgba(255, 255, 255, 0.85);
             border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 24px; color: var(--primary-color);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: var(--primary-color);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
-        
+
         /* 中部内容区域 */
         .content-section {
             padding: 30px;
         }
-        
+
         /* 作者信息与二维码区域 */
         .author-qr-row {
             display: flex;
@@ -137,28 +147,29 @@
             padding-bottom: 20px;
             border-bottom: 1px dashed #eee;
         }
-        
+
         .author-info {
             display: flex;
             align-items: center;
             gap: 16px;
         }
-        
+
         .author-avatar {
-            width: 64px; height: 64px;
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
             object-fit: cover;
             border: 3px solid #fff;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
-        
+
         .author-details h3 {
             font-size: 19px;
             margin-bottom: 6px;
             color: var(--dark-color);
             font-weight: 700;
         }
-        
+
         .author-meta {
             color: var(--gray-color);
             font-size: 13px;
@@ -167,7 +178,7 @@
             gap: 8px;
             flex-wrap: wrap;
         }
-        
+
         .info-badge {
             background-color: #f1f8ff;
             padding: 2px 8px;
@@ -177,12 +188,22 @@
             font-size: 12px;
         }
 
-        .info-badge.uid { color: var(--secondary-color); background-color: #eaf4fc; }
-        .info-badge.content-id { color: #e67e22; background-color: #fdf2e9; }
-        
-        .time-text {
-            display: flex; align-items: center; gap: 4px;
+        .info-badge.uid {
+            color: var(--secondary-color);
+            background-color: #eaf4fc;
         }
+
+        .info-badge.content-id {
+            color: #e67e22;
+            background-color: #fdf2e9;
+        }
+
+        .time-text {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
         .time-text::before {
             content: "\f017";
             font-family: "Font Awesome 6 Free";
@@ -190,11 +211,18 @@
         }
 
         .qrcode-placeholder {
-            display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
             color: #ddd;
         }
-        .qrcode-icon { font-size: 32px; color: #eee; }
-        
+
+        .qrcode-icon {
+            font-size: 32px;
+            color: #eee;
+        }
+
         /* 统计数据区域 */
         .stats-container {
             display: grid;
@@ -202,7 +230,7 @@
             gap: 12px;
             margin-bottom: 25px;
         }
-        
+
         .stat-item {
             display: flex;
             align-items: center;
@@ -212,32 +240,84 @@
             border-radius: 10px;
             border-left: 4px solid transparent;
         }
-        
-        .stat-item:nth-child(1) { border-left-color: #e74c3c; }
-        .stat-item:nth-child(2) { border-left-color: #3498db; }
-        .stat-item:nth-child(3) { border-left-color: #2ecc71; }
-        .stat-item:nth-child(4) { border-left-color: #f39c12; }
-        .stat-item:nth-child(5) { border-left-color: #9b59b6; }
-        .stat-item:nth-child(6) { border-left-color: #1abc9c; }
-        
+
+        .stat-item:nth-child(1) {
+            border-left-color: #e74c3c;
+        }
+
+        .stat-item:nth-child(2) {
+            border-left-color: #3498db;
+        }
+
+        .stat-item:nth-child(3) {
+            border-left-color: #2ecc71;
+        }
+
+        .stat-item:nth-child(4) {
+            border-left-color: #f39c12;
+        }
+
+        .stat-item:nth-child(5) {
+            border-left-color: #9b59b6;
+        }
+
+        .stat-item:nth-child(6) {
+            border-left-color: #1abc9c;
+        }
+
         .stat-icon {
-            width: 36px; height: 36px;
+            width: 36px;
+            height: 36px;
             border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 16px; color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: white;
             flex-shrink: 0;
         }
-        
-        .stat-icon.play { background-color: #e74c3c; }
-        .stat-icon.like { background-color: #3498db; }
-        .stat-icon.reply { background-color: #2ecc71; }
-        .stat-icon.fav { background-color: #f39c12; }
-        .stat-icon.share { background-color: #9b59b6; }
-        .stat-icon.coin { background-color: #1abc9c; }
-        
-        .stat-content { display: flex; flex-direction: column; }
-        .stat-value { font-size: 17px; font-weight: 700; color: var(--dark-color); line-height: 1.1; }
-        .stat-label { font-size: 12px; color: var(--gray-color); margin-top: 2px; }
+
+        .stat-icon.play {
+            background-color: #e74c3c;
+        }
+
+        .stat-icon.like {
+            background-color: #3498db;
+        }
+
+        .stat-icon.reply {
+            background-color: #2ecc71;
+        }
+
+        .stat-icon.fav {
+            background-color: #f39c12;
+        }
+
+        .stat-icon.share {
+            background-color: #9b59b6;
+        }
+
+        .stat-icon.coin {
+            background-color: #1abc9c;
+        }
+
+        .stat-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-value {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--dark-color);
+            line-height: 1.1;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--gray-color);
+            margin-top: 2px;
+        }
 
         /* 内容文本 */
         .content-title {
@@ -258,25 +338,24 @@
             margin-bottom: 20px;
             position: relative;
         }
+
         .ai-summary h4 {
             color: var(--secondary-color);
             margin-bottom: 8px;
-            display: flex; align-items: center; gap: 8px;
-            font-size: 15px; font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 700;
         }
+
         .ai-summary p {
-            color: #505c6b; font-size: 14px; line-height: 1.6;
+            color: #505c6b;
+            font-size: 14px;
+            line-height: 1.6;
             text-align: justify;
         }
 
-        .description {
-            font-size: 15px;
-            line-height: 1.7;
-            color: #444;
-            margin-bottom: 20px;
-            white-space: pre-wrap;
-        }
-        
         /* -----------------------
            【新增】转发区域样式 
            ----------------------- */
@@ -288,7 +367,7 @@
             border: 1px solid #e1e4e8;
             position: relative;
         }
-        
+
         .repost-header {
             display: flex;
             align-items: center;
@@ -337,13 +416,16 @@
             margin-top: 10px;
             position: relative;
         }
-        
+
         .repost-media img {
             width: 100%;
             height: auto;
-            object-fit: contain; /* 确保图片内容完全显示，不裁剪 */
-            max-height: none;    /* 取消高度限制 */
-            border-radius: 6px; /* 保持圆角 */
+            object-fit: contain;
+            /* 确保图片内容完全显示，不裁剪 */
+            max-height: none;
+            /* 取消高度限制 */
+            border-radius: 6px;
+            /* 保持圆角 */
         }
 
         .repost-deleted {
@@ -360,53 +442,55 @@
             gap: 8px;
         }
 
-        /* 图片展示区域 */
-        .images-container { margin: 20px 0; }
-        .images-header {
-            font-size: 14px; color: var(--dark-color); font-weight: 600; margin-bottom: 10px;
-            display: flex; align-items: center; gap: 8px;
-        }
-        .images-grid {
-            display: grid; gap: 6px; width: 100%; border-radius: 8px; overflow: hidden;
-        }
-        .images-grid.single { grid-template-columns: 1fr; }
-        .images-grid.single .image-item { max-height: none; /* 取消高度限制 */ }
-        .images-grid.double { grid-template-columns: 1fr 1fr; }
-        .images-grid.double .image-item { aspect-ratio: 16/9; }
-        .images-grid.quad { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
-        .images-grid.quad .image-item { aspect-ratio: 1/1; }
-        .images-grid.nine { grid-template-columns: repeat(3, 1fr); }
-        .images-grid.nine .image-item { aspect-ratio: 1/1; }
-        
-        .image-item { position: relative; overflow: hidden; background: #eee; }
-        .image-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .more-count {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px);
-            color: white; display: flex; align-items: center; justify-content: center;
-            font-size: 28px; font-weight: bold;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: bold;
         }
-        
+
         /* 底部信息栏 */
         .footer-section {
             background-color: var(--dark-color);
-            color: rgba(255,255,255,0.8);
+            color: rgba(255, 255, 255, 0.8);
             padding: 15px 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-size: 12px;
         }
-        .footer-info { display: flex; gap: 15px; align-items: center; }
-        .footer-brand { font-weight: 600; letter-spacing: 0.5px; color: white; display: flex; gap: 8px; align-items: center;}
-        
+
+        .footer-info {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .footer-brand {
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: white;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
         /* 评论区域 */
         .comments-section {
             padding: 0 30px 30px;
             border-top: 1px solid #eee;
             margin-top: 20px;
         }
-        
+
         .comments-header {
             font-size: 18px;
             font-weight: 700;
@@ -416,13 +500,13 @@
             align-items: center;
             gap: 10px;
         }
-        
+
         .comments-header i {
             color: var(--secondary-color);
         }
-        
+
         /* ========== 评论样式 ========== */
-        
+
         /* 主评论容器 */
         .comment-container {
             display: flex;
@@ -431,20 +515,20 @@
             padding-bottom: 20px;
             border-bottom: 1px dashed #eee;
         }
-        
+
         .comment-container:last-child {
             border-bottom: none;
             margin-bottom: 0;
             padding-bottom: 0;
         }
-        
+
         /* 头像区域 */
         .comment-avatar-wrapper {
             flex-shrink: 0;
             width: 48px;
             height: 48px;
         }
-        
+
         .comment-avatar {
             width: 100%;
             height: 100%;
@@ -452,13 +536,14 @@
             object-fit: cover;
             border: 2px solid #f0f0f0;
         }
-        
+
         /* 评论内容区域 */
         .comment-content-wrapper {
             flex: 1;
-            min-width: 0; /* 防止内容溢出 */
+            min-width: 0;
+            /* 防止内容溢出 */
         }
-        
+
         /* 作者信息行 */
         .comment-author-row {
             display: flex;
@@ -466,7 +551,7 @@
             align-items: center;
             margin-bottom: 8px;
         }
-        
+
         .comment-author-info {
             display: flex;
             align-items: center;
@@ -474,14 +559,14 @@
             flex-wrap: wrap;
             flex: 1;
         }
-        
+
         .comment-author-name {
             font-weight: 600;
             font-size: 14px;
             color: var(--dark-color);
             line-height: 1.2;
         }
-        
+
         /* 评论时间 */
         .comment-time {
             font-size: 12px;
@@ -489,7 +574,7 @@
             white-space: nowrap;
             margin-left: 8px;
         }
-        
+
         /* 评论内容 */
         .comment-text {
             font-size: 14px;
@@ -498,7 +583,7 @@
             margin-bottom: 10px;
             word-wrap: break-word;
         }
-        
+
         /* 处理评论中的图片 */
         .comment-text img {
             max-width: 100%;
@@ -506,7 +591,7 @@
             border-radius: 8px;
             margin: 5px 0;
         }
-        
+
         /* 统计信息 */
         .comment-stats {
             display: flex;
@@ -514,22 +599,24 @@
             font-size: 12px;
             color: var(--gray-color);
         }
-        
+
         .comment-stat {
             display: flex;
             align-items: center;
             gap: 4px;
         }
-        
+
         /* ========== 回复样式 ========== */
-        
+
         .comment-replies {
             margin-top: 15px;
-            margin-left: 12px; /* 与主评论内容对齐 */
-            padding-left: 48px; /* 头像宽度 + 间距 */
+            margin-left: 12px;
+            /* 与主评论内容对齐 */
+            padding-left: 48px;
+            /* 头像宽度 + 间距 */
             border-left: 2px solid #f0f0f0;
         }
-        
+
         .reply-container {
             display: flex;
             gap: 12px;
@@ -537,13 +624,13 @@
             padding-bottom: 15px;
             border-bottom: 1px dashed #f0f0f0;
         }
-        
+
         .reply-container:last-child {
             border-bottom: none;
             margin-bottom: 0;
             padding-bottom: 0;
         }
-        
+
         /* 回复头像区域 */
         .reply-avatar-wrapper {
             flex-shrink: 0;
@@ -551,7 +638,7 @@
             height: 40px;
             margin-top: 2px;
         }
-        
+
         .reply-avatar {
             width: 100%;
             height: 100%;
@@ -559,13 +646,13 @@
             object-fit: cover;
             border: 2px solid #f0f0f0;
         }
-        
+
         /* 回复内容区域 */
         .reply-content-wrapper {
             flex: 1;
             min-width: 0;
         }
-        
+
         /* 回复作者信息行 */
         .reply-author-row {
             display: flex;
@@ -573,7 +660,7 @@
             align-items: center;
             margin-bottom: 6px;
         }
-        
+
         .reply-author-info {
             display: flex;
             align-items: center;
@@ -581,14 +668,14 @@
             flex-wrap: wrap;
             flex: 1;
         }
-        
+
         .reply-author-name {
             font-weight: 600;
             font-size: 13px;
             color: var(--dark-color);
             line-height: 1.2;
         }
-        
+
         /* 回复时间 */
         .reply-time {
             font-size: 11px;
@@ -596,7 +683,7 @@
             white-space: nowrap;
             margin-left: 6px;
         }
-        
+
         /* 回复内容 */
         .reply-text {
             font-size: 13px;
@@ -605,7 +692,7 @@
             margin-bottom: 8px;
             word-wrap: break-word;
         }
-        
+
         /* 回复中的图片 */
         .reply-text img {
             max-width: 100%;
@@ -615,21 +702,22 @@
         }
     </style>
 </head>
+
 <body>
 
     {# === 宏定义：渲染卡片 === #}
     {% macro render_card(result, is_repost=False) %}
-    
+
     {# 变量定义 #}
     {% set extra = result.extra if result.extra else {} %}
-    {% set platform = result.platform if result.platform else {} %}
+    {% set platform = result.platform %}
     {% set content_id = extra.content_id %}
     {% set stats = extra.stats if extra.stats else {} %}
     {% set type_tag = extra.type_tag if extra.type_tag else "B站" %}
     {% set type_icon = extra.type_icon if extra.type_icon else "fa-brands fa-bilibili" %}
     {% set type = extra.type if extra.type else "video" %}
 
-    <div class="card" {% if is_repost %}style="width: 100%; margin-bottom: 0;"{% endif %}>
+    <div class="card" {% if is_repost %}style="width: 100%; margin-bottom: 0;" {% endif %}>
         {% if not is_repost %}
         <div class="decorative-stripe"></div>
         {% endif %}
@@ -637,27 +725,26 @@
         {# --- 封面区域 --- #}
         {% set cover_url = result.cover_path %}
         {% if not cover_url and result.img_contents and result.img_contents|length > 0 %}
-            {% set cover_url = result.img_contents[0].path %}
+        {% set cover_url = result.img_contents[0].path %}
         {% endif %}
 
         {% if cover_url %}
         <div class="cover-section">
             <img src="{{ cover_url }}" class="cover-image" alt="Cover">
             <div class="cover-overlay"></div>
-            
+
             {% if platform.name == 'bilibili' and extra.type_tag %}
             <div class="tag type-tag">
                 <i class="fa-solid {{ extra.type_icon }}"></i>
                 <span>{{ extra.type_tag }}</span>
             </div>
             {% endif %}
-            
-            {% if platform %}
+
             <div class="tag platform-tag">
-                <img src="https://i0.hdslb.com/bfs/static/jinkela/long/images/favicon.ico" class="platform-logo-img" style="width: 16px; height: 16px; margin-right: 6px;">
+                <img src="https://i0.hdslb.com/bfs/static/jinkela/long/images/favicon.ico" class="platform-logo-img"
+                    style="width: 16px; height: 16px; margin-right: 6px;">
                 <span>BILIBILI</span>
             </div>
-            {% endif %}
 
             {% if type in ['video', 'live'] %}
             <div class="play-btn-overlay">
@@ -689,11 +776,12 @@
                     </div>
                 </div>
                 <div class="qrcode-placeholder">
-                {% if result.qr_code_path %}
-                    <img src="{{ result.qr_code_path }}" alt="QR Code" style="width: 77px; height: 77px; border-radius: 8px;" />
-                {% else %}
+                    {% if result.qr_code_path %}
+                    <img src="{{ result.qr_code_path }}" alt="QR Code"
+                        style="width: 77px; height: 77px; border-radius: 8px;" />
+                    {% else %}
                     <i class="fas fa-qrcode qrcode-icon"></i>
-                {% endif %}
+                    {% endif %}
                 </div>
             </div>
             {% endif %}
@@ -707,37 +795,44 @@
 
             {# 播放量 #}
             {% if stats.play and stats.play != '-' %}
-                {% set _ = stat_items.append({'key': 'play', 'value': stats.play, 'label': '播放', 'icon': 'fa-eye', 'color': '#e74c3c'}) %}
+            {% set _ = stat_items.append({'key': 'play', 'value': stats.play, 'label': '播放', 'icon': 'fa-eye', 'color':
+            '#e74c3c'}) %}
             {% endif %}
 
             {# 弹幕数 #}
             {% if stats.danmaku and stats.danmaku != '-' %}
-                {% set _ = stat_items.append({'key': 'danmaku', 'value': stats.danmaku, 'label': '弹幕', 'icon': 'fa-comment-dots', 'color': '#3498db'}) %}
+            {% set _ = stat_items.append({'key': 'danmaku', 'value': stats.danmaku, 'label': '弹幕', 'icon':
+            'fa-comment-dots', 'color': '#3498db'}) %}
             {% endif %}
 
             {# 硬币数 #}
             {% if stats.coin and stats.coin != '-' %}
-                {% set _ = stat_items.append({'key': 'coin', 'value': stats.coin, 'label': '硬币', 'icon': 'fa-coins', 'color': '#f39c12'}) %}
+            {% set _ = stat_items.append({'key': 'coin', 'value': stats.coin, 'label': '硬币', 'icon': 'fa-coins',
+            'color': '#f39c12'}) %}
             {% endif %}
 
             {# 点赞数 #}
             {% if stats.like and stats.like != '-' %}
-                {% set _ = stat_items.append({'key': 'like', 'value': stats.like, 'label': '点赞', 'icon': 'fa-thumbs-up', 'color': '#2ecc71'}) %}
+            {% set _ = stat_items.append({'key': 'like', 'value': stats.like, 'label': '点赞', 'icon': 'fa-thumbs-up',
+            'color': '#2ecc71'}) %}
             {% endif %}
 
             {# 收藏数 #}
             {% if stats.favorite and stats.favorite != '-' %}
-                {% set _ = stat_items.append({'key': 'favorite', 'value': stats.favorite, 'label': '收藏', 'icon': 'fa-star', 'color': '#9b59b6'}) %}
+            {% set _ = stat_items.append({'key': 'favorite', 'value': stats.favorite, 'label': '收藏', 'icon': 'fa-star',
+            'color': '#9b59b6'}) %}
             {% endif %}
 
             {# 评论数 #}
             {% if stats.reply and stats.reply != '-' %}
-                {% set _ = stat_items.append({'key': 'reply', 'value': stats.reply, 'label': '评论', 'icon': 'fa-comment', 'color': '#1abc9c'}) %}
+            {% set _ = stat_items.append({'key': 'reply', 'value': stats.reply, 'label': '评论', 'icon': 'fa-comment',
+            'color': '#1abc9c'}) %}
             {% endif %}
 
             {# 分享数 #}
             {% if stats.share and stats.share != '-' %}
-                {% set _ = stat_items.append({'key': 'share', 'value': stats.share, 'label': '分享', 'icon': 'fa-share', 'color': '#34495e'}) %}
+            {% set _ = stat_items.append({'key': 'share', 'value': stats.share, 'label': '分享', 'icon': 'fa-share',
+            'color': '#34495e'}) %}
             {% endif %}
 
             {# 只在有统计项时显示整个统计容器 #}
@@ -772,84 +867,50 @@
             {% endif %}
 
             {# --- 正文描述 --- #}
-            {% if result.text %}
-            <div class="description">{{ result.text }}</div>
-            {% endif %}
-
-            {# --- 【新增】Extra Origin 转发区域 --- #}
-            {% if result.extra.origin %}
-                {# 只显示嵌套卡片，不显示旧的文本内容 #}
-            {% endif %}
-
-            {# --- 图片网格 --- #}
-            {% if result.img_contents %}
-                {% set imgs = result.img_contents %}
-                {% set count = imgs|length %}
-                {% if count > 0 %}
-                    <div class="images-container">
-                        <div class="images-header"><i class="fas fa-images" style="color:#2ecc71"></i> 内容预览</div>
-                        
-                        {% set grid_class = 'single' %}
-                        {% if count == 2 %}{% set grid_class = 'double' %}
-                        {% elif count == 4 %}{% set grid_class = 'quad' %}
-                        {% elif count >= 3 %}{% set grid_class = 'nine' %}
-                        {% endif %}
-
-                        <div class="images-grid {{ grid_class }}">
-                            {% for img in imgs[:9] %}
-                            <div class="image-item">
-                                <img src="{{ img.path }}">
-                                {% if loop.last and count > 9 %}
-                                <div class="more-count">+{{ count - 9 }}</div>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                {% endif %}
-            {% endif %}
+            <div id="main">{{ result.contents | safe }}</div>
 
             {# --- 旧版 Repost (保留兼容性) --- #}
-        {% if result.repost %}
-        <div style="margin-top: 20px; border: 1px solid #eee; background-color: #fafbfc; border-radius: 8px; padding: 15px;">
-            <div style="margin-bottom:10px; color:#666; font-size:14px; font-weight:600;">
-                <i class="fas fa-share" style="margin-right:5px;"></i> 转发内容
+            {% if result.repost %}
+            <div
+                style="margin-top: 20px; border: 1px solid #eee; background-color: #fafbfc; border-radius: 8px; padding: 15px;">
+                <div style="margin-bottom:10px; color:#666; font-size:14px; font-weight:600;">
+                    <i class="fas fa-share" style="margin-right:5px;"></i> 转发内容
+                </div>
+                <div style="width: 100%; overflow: hidden;">
+                    {{ render_card(result.repost, is_repost=True) }}
+                </div>
             </div>
-            <div style="width: 100%; overflow: hidden;">
-                {{ render_card(result.repost, is_repost=True) }}
-            </div>
+            {% endif %}
         </div>
-        {% endif %}
-        </div>
-        
+
         {# --- 评论区域 --- #}
         {% set comments = [] %}
-        
+
         {# 首先检查当前卡片是否有评论 #}
         {% if result.comments %}
-            {% set comments = result.comments %}
+        {% set comments = result.comments %}
         {% elif extra.comments %}
-            {% set comments = extra.comments %}
+        {% set comments = extra.comments %}
         {% endif %}
-        
+
         {# 然后检查转发的内容是否有评论（如果是转发的视频/动态） #}
         {% if not comments and repost and repost.extra and repost.extra.comments %}
-            {% set comments = repost.extra.comments %}
+        {% set comments = repost.extra.comments %}
         {% endif %}
-        
+
         {% if comments and comments|length > 0 %}
         <div class="comments-section">
             <div class="comments-header">
                 <i class="fas fa-comments"></i> 评论 ({{ comments|length }})
             </div>
-            
+
             {% for comment in comments %}
             <div class="comment-container">
                 {# 左侧头像 #}
                 <div class="comment-avatar-wrapper">
                     <img src="{{ comment.author.avatar }}" alt="用户头像" class="comment-avatar">
                 </div>
-                
+
                 {# 右侧内容 #}
                 <div class="comment-content-wrapper">
                     {# 作者信息行 #}
@@ -859,12 +920,12 @@
                         </div>
                         <span class="comment-time">{{ comment.created_time if comment.created_time else '' }}</span>
                     </div>
-                    
+
                     {# 评论内容 #}
                     <div class="comment-text">
                         {{ comment.content | safe }}
                     </div>
-                    
+
                     {# 统计信息 #}
                     <div class="comment-stats">
                         {% if comment.like %}
@@ -880,7 +941,7 @@
                         </span>
                         {% endif %}
                     </div>
-                    
+
                     {# 回复列表 #}
                     {% if comment.child_posts and comment.child_posts|length > 0 %}
                     <div class="comment-replies">
@@ -890,7 +951,7 @@
                             <div class="reply-avatar-wrapper">
                                 <img src="{{ reply.author.avatar }}" alt="回复者头像" class="reply-avatar">
                             </div>
-                            
+
                             {# 回复右侧内容 #}
                             <div class="reply-content-wrapper">
                                 {# 回复作者信息行 #}
@@ -898,14 +959,15 @@
                                     <div class="reply-author-info">
                                         <span class="reply-author-name">{{ reply.author.name }}</span>
                                     </div>
-                                    <span class="reply-time">{{ reply.created_time if reply.created_time else '' }}</span>
+                                    <span class="reply-time">{{ reply.created_time if reply.created_time else ''
+                                        }}</span>
                                 </div>
-                                
+
                                 {# 回复内容 #}
                                 <div class="reply-text">
                                     {{ reply.content | safe }}
                                 </div>
-                                
+
                                 {# 回复统计信息 #}
                                 <div class="comment-stats">
                                     {% if reply.like %}
@@ -948,4 +1010,5 @@
     {{ render_card(result) }}
 
 </body>
+
 </html>
