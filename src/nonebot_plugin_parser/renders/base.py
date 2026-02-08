@@ -1,7 +1,7 @@
 import uuid
 import datetime
 from io import BytesIO
-from typing import Any, ClassVar
+from typing import Any, ClassVar, overload
 from pathlib import Path
 from itertools import chain
 from collections.abc import AsyncGenerator
@@ -16,9 +16,9 @@ from ..parsers.data import (
     ParseResult,
     AudioContent,
     ImageContent,
-    MediaContent,
     VideoContent,
     DynamicContent,
+    StickerContent,
     GraphicsContent,
 )
 
@@ -67,84 +67,47 @@ class Renderer:
         forwardable_segs: list[ForwardNodeInner] = []
         dynamic_segs: list[ForwardNodeInner] = []
 
-        # 用于存储延迟发送的媒体内容
-        media_contents: list[tuple[type, MediaContent | Path]] = []
-
         for cont in chain(
             result.contents, result.repost.contents if result.repost else ()
         ):
             match cont:
                 case VideoContent() | AudioContent():
-                    # 检查是否需要延迟发送或懒下载
-                    need_delay = (
-                        pconfig.delay_send_media or pconfig.delay_send_lazy_download
-                    )
-                    logger.debug(
-                        f"处理{type(cont).__name__}，need_delay={need_delay}, "
-                        f"lazy_download={pconfig.delay_send_lazy_download}"
-                    )
-                    if need_delay:
-                        # 延迟发送模式：缓存MediaContent对象或路径
-                        if pconfig.delay_send_lazy_download:
-                            # 真正的延迟下载，缓存MediaContent对象，不立即下载
-                            logger.debug(
-                                f"延迟发送{type(cont).__name__}，缓存MediaContent对象，不立即下载"
-                            )
-                            media_contents.append((type(cont), cont))
-                        else:
-                            # 解析时自动下载，但延迟发送
-                            try:
-                                path = await cont.get_path()
-                                logger.debug(
-                                    f"延迟发送{type(cont).__name__}，已下载，缓存路径: {path}"
-                                )
-                                media_contents.append((type(cont), path))
-                            except (DownloadLimitException, ZeroSizeException):
-                                continue
-                            except DownloadException:
-                                failed_count += 1
-                                continue
-                    else:
-                        # 立即发送模式
-                        try:
-                            path = await cont.get_path()
-                            logger.debug(f"立即发送{type(cont).__name__}: {path}")
+                    # 立即发送模式
+                    try:
+                        path = await cont.get_path()
+                        logger.debug(f"立即发送{type(cont).__name__}: {path}")
 
-                            if isinstance(cont, VideoContent):
-                                try:
-                                    # 尝试直接发送视频
-                                    yield UniMessage(UniHelper.video_seg(path))
-                                    # 如果需要上传视频文件，且没有因为大小问题发送失败
-                                    if pconfig.need_upload_video:
-                                        await UniMessage(
-                                            UniHelper.file_seg(path)
-                                        ).send()
-                                except Exception as e:
-                                    # 直接发送失败，可能是因为文件太大，尝试使用群文件发送
-                                    logger.debug(
-                                        f"直接发送视频失败，尝试使用群文件发送: {e}"
-                                    )
+                        if isinstance(cont, VideoContent):
+                            try:
+                                # 尝试直接发送视频
+                                yield UniMessage(UniHelper.video_seg(path))
+                                # 如果需要上传视频文件，且没有因为大小问题发送失败
+                                if pconfig.need_upload_video:
                                     await UniMessage(UniHelper.file_seg(path)).send()
-                            elif isinstance(cont, AudioContent):
-                                try:
-                                    # 尝试直接发送音频
-                                    yield UniMessage(UniHelper.record_seg(path))
-                                    # 如果需要上传音频文件，且没有因为大小问题发送失败
-                                    if pconfig.need_upload_audio:
-                                        await UniMessage(
-                                            UniHelper.file_seg(path)
-                                        ).send()
-                                except Exception as e:
-                                    # 直接发送失败，可能是因为文件太大，尝试使用群文件发送
-                                    logger.debug(
-                                        f"直接发送音频失败，尝试使用群文件发送: {e}"
-                                    )
+                            except Exception as e:
+                                # 直接发送失败，可能是因为文件太大，尝试使用群文件发送
+                                logger.debug(
+                                    f"直接发送视频失败，尝试使用群文件发送: {e}"
+                                )
+                                await UniMessage(UniHelper.file_seg(path)).send()
+                        elif isinstance(cont, AudioContent):
+                            try:
+                                # 尝试直接发送音频
+                                yield UniMessage(UniHelper.record_seg(path))
+                                # 如果需要上传音频文件，且没有因为大小问题发送失败
+                                if pconfig.need_upload_audio:
                                     await UniMessage(UniHelper.file_seg(path)).send()
-                        except (DownloadLimitException, ZeroSizeException):
-                            continue
-                        except DownloadException:
-                            failed_count += 1
-                            continue
+                            except Exception as e:
+                                # 直接发送失败，可能是因为文件太大，尝试使用群文件发送
+                                logger.debug(
+                                    f"直接发送音频失败，尝试使用群文件发送: {e}"
+                                )
+                                await UniMessage(UniHelper.file_seg(path)).send()
+                    except (DownloadLimitException, ZeroSizeException):
+                        continue
+                    except DownloadException:
+                        failed_count += 1
+                        continue
                 case ImageContent():
                     try:
                         path = await cont.get_path()
@@ -167,8 +130,6 @@ class Renderer:
                     try:
                         path = await cont.get_path()
                         graphics_msg = UniHelper.img_seg(path)
-                        if graphics.text is not None:
-                            graphics_msg = graphics.text + graphics_msg
                         if graphics.alt is not None:
                             graphics_msg = graphics_msg + graphics.alt
                         forwardable_segs.append(graphics_msg)
@@ -178,19 +139,13 @@ class Renderer:
                         failed_count += 1
                         continue
 
-        # 如果有延迟发送的媒体，存储到解析结果中
-        if media_contents and (
-            pconfig.delay_send_media or pconfig.delay_send_lazy_download
-        ):
-            result.media_contents = media_contents
-
         if forwardable_segs:
             # 添加原始动态的文本，包含作者信息
             # 对于转发动态，当前result是转发者的动态，result.repost是被转发者的内容
             author_name = result.author.name if result.author else "未知用户"
 
             # 添加转发内容的标题和文本，包含原作者信息
-            if result.text:
+            if result.contents:
                 if result.repost:
                     # result.repost是被转发者的内容，所以repost_author是被转发者
                     repost_author = (
@@ -283,25 +238,27 @@ class Renderer:
     async def _resolve_parse_result(self, result: ParseResult) -> dict[str, Any]:
         """解析 ParseResult 为模板可用的字典数据"""
 
+        logo_path = Path(__file__).parent / "resources" / f"{result.platform.name}.png"
+        contents, cover_path = await self._build_contents(result)
+
+        # if ori := result.extra.get("origin"):
+        #     if oric := ori.get("contents"):
+        #         ori["contents"], _ = await self._build_contents(oric)
+
+        # 这些是一定会有的字段
         data: dict[str, Any] = {
             "title": result.title,
-            "text": result.text,
             "formatted_datetime": result.formatted_datetime,
             "extra_info": result.extra_info,
             "extra": result.extra,
-        }
-
-        if result.platform:
-            data["platform"] = {
+            "platform": {
                 "display_name": result.platform.display_name,
                 "name": result.platform.name,
-            }
-            # 尝试获取平台 logo
-            logo_path = (
-                Path(__file__).parent / "resources" / f"{result.platform.name}.png"
-            )
-            if logo_path.exists():
-                data["platform"]["logo_path"] = logo_path.as_uri()
+                "logo_path": (logo_path.as_uri() if logo_path.exists() else None),
+            },
+            "contents": contents,
+            "cover_path": cover_path,
+        }
 
         if result.author:
             avatar_path = await result.author.get_avatar_path()
@@ -314,63 +271,6 @@ class Renderer:
                 "id": author_id,  # 传递 UID
                 "avatar_path": avatar_path.as_uri() if avatar_path else None,
             }
-
-        # 处理封面路径 - 先从contents中查找图片作为封面
-        cover_path = None
-        contents = []
-
-        # 只处理ImageContent类型的内容，避免触发视频/音频下载
-        for cont in result.contents:
-            # 只处理图片内容，不触发视频/音频下载
-            if hasattr(cont, "__class__") and cont.__class__.__name__ == "ImageContent":
-                try:
-                    path = await cont.get_path()
-                    contents.append({"path": path.as_uri()})
-                    # 将第一个图片内容作为封面
-                    if not cover_path:
-                        cover_path = path
-                except Exception as e:
-                    logger.warning(f"获取图片内容路径失败: {e}")
-            else:
-                # 对于非图片内容，不获取路径，避免触发下载
-                contents.append({"path": None})
-
-        # 如果contents中没有图片，尝试使用cover_path属性
-        if not cover_path:
-            try:
-                cover_path = await result.cover_path
-            except Exception as e:
-                logger.warning(f"获取封面路径失败: {e}")
-
-        if cover_path:
-            data["cover_path"] = cover_path.as_uri()
-
-        # 保存所有contents
-        data["contents"] = contents
-
-        img_contents = []
-        for img in result.img_contents:
-            try:
-                path = await img.get_path()
-                img_contents.append({"path": path.as_uri()})
-            except Exception as e:
-                logger.warning(f"获取图片内容路径失败: {e}")
-        data["img_contents"] = img_contents
-
-        graphics_contents = []
-        for graphics in result.graphics_contents:
-            try:
-                path = await graphics.get_path()
-                graphics_contents.append(
-                    {
-                        "path": path.as_uri(),
-                        "text": graphics.text,
-                        "alt": graphics.alt,
-                    }
-                )
-            except Exception as e:
-                logger.warning(f"获取图文内容路径失败: {e}")
-        data["graphics_contents"] = graphics_contents
 
         if result.repost:
             data["repost"] = await self._resolve_parse_result(result.repost)
@@ -400,7 +300,6 @@ class Renderer:
             data["qr_code_path"] = f"data:image/png;base64,{img_base64}"
 
         return data
-
 
     async def cache_or_render_image(self, result: ParseResult):
         """获取缓存图片
@@ -437,3 +336,135 @@ class Renderer:
         async with aiofiles.open(image_path, "wb+") as f:
             await f.write(raw)
         return image_path
+
+    @classmethod
+    @overload
+    async def _build_contents(cls, result: ParseResult, no_cover=True) -> str: ...
+    @classmethod
+    @overload
+    async def _build_contents(
+        cls, result: ParseResult, no_cover: bool = False
+    ) -> tuple[str, str | None]: ...
+    @classmethod
+    async def _build_contents(
+        cls, result: ParseResult, no_cover: bool = False
+    ) -> str | tuple[str, str | None]:
+        """构建模板可用的内容 HTML 字符串。
+
+        文本、图片、表情、graphics 在这里直接拼成完整 HTML
+
+        :return: HTML, cover_path
+        """
+        cover_path: Path | None = None
+        html_parts: list[str] = []
+
+        # 当前图片段相关状态：用于处理“连续图片合并为宫格”
+        current_imgs: list[str] = []
+
+        def build_images_grid(img_src_list: list[str]) -> str:
+            """根据图片数量构建单/双/四宫格/九宫格 HTML."""
+            if not img_src_list:
+                return ""
+
+            count = len(img_src_list)
+            if count == 1:
+                grid_class = "single"
+            elif count == 2:
+                grid_class = "double"
+            elif count == 4:
+                grid_class = "quad"
+            elif count >= 3:
+                grid_class = "nine"
+            else:
+                grid_class = "single"
+
+            # 最多展示 9 张，超出的收纳为 +N
+            visible_imgs = img_src_list[:9]
+            hidden_count = max(0, count - 9)
+
+            items_html: list[str] = []
+            for idx, src in enumerate(visible_imgs):
+                more_html = ""
+                # 最后一张叠加 "+N"
+                if hidden_count > 0 and idx == len(visible_imgs) - 1:
+                    more_html = f'<div class="more-count">+{hidden_count}</div>'
+                items_html.append(
+                    '<div class="image-item">' f'<img src="{src}">{more_html}</div>'
+                )
+
+            return (
+                '<div class="images-container">'
+                f'<div class="images-grid {grid_class}">'
+                f"{''.join(items_html)}"
+                "</div></div>"
+            )
+
+        def flush_images() -> None:
+            """结束当前连续图片段并写入 HTML."""
+            nonlocal current_imgs
+            if current_imgs:
+                html_parts.append(build_images_grid(current_imgs))
+                current_imgs = []
+
+        # 预先看一眼“下一个内容”，用于判断文本后面是否紧跟贴纸
+        contents_seq = list(result.contents)
+        total = len(contents_seq)
+
+        for idx, cont in enumerate(contents_seq):
+            # 只处理图片内容，不触发视频/音频下载
+            if isinstance(cont, ImageContent):
+                path = await cont.get_path()
+                src = path.as_uri()
+                current_imgs.append(src)
+                # 将第一个图片内容作为封面
+                if not cover_path:
+                    cover_path = path
+            else:
+                # 任意非 image 内容会打断图片连续段
+                flush_images()
+
+                # 计算“下一个是否是贴纸”
+                next_is_sticker = False
+                if idx + 1 < total and isinstance(
+                    contents_seq[idx + 1], StickerContent
+                ):
+                    next_is_sticker = True
+
+                if isinstance(cont, str | float):
+                    # 如果后一个是贴纸，用 span，不是贴纸就用 p
+                    if next_is_sticker:
+                        html_parts.append(f'<span class="text">{cont}</span>')
+                    else:
+                        html_parts.append(f'<p class="text">{cont}</p>')
+                elif isinstance(cont, GraphicsContent):
+                    g_path = await cont.get_path()
+                    g_src = g_path.as_uri()
+                    alt = cont.alt or ""
+                    html_parts.append(
+                        '<div class="images-container">'
+                        '<div class="images-grid single">'
+                        '<div class="image-item">'
+                        f'<img src="{g_src}">'
+                        "</div></div>"
+                        f'<center><span class="text">{alt}</span></center>'
+                        "</div>"
+                    )
+                    if not cover_path:
+                        cover_path = g_path
+                elif isinstance(cont, StickerContent):
+                    s_path = await cont.get_path()
+                    s_src = s_path.as_uri()
+                    size = cont.size or "medium"
+                    # 贴纸本身用 span 包裹，从而能紧跟在文本 span 后面排在同一行
+                    html_parts.append(
+                        f'<span><img class="sticker {size}" src="{s_src}"></span>'
+                    )
+
+        # 末尾如果还有图片段，补一次 flush
+        flush_images()
+
+        if not cover_path:
+            cover_path = await result.cover_path
+        if no_cover:
+            return "".join(html_parts)
+        return "".join(html_parts), cover_path.as_uri() if cover_path else None

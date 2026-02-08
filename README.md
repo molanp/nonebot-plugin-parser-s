@@ -108,18 +108,6 @@ parser_append_url=False
 
 # [可选] 是否需要转发媒体内容(超过 4 项时始终使用合并转发)
 parser_need_forward_contents=True
-
-# [可选] 是否延迟发送视频/音频，需要用户发送特定表情或点赞特定表情后才发送
-parser_delay_send_media=False
-
-# [可选] 触发延迟发送视频的表情
-parser_delay_send_emoji="🎬"
-
-# [可选] 触发延迟发送视频的表情ID列表，用于监听group_msg_emoji_like事件
-parser_delay_send_emoji_ids=["128077"]
-
-# [可选] 是否开启懒下载模式，仅在用户请求时才下载视频
-parser_delay_send_lazy_download=False
 ```
 
 </details>
@@ -277,6 +265,17 @@ dynamics = self.create_dynamic_contents([
 real_url = await self.get_redirect_url(
     url="https://short.url/abc",
     headers=self.headers  # 可选
+)
+
+> 创建贴纸表情
+
+```python
+stickers = self.create_sticker_contents(
+    url="http://xx",
+    size="small"  # 可选
+    # small和文字大小相同
+    # medium是文字大小两倍
+    # large是文字大小三倍
 )
 ```
 

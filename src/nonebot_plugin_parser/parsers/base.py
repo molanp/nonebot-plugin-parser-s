@@ -3,7 +3,7 @@
 import asyncio
 from re import Match, Pattern, compile
 from abc import ABC
-from typing import TYPE_CHECKING, Any, TypeVar, ClassVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, ClassVar, cast
 from asyncio import Task
 from pathlib import Path
 from collections.abc import Callable, Coroutine
@@ -321,11 +321,29 @@ class BaseParser:
     def create_graphics_content(
         self,
         image_url: str,
-        text: str | None = None,
         alt: str | None = None,
     ):
         """创建图文内容 图片不能为空 文字可空 渲染时文字在前 图片在后"""
         from .data import GraphicsContent
 
         image_task = DOWNLOADER.download_img(image_url, ext_headers=self.headers)
-        return GraphicsContent(image_task, text, alt)
+        return GraphicsContent(image_task, alt)
+
+    def create_sticker_content(
+        self,
+        url: str,
+        size: Literal["small", "medium", "large"] = "medium",
+    ):
+        """
+        创建贴纸内容
+
+        :param url: 贴纸图片链接
+        :param size: 贴纸大小
+            - small: 和文字一样大
+            - medium: 文字大小的两倍
+            - larget: 文字大小的三倍
+        """
+        from .data import StickerContent
+
+        image_task = DOWNLOADER.download_img(url, ext_headers=self.headers)
+        return StickerContent(image_task, size)

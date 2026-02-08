@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 from asyncio import Task
 from pathlib import Path
 from datetime import datetime
@@ -66,12 +66,6 @@ class VideoContent(MediaContent):
         minutes, seconds = divmod(int(self.duration), 60)
         return f"时长: {minutes}:{seconds:02d}"
 
-    def __repr__(self) -> str:
-        repr = f"VideoContent({repr_path_task(self.path_task)}"
-        if self.cover is not None:
-            repr += f", cover={repr_path_task(self.cover)}"
-        return f"{repr})"
-
 
 @dataclass(repr=False, slots=True)
 class ImageContent(MediaContent):
@@ -91,18 +85,20 @@ class DynamicContent(MediaContent):
 class GraphicsContent(MediaContent):
     """图文内容 渲染时文字在前 图片在后"""
 
-    text: str | None = None
-    """图片前的文本内容"""
     alt: str | None = None
     """图片描述 渲染时居中显示"""
 
-    def __repr__(self) -> str:
-        repr = f"GraphicsContent({repr_path_task(self.path_task)}"
-        if self.text:
-            repr += f", text={self.text}"
-        if self.alt:
-            repr += f", alt={self.alt}"
-        return f"{repr})"
+
+@dataclass(repr=False, slots=True)
+class StickerContent(MediaContent):
+    """贴纸内容"""
+
+    size: Literal["small", "medium", "large"] = "medium"
+    """贴纸大小
+            - small: 和文字一样大
+            - medium: 文字大小的两倍
+            - larget: 文字大小的三倍
+    """
 
 
 @dataclass(slots=True)
@@ -134,14 +130,6 @@ class Author:
         self.avatar = await self.avatar
         return self.avatar
 
-    def __repr__(self) -> str:
-        repr = f"Author(name={self.name}"
-        if self.avatar:
-            repr += f", avatar_{repr_path_task(self.avatar)}"
-        if self.description:
-            repr += f", description={self.description}"
-        return f"{repr})"
-
 
 @dataclass(repr=False, slots=True)
 class ParseResult:
@@ -154,23 +142,19 @@ class ParseResult:
     title: str | None = None
     """标题"""
     text: str | None = None
-    """文本内容"""
+    """纯文本内容"""
     timestamp: int | None = None
     """发布时间戳, 秒"""
     url: str | None = None
     """来源链接"""
-    contents: list[MediaContent] = field(default_factory=list)
-    """媒体内容"""
+    contents: list[MediaContent | str] = field(default_factory=list)
+    """富文本内容"""
     extra: dict[str, Any] = field(default_factory=dict)
     """额外信息"""
     repost: "ParseResult | None" = None
     """转发的内容"""
     render_image: Path | None = None
     """渲染图片"""
-    media_contents: list[tuple[type, "MediaContent | Path"]] = field(
-        default_factory=list
-    )
-    """延迟发送的媒体内容"""
 
     @property
     def header(self) -> str | None:
@@ -193,26 +177,6 @@ class ParseResult:
     @property
     def extra_info(self) -> str | None:
         return self.extra.get("info")
-
-    @property
-    def video_contents(self) -> list[VideoContent]:
-        return [cont for cont in self.contents if isinstance(cont, VideoContent)]
-
-    @property
-    def img_contents(self) -> list[ImageContent]:
-        return [cont for cont in self.contents if isinstance(cont, ImageContent)]
-
-    @property
-    def audio_contents(self) -> list[AudioContent]:
-        return [cont for cont in self.contents if isinstance(cont, AudioContent)]
-
-    @property
-    def dynamic_contents(self) -> list[DynamicContent]:
-        return [cont for cont in self.contents if isinstance(cont, DynamicContent)]
-
-    @property
-    def graphics_contents(self) -> list[GraphicsContent]:
-        return [cont for cont in self.contents if isinstance(cont, GraphicsContent)]
 
     @property
     async def cover_path(self) -> Path | None:
@@ -247,7 +211,6 @@ class ParseResult:
             f"platform: {self.platform.display_name}, "
             f"timestamp: {self.timestamp}, "
             f"title: {self.title}, "
-            f"text: {self.text}, "
             f"url: {self.url}, "
             f"author: {self.author}, "
             f"contents: {self.contents}, "
@@ -264,7 +227,7 @@ from dataclasses import field, dataclass
 class ParseResultKwargs(TypedDict, total=False):
     title: str | None
     text: str | None
-    contents: list[MediaContent]
+    contents: list[MediaContent|str]
     timestamp: int | None
     url: str | None
     author: Author | None
