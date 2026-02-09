@@ -34,6 +34,7 @@ class OpusSummary(Struct):
     """图文动态摘要"""
 
     text: str
+    rich_text_nodes: list[dict[str, Any]]
 
 
 class OpusContent(Struct):
@@ -73,13 +74,23 @@ class DynamicMajor(Struct):
         return None
 
     @property
+    def rich_text_nodes(self) -> list[dict[str, Any]]:
+        """获取富文本节点"""
+        if self.type == "MAJOR_TYPE_OPUS" and self.opus:
+            return self.opus.summary.rich_text_nodes
+        elif self.desc:
+            return self.desc.rich_text_nodes
+        return []
+
+    @property
     def image_urls(self) -> list[str]:
         """获取图片URL列表"""
         # 优先从opus获取图片
-        if self.type == "MAJOR_TYPE_OPUS" and self.opus and self.opus.pics:
-            return [pic.url for pic in self.opus.pics]
+        # 不可能是图文，因为图文不走动态解析
+        # if self.type == "MAJOR_TYPE_OPUS" and self.opus and self.opus.pics:
+        #     return [pic.url for pic in self.opus.pics]
         # 从draw类型获取图片
-        elif self.type == "MAJOR_TYPE_DRAW" and self.draw:
+        if self.type == "MAJOR_TYPE_DRAW" and self.draw:
             pictures = self.draw.get("pictures", [])
             return [pic.get("img_src", "") for pic in pictures if pic.get("img_src")]
         # 从视频archive获取封面
@@ -166,6 +177,19 @@ class DynamicInfo(Struct):
         return "转发动态" if self.type == "DYNAMIC_TYPE_FORWARD" else None
 
     @property
+    def rich_text_nodes(self) -> list[dict[str, Any]]:
+        """获取富文本节点"""
+        if self.modules.module_dynamic:
+            desc = self.modules.module_dynamic.get("desc")
+            if desc and isinstance(desc, dict):
+                if rich_text_nodes := desc.get("rich_text_nodes"):
+                    return rich_text_nodes
+        if major_info := self.modules.major_info:
+            major = convert(major_info, DynamicMajor)
+            return major.rich_text_nodes
+        return []
+
+    @property
     def text(self) -> str | None:
         """获取文本内容"""
         # 【关键修改】优先从 modules.module_dynamic.desc.text 获取
@@ -201,29 +225,17 @@ class DynamicInfo(Struct):
                 # 尝试从不同位置获取图片
                 if "pics" in dynamic_data:
                     # 直接的pics字段
-                    return [
-                        pic.get("url", "")
-                        for pic in dynamic_data["pics"]
-                        if pic.get("url")
-                    ]
+                    return [pic.get("url", "") for pic in dynamic_data["pics"] if pic.get("url")]
                 elif "major" in dynamic_data:
                     major = dynamic_data["major"]
                     if isinstance(major, dict):
                         # 检查major是否包含图片信息
                         if "pics" in major:
-                            return [
-                                pic.get("url", "")
-                                for pic in major["pics"]
-                                if pic.get("url")
-                            ]
+                            return [pic.get("url", "") for pic in major["pics"] if pic.get("url")]
                         elif "draw" in major and isinstance(major["draw"], dict):
                             draw = major["draw"]
                             if "pictures" in draw:
-                                return [
-                                    pic.get("img_src", "")
-                                    for pic in draw["pictures"]
-                                    if pic.get("img_src")
-                                ]
+                                return [pic.get("img_src", "") for pic in draw["pictures"] if pic.get("img_src")]
 
         # 3. 转发动态时，如果主体没有图片，不再从orig获取图片
         # 直接返回空列表，后续会使用默认图片

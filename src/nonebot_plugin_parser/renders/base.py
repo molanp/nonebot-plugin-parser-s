@@ -1,7 +1,7 @@
 import uuid
 import datetime
 from io import BytesIO
-from typing import Any, ClassVar, overload
+from typing import Any, ClassVar
 from pathlib import Path
 from itertools import chain
 from collections.abc import AsyncGenerator
@@ -9,6 +9,7 @@ from collections.abc import AsyncGenerator
 import qrcode  # pyright: ignore[reportMissingModuleSource]
 from nonebot import logger, require
 
+from .utils import build_contents
 from ..config import pconfig, _nickname
 from ..helper import UniHelper, UniMessage, ForwardNodeInner
 from ..exception import DownloadException, ZeroSizeException, DownloadLimitException
@@ -18,7 +19,6 @@ from ..parsers.data import (
     ImageContent,
     VideoContent,
     DynamicContent,
-    StickerContent,
     GraphicsContent,
 )
 
@@ -32,9 +32,7 @@ class Renderer:
     templates_dir: ClassVar[Path] = Path(__file__).parent / "templates"
     """模板目录"""
 
-    async def render_messages(
-        self, result: ParseResult
-    ) -> AsyncGenerator[UniMessage[Any], None]:
+    async def render_messages(self, result: ParseResult) -> AsyncGenerator[UniMessage[Any], None]:
         """渲染消息
 
         Args:
@@ -52,9 +50,7 @@ class Renderer:
         async for message in self.render_contents(result):
             yield message
 
-    async def render_contents(
-        self, result: ParseResult
-    ) -> AsyncGenerator[UniMessage[Any], None]:
+    async def render_contents(self, result: ParseResult) -> AsyncGenerator[UniMessage[Any], None]:
         """渲染媒体内容消息
 
         Args:
@@ -67,9 +63,7 @@ class Renderer:
         forwardable_segs: list[ForwardNodeInner] = []
         dynamic_segs: list[ForwardNodeInner] = []
 
-        for cont in chain(
-            result.contents, result.repost.contents if result.repost else ()
-        ):
+        for cont in chain(result.contents, result.repost.contents if result.repost else ()):
             match cont:
                 case VideoContent() | AudioContent():
                     # 立即发送模式
@@ -86,9 +80,7 @@ class Renderer:
                                     await UniMessage(UniHelper.file_seg(path)).send()
                             except Exception as e:
                                 # 直接发送失败，可能是因为文件太大，尝试使用群文件发送
-                                logger.debug(
-                                    f"直接发送视频失败，尝试使用群文件发送: {e}"
-                                )
+                                logger.debug(f"直接发送视频失败，尝试使用群文件发送: {e}")
                                 await UniMessage(UniHelper.file_seg(path)).send()
                         elif isinstance(cont, AudioContent):
                             try:
@@ -99,9 +91,7 @@ class Renderer:
                                     await UniMessage(UniHelper.file_seg(path)).send()
                             except Exception as e:
                                 # 直接发送失败，可能是因为文件太大，尝试使用群文件发送
-                                logger.debug(
-                                    f"直接发送音频失败，尝试使用群文件发送: {e}"
-                                )
+                                logger.debug(f"直接发送音频失败，尝试使用群文件发送: {e}")
                                 await UniMessage(UniHelper.file_seg(path)).send()
                     except (DownloadLimitException, ZeroSizeException):
                         continue
@@ -148,15 +138,9 @@ class Renderer:
             if result.contents:
                 if result.repost:
                     # result.repost是被转发者的内容，所以repost_author是被转发者
-                    repost_author = (
-                        result.repost.author.name
-                        if result.repost.author
-                        else "未知用户"
-                    )
+                    repost_author = result.repost.author.name if result.repost.author else "未知用户"
                     # 当前result是转发者的动态，所以作者是转发者
-                    forwardable_segs.append(
-                        f"{author_name}[转发{repost_author}]：{result.text}"
-                    )
+                    forwardable_segs.append(f"{author_name}[转发{repost_author}]：{result.text}")
 
                     repost_text = []
                     if result.repost.title:
@@ -169,16 +153,12 @@ class Renderer:
                     if repost_text:
                         repost_content = "\n".join(repost_text)
                         # 被转发者：被转发者的内容
-                        forwardable_segs.append(
-                            f"{repost_author}[被转作者]：{repost_content}"
-                        )
+                        forwardable_segs.append(f"{repost_author}[被转作者]：{repost_content}")
                 else:
                     forwardable_segs.append(f"{author_name}：{result.text}")
 
             if pconfig.need_forward_contents or len(forwardable_segs) > 4:
-                forward_msg = UniHelper.construct_forward_message(
-                    forwardable_segs + dynamic_segs
-                )
+                forward_msg = UniHelper.construct_forward_message(forwardable_segs + dynamic_segs)
                 yield UniMessage(forward_msg)
             else:
                 yield UniMessage(forwardable_segs)
@@ -219,7 +199,19 @@ class Renderer:
                 if (self.templates_dir / file_name).exists():
                     template_name = file_name
 
-        # 渲染图片
+        from jinja2 import FileSystemLoader, Environment
+
+        # 创建一个包加载器对象
+        env = Environment(loader=FileSystemLoader(self.templates_dir))
+        template = env.get_template(template_name)
+        # 渲染
+        with open(f"{template_name}.{uuid.uuid4()}.html", "w", encoding="utf8") as f:
+            f.write(template.render(**{
+                "result": template_data,
+                "rendering_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "bot_name": _nickname,
+            }))
+
         return await template_to_pic(
             template_path=str(self.templates_dir),
             template_name=template_name,
@@ -239,7 +231,7 @@ class Renderer:
         """解析 ParseResult 为模板可用的字典数据"""
 
         logo_path = Path(__file__).parent / "resources" / f"{result.platform.name}.png"
-        contents, cover_path = await self._build_contents(result)
+        contents, cover_path = await build_contents(result)
 
         # if ori := result.extra.get("origin"):
         #     if oric := ori.get("contents"):
@@ -336,135 +328,3 @@ class Renderer:
         async with aiofiles.open(image_path, "wb+") as f:
             await f.write(raw)
         return image_path
-
-    @classmethod
-    @overload
-    async def _build_contents(cls, result: ParseResult, no_cover=True) -> str: ...
-    @classmethod
-    @overload
-    async def _build_contents(
-        cls, result: ParseResult, no_cover: bool = False
-    ) -> tuple[str, str | None]: ...
-    @classmethod
-    async def _build_contents(
-        cls, result: ParseResult, no_cover: bool = False
-    ) -> str | tuple[str, str | None]:
-        """构建模板可用的内容 HTML 字符串。
-
-        文本、图片、表情、graphics 在这里直接拼成完整 HTML
-
-        :return: HTML, cover_path
-        """
-        cover_path: Path | None = None
-        html_parts: list[str] = []
-
-        # 当前图片段相关状态：用于处理“连续图片合并为宫格”
-        current_imgs: list[str] = []
-
-        def build_images_grid(img_src_list: list[str]) -> str:
-            """根据图片数量构建单/双/四宫格/九宫格 HTML."""
-            if not img_src_list:
-                return ""
-
-            count = len(img_src_list)
-            if count == 1:
-                grid_class = "single"
-            elif count == 2:
-                grid_class = "double"
-            elif count == 4:
-                grid_class = "quad"
-            elif count >= 3:
-                grid_class = "nine"
-            else:
-                grid_class = "single"
-
-            # 最多展示 9 张，超出的收纳为 +N
-            visible_imgs = img_src_list[:9]
-            hidden_count = max(0, count - 9)
-
-            items_html: list[str] = []
-            for idx, src in enumerate(visible_imgs):
-                more_html = ""
-                # 最后一张叠加 "+N"
-                if hidden_count > 0 and idx == len(visible_imgs) - 1:
-                    more_html = f'<div class="more-count">+{hidden_count}</div>'
-                items_html.append(
-                    '<div class="image-item">' f'<img src="{src}">{more_html}</div>'
-                )
-
-            return (
-                '<div class="images-container">'
-                f'<div class="images-grid {grid_class}">'
-                f"{''.join(items_html)}"
-                "</div></div>"
-            )
-
-        def flush_images() -> None:
-            """结束当前连续图片段并写入 HTML."""
-            nonlocal current_imgs
-            if current_imgs:
-                html_parts.append(build_images_grid(current_imgs))
-                current_imgs = []
-
-        # 预先看一眼“下一个内容”，用于判断文本后面是否紧跟贴纸
-        contents_seq = list(result.contents)
-        total = len(contents_seq)
-
-        for idx, cont in enumerate(contents_seq):
-            # 只处理图片内容，不触发视频/音频下载
-            if isinstance(cont, ImageContent):
-                path = await cont.get_path()
-                src = path.as_uri()
-                current_imgs.append(src)
-                # 将第一个图片内容作为封面
-                if not cover_path:
-                    cover_path = path
-            else:
-                # 任意非 image 内容会打断图片连续段
-                flush_images()
-
-                # 计算“下一个是否是贴纸”
-                next_is_sticker = False
-                if idx + 1 < total and isinstance(
-                    contents_seq[idx + 1], StickerContent
-                ):
-                    next_is_sticker = True
-
-                if isinstance(cont, str | float):
-                    # 如果后一个是贴纸，用 span，不是贴纸就用 p
-                    if next_is_sticker:
-                        html_parts.append(f'<span class="text">{cont}</span>')
-                    else:
-                        html_parts.append(f'<p class="text">{cont}</p>')
-                elif isinstance(cont, GraphicsContent):
-                    g_path = await cont.get_path()
-                    g_src = g_path.as_uri()
-                    alt = cont.alt or ""
-                    html_parts.append(
-                        '<div class="images-container">'
-                        '<div class="images-grid single">'
-                        '<div class="image-item">'
-                        f'<img src="{g_src}">'
-                        "</div></div>"
-                        f'<center><span class="text">{alt}</span></center>'
-                        "</div>"
-                    )
-                    if not cover_path:
-                        cover_path = g_path
-                elif isinstance(cont, StickerContent):
-                    s_path = await cont.get_path()
-                    s_src = s_path.as_uri()
-                    size = cont.size or "medium"
-                    # 贴纸本身用 span 包裹，从而能紧跟在文本 span 后面排在同一行
-                    html_parts.append(
-                        f'<span><img class="sticker {size}" src="{s_src}"></span>'
-                    )
-
-        # 末尾如果还有图片段，补一次 flush
-        flush_images()
-
-        if not cover_path:
-            cover_path = await result.cover_path
-        if no_cover:
-            return "".join(html_parts)
-        return "".join(html_parts), cover_path.as_uri() if cover_path else None

@@ -5,15 +5,19 @@
     color: #444;
     white-space: pre-wrap;
   }
+
+  .sticker {
+    vertical-align: text-bottom;
+  }
+
   .sticker.small {
-    height: 15px;
+    height: 1.4rem;
   }
+
   .sticker.medium {
-    height: 30px;
+    height: 3.2rem;
   }
-  .sticker.large {
-    height: 45px;
-  }
+
   /* 图片展示区域 */
   .images-container {
     margin: 20px 0;
@@ -31,9 +35,9 @@
     grid-template-columns: 1fr;
   }
 
+  /* 单图：使用正方形容器，图片居中裁切 */
   .images-grid.single .image-item {
-    max-height: none;
-    /* 取消高度限制 */
+    aspect-ratio: 1/1;
   }
 
   .images-grid.double {
@@ -72,5 +76,21 @@
     height: 100%;
     object-fit: cover;
     display: block;
+  }
+
+  .more-count {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: bold;
   }
 </style>
