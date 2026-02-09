@@ -128,7 +128,7 @@ class TiebaParser(BaseParser):
             title=thread.title,
             text="".join(text_parts),
             author=author,
-            contents=contents,
+            contents=contents, # TODO: 富文本
             timestamp=thread.create_time,
             url=f"https://tieba.baidu.com/p/{post_id}",
             extra=extra,

@@ -8,10 +8,10 @@ from datetime import datetime
 import httpx
 from nonebot import logger, require
 
-from ..base import BaseParser, handle
-from ..data import Platform, VideoContent
-from ...constants import PlatformEnum
-from ...exception import ParseException
+from .base import BaseParser, handle
+from .data import Platform, VideoContent
+from ..constants import PlatformEnum
+from ..exception import ParseException
 
 require("nonebot_plugin_htmlrender")
 
@@ -21,7 +21,7 @@ from nonebot_plugin_htmlrender import get_new_page
 class TapTapParser(BaseParser):
     """TapTap 解析器"""
 
-    platform = Platform(name=PlatformEnum.TAPTAP.value, display_name="TapTap")
+    platform = Platform(PlatformEnum.TAPTAP, "TapTap")
 
     def __init__(self):
         super().__init__()
@@ -1420,7 +1420,6 @@ class TapTapParser(BaseParser):
         )
 
         # 设置media_contents，用于延迟发送
-        result.media_contents = media_contents
         logger.debug(
             f"构建解析结果完成: title={detail['title']}, images={len(detail['images'])}, "
             f"videos={len(detail['videos'])}, media_contents={len(media_contents)}"
