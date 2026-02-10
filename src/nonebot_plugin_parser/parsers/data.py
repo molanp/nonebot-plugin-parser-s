@@ -93,11 +93,10 @@ class GraphicsContent(MediaContent):
 class StickerContent(MediaContent):
     """贴纸内容"""
 
-    size: Literal["small", "medium", "large"] = "medium"
+    size: Literal["small", "medium"] = "medium"
     """贴纸大小
-            - small: 和文字一样大
-            - medium: 文字大小的两倍
-            - larget: 文字大小的三倍
+            - small: 比文字大一点
+            - medium: 文字大小的两倍大一点
     """
 
 

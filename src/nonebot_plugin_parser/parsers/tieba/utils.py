@@ -1,12 +1,22 @@
 # pyright: reportAttributeAccessIssue=false
 
+import contextlib
+from typing import Any
 from pathlib import Path
+from datetime import datetime
 
 from httpx import AsyncClient, NetworkError
 from google.protobuf import descriptor_pb2, descriptor_pool
 from google.protobuf.message_factory import GetMessageClass
 
-from .models import Posts
+from ..data import MediaContent, VideoContent, StickerContent, GraphicsContent
+from .models import Post, Posts, FragAt, Contents, FragLink, FragText, FragEmoji, FragImage, FragVideo
+from ...download import DOWNLOADER
+from ...constants import COMMON_HEADER
+
+headers = COMMON_HEADER.copy()
+
+STICKER_PROXY = "https://gh-proxy.top/"
 
 
 def get_message(name: str):
@@ -45,11 +55,7 @@ async def pack_req(data: bytes) -> bytes:
     boundary = "-*_r1999"
 
     body = (
-        (
-            f"--{boundary}\r\n"
-            f'Content-Disposition: form-data; name="data"; filename="file"\r\n'
-            f"\r\n"
-        ).encode()
+        (f"--{boundary}\r\n" f'Content-Disposition: form-data; name="data"; filename="file"\r\n' f"\r\n").encode()
         + data
         + f"\r\n--{boundary}--\r\n".encode()
     )
@@ -86,3 +92,164 @@ async def get_post(tid: int) -> Posts:
     req = make_req(tid)
     data = await pack_req(req)
     return parse_res(data)
+
+
+def build_contents(post: Post, text_parts: list[str]) -> tuple[list[MediaContent | str], list[str]]:
+    """
+    构建帖子内容
+
+    :param post: 帖子数据
+    :param text_parts: 需要追加的文本片段列表，无则不返回
+
+    :return: 帖子内容(HTML), 纯文本片段列表)
+    """
+    text_parts.append("\n")
+    contents: list[MediaContent | str] = []
+
+    # 提取帖子正文
+    for part in post.contents.objs:
+        if isinstance(part, FragText):
+            contents.append(part.text)
+            text_parts.append(part.text)
+        elif isinstance(part, FragEmoji):
+            sticker_task = DOWNLOADER.download_img(
+                f"{STICKER_PROXY}https://github.com/microlong666/Tieba_mobile_emotions/blob/master/{part.id}.png",
+                ext_headers=headers,
+            )
+            contents.append(StickerContent(sticker_task, "small"))
+            text_parts.append(f"#({part.desc})")
+        elif isinstance(part, FragImage):
+            image_task = DOWNLOADER.download_img(part.origin_src, ext_headers=headers)
+            contents.append(GraphicsContent(image_task))
+            text_parts.append("[图片]")
+        elif isinstance(part, FragAt):
+            # 如果上一项是文本，则追加到上一项末尾
+            if contents and isinstance(contents[-1], str):
+                contents[-1] += f"@{part.text}&nbsp;"  # &nbsp;
+            else:
+                contents.append(f"@{part.text}&nbsp;")
+            # 纯文本同样追加到上一段
+            if text_parts:
+                text_parts[-1] += f"@{part.text}\u200b"
+            else:
+                text_parts.append(f"@{part.text}\u200b")
+        elif isinstance(part, FragLink):
+            url_str = str(part.url)
+            if contents and isinstance(contents[-1], str):
+                contents[-1] += url_str
+            else:
+                contents.append(url_str)
+            if text_parts:
+                text_parts[-1] += url_str
+            else:
+                text_parts.append(url_str)
+
+        elif isinstance(part, FragVideo):
+            video_task = DOWNLOADER.download_video(part.src, ext_headers=headers)
+            cover_task = DOWNLOADER.download_img(part.cover_src, ext_headers=headers)
+            contents.append(VideoContent(video_task, cover_task, part.duration))
+        # 经过测试，所有帖子中的语音均无法播放，无法进行地址捕获
+        # 现在好像也发不了这玩意了
+        # 最近的语音消息在2018年
+        # elif isinstance(part, FragVoice):
+        #     audio_task = DOWNLOADER.download_audio(part.md5, ext_headers=headers)
+        #     contents.append(post.create_audio_content(audio_task, part.duration))
+
+    return contents, text_parts
+
+
+def build_comment_content(contents: Contents) -> str:
+    """
+    构建帖子评论HTML内容
+
+    :param contents: 内容碎片列表
+    """
+    content = ""
+    for part in contents.objs:
+        if isinstance(part, FragText):
+            content += part.text
+        elif isinstance(part, FragEmoji):
+            content += f'<img class="sticker small" src="{STICKER_PROXY}https://github.com/microlong666/Tieba_mobile_emotions/blob/master/{part.id}.png">'
+        elif isinstance(part, FragImage):
+            content += (
+                '<div class="images-container">'
+                f'<div class="images-grid single">'
+                '<div class="image-item">'
+                f'<img src="{part.origin_src}">'
+                "</div></div></div>"
+            )
+        elif isinstance(part, FragAt):
+            content += f"@{part.text}&nbsp;"
+        elif isinstance(part, FragLink):
+            content += str(part.url)
+    return content
+
+
+def build_comments(posts: list[Post], poster_id: int) -> list[dict[str, Any]]:
+    """
+    构建帖子评论
+
+    :param posts: 评论列表
+    :param poster_id: 帖子作者id
+    """
+    comments = []
+    # 获取前10条评论（优先显示楼主的评论）
+    main_comments = []
+    other_comments = []
+
+    for post in posts:  # 跳过主楼
+        if post.user.user_id == poster_id:
+            main_comments.append(post)
+        else:
+            other_comments.append(post)
+
+    # 合并评论，优先显示楼主的评论
+    combined_comments: list[Post] = main_comments[:5] + other_comments[:5]
+
+    for post in combined_comments:
+        # 处理评论作者信息
+        comment_author = {
+            "name": post.user.show_name,
+            "avatar": f"http://tb.himg.baidu.com/sys/portraith/item/{post.user.portrait}",
+        }
+
+        # 处理评论时间
+        formatted_time = ""
+        if post.create_time:
+            with contextlib.suppress(Exception):
+                dt = datetime.fromtimestamp(post.create_time)
+                formatted_time = dt.strftime("%Y-%m-%d %H:%M")
+        # 处理楼中楼评论
+        child_posts = []
+        if post.comments:
+            for comment in post.comments[:3]:  # 每个评论最多显示3条楼中楼
+                child_author = {
+                    "name": comment.user.show_name,
+                    "avatar": f"http://tb.himg.baidu.com/sys/portraith/item/{comment.user.portrait}",
+                }
+
+                child_formatted_time = ""
+                if hasattr(comment, "create_time") and comment.create_time:
+                    with contextlib.suppress(Exception):
+                        dt = datetime.fromtimestamp(comment.create_time)
+                        child_formatted_time = dt.strftime("%Y-%m-%d %H:%M")
+                child_posts.append(
+                    {
+                        "author": child_author,
+                        "content": build_comment_content(comment.contents),
+                        "formatted_time": child_formatted_time,
+                        "ups": comment.agree,
+                    }
+                )
+
+        comments.append(
+            {
+                "author": comment_author,
+                "content": build_comment_content(post.contents),
+                "formatted_time": formatted_time,
+                "ups": post.agree,
+                "comments": len(child_posts),
+                "child_posts": child_posts,
+            }
+        )
+    return comments
