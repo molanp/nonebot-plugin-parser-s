@@ -260,9 +260,7 @@ class BaseParser:
         if cover_url:
             cover_task = DOWNLOADER.download_img(cover_url, ext_headers=self.headers)
         if isinstance(url_or_task, str):
-            url_or_task = DOWNLOADER.download_video(
-                url_or_task, video_name=video_name, ext_headers=self.headers
-            )
+            url_or_task = DOWNLOADER.download_video(url_or_task, video_name=video_name, ext_headers=self.headers)
 
         return VideoContent(url_or_task, cover_task, duration)
 
@@ -312,9 +310,7 @@ class BaseParser:
             audio_name = f"{cleaned_base}{ext}"
 
         if isinstance(url_or_task, str):
-            url_or_task = DOWNLOADER.download_audio(
-                url_or_task, audio_name=audio_name, ext_headers=self.headers
-            )
+            url_or_task = DOWNLOADER.download_audio(url_or_task, audio_name=audio_name, ext_headers=self.headers)
 
         return AudioContent(url_or_task, duration)
 
@@ -332,16 +328,15 @@ class BaseParser:
     def create_sticker_content(
         self,
         url: str,
-        size: Literal["small", "medium", "large"] = "medium",
+        size: Literal["small", "medium"] = "medium",
     ):
         """
         创建贴纸内容
 
         :param url: 贴纸图片链接
         :param size: 贴纸大小
-            - small: 和文字一样大
-            - medium: 文字大小的两倍
-            - larget: 文字大小的三倍
+            - small: 比文字大一点
+            - medium: 文字大小的两倍大一点
         """
         from .data import StickerContent
 
