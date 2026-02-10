@@ -11,6 +11,7 @@ from httpx import HTTPError, AsyncClient
 
 from .base import Platform, BaseParser, PlatformEnum, handle
 from ..exception import ParseException
+from ..parsers.data import MediaContent
 
 
 class NGAParser(BaseParser):
@@ -45,9 +46,7 @@ class NGAParser(BaseParser):
         tid = searched.group("tid")
         url = self.nga_url(tid)
 
-        async with AsyncClient(
-            headers=self.headers, timeout=self.timeout, follow_redirects=True
-        ) as client:
+        async with AsyncClient(headers=self.headers, timeout=self.timeout, follow_redirects=True) as client:
             try:
                 # 第一次请求可能返回403，但包含设置cookie的JavaScript
                 resp = await client.get(url)
@@ -120,7 +119,7 @@ class NGAParser(BaseParser):
         # 提取文本 - postcontent0
         text = None
         content_tag = soup.find(id="postcontent0")
-        contents = []
+        contents: list[MediaContent] = []
         if content_tag and isinstance(content_tag, Tag):
             text = content_tag.get_text("\n", strip=True)
             # 清理 BBCode 标签并限制长度

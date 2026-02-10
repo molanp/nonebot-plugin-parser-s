@@ -146,7 +146,7 @@ class ParseResult:
     """发布时间戳, 秒"""
     url: str | None = None
     """来源链接"""
-    contents: list[MediaContent | str] = field(default_factory=list)
+    contents: list[MediaContent | str] | list[MediaContent] = field(default_factory=list)
     """富文本内容"""
     extra: dict[str, Any] = field(default_factory=dict)
     """额外信息"""
@@ -193,9 +193,7 @@ class ParseResult:
         # 如果没有视频和图片内容，使用默认图片
         from pathlib import Path
 
-        default_image_path = (
-            Path(__file__).parent.parent / "renders" / "resources" / "QIQI.jpg"
-        )
+        default_image_path = Path(__file__).parent.parent / "renders" / "resources" / "QIQI.jpg"
         return default_image_path if default_image_path.exists() else None
 
     @property
@@ -226,7 +224,7 @@ from dataclasses import field, dataclass
 class ParseResultKwargs(TypedDict, total=False):
     title: str | None
     text: str | None
-    contents: list[MediaContent|str]
+    contents: list[MediaContent | str] | list[MediaContent]
     timestamp: int | None
     url: str | None
     author: Author | None
