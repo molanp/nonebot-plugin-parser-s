@@ -103,8 +103,10 @@ class FragImage:
         show_width = int(show_width)
         show_height = int(show_height)
 
-        hash_ = _IMAGEHASH_EXP.search(src)[1] # pyright: ignore[reportOptionalSubscript]
-
+        if hash_obj := _IMAGEHASH_EXP.search(src):
+            hash_ = hash_obj[1]
+        else:
+            hash_ = ""
         return FragImage(src, big_src, origin_src, origin_size, show_width, show_height, hash_)
 
 
@@ -238,11 +240,7 @@ class FragLink:
 
     @cached_property
     def url(self) -> yarl.URL:
-        return (
-            yarl.URL(self.raw_url.query["url"])
-            if self.is_external
-            else self.raw_url
-        )
+        return yarl.URL(self.raw_url.query["url"]) if self.is_external else self.raw_url
 
     @cached_property
     def is_external(self) -> bool:
@@ -377,6 +375,7 @@ class VoteInfo:
     def __bool__(self) -> bool:
         return bool(self.options)
 
+
 @dcs.dataclass
 class Containers(Generic[TypeContainer]):
     """
@@ -461,96 +460,12 @@ class PrivReply(IntEnum):
     FOLLOW = 6
 
 
-FragText_p = FragText_pt = FragText_pc = FragText
-FragEmoji_p = FragEmoji_pt = FragEmoji_pc = FragEmoji
-FragAt_p = FragAt_pt = FragAt_pc = FragAt
-FragLink_p = FragLink_pt = FragLink_pc = FragLink
-FragTiebaPlus_p = FragTiebaPlus_pt = FragTiebaPlus_pc = FragTiebaPlus
-FragVideo_pt = FragVideo
-FragVoice_p = FragVoice_pt = FragVoice_pc = FragVoice
-
-
 @dcs.dataclass
-class FragImage_p:
-    """
-    图像碎片
-
-    Attributes:
-        src (str): 小图链接
-        big_src (str): 大图链接
-        origin_src (str): 原图链接
-        origin_size (int): 原图大小
-        show_width (int): 图像在客户端预览显示的宽度
-        show_height (int): 图像在客户端预览显示的高度
-        hash (str): 百度图床hash
-    """
-
-    src: str = dcs.field(default="", repr=False)
-    big_src: str = dcs.field(default="", repr=False)
-    origin_src: str = dcs.field(default="", repr=False)
-    origin_size: int = 0
-    show_width: int = 0
-    show_height: int = 0
-    hash: str = ""
-
-    @staticmethod
-    def from_tbdata(data_proto: Message) -> FragImage_p:
-        src = data_proto.cdn_src
-        big_src = data_proto.big_cdn_src
-        origin_src = data_proto.origin_src
-        origin_size = data_proto.origin_size
-
-        show_width, _, show_height = data_proto.bsize.partition(",")
-        show_width = int(show_width)
-        show_height = int(show_height)
-
-        if hash_obj := _IMAGEHASH_EXP.search(src):
-            hash_ = hash_obj.group(1)
-        else:
-            hash_ = ""
-
-        return FragImage_p(
-            src, big_src, origin_src, origin_size, show_width, show_height, hash_
-        )
-
-
-@dcs.dataclass
-class FragVideo_p:
-    """
-    视频碎片
-
-    Attributes:
-        src (str): 视频链接
-        cover_src (str): 封面链接
-        duration (int): 视频长度 以秒为单位
-        width (int): 视频宽度
-        height (int): 视频高度
-        view_num (int): 浏览次数
-    """
-
-    src: str = ""
-    cover_src: str = ""
-    duration: int = 0
-    width: int = 0
-    height: int = 0
-    view_num: int = 0
-
-    @staticmethod
-    def from_tbdata(data_proto: Message) -> FragVideo_p:
-        src = data_proto.link
-        cover_src = data_proto.src
-        duration = data_proto.during_time
-        width = data_proto.width
-        height = data_proto.height
-        view_num = data_proto.count
-        return FragVideo_p(src, cover_src, duration, width, height, view_num)
-
-    def __bool__(self) -> bool:
-        return bool(self.width)
-
-
-@dcs.dataclass
-class Contents_p(Containers[TypeFragment]):
+class Contents(
+    Containers[
+        FragText | FragEmoji | FragImage | FragAt | FragLink | FragVoice | FragVideo | FragTiebaPlus | FragUnknown
+    ]
+):
     """
     内容碎片列表
 
@@ -570,16 +485,16 @@ class Contents_p(Containers[TypeFragment]):
     """
 
     texts: list[TypeFragText] = dcs.field(default_factory=list, repr=False)
-    emojis: list[FragEmoji_p] = dcs.field(default_factory=list, repr=False)
-    imgs: list[FragImage_p] = dcs.field(default_factory=list, repr=False)
-    ats: list[FragAt_p] = dcs.field(default_factory=list, repr=False)
-    links: list[FragLink_p] = dcs.field(default_factory=list, repr=False)
-    tiebapluses: list[FragTiebaPlus_p] = dcs.field(default_factory=list, repr=False)
-    video: FragVideo_p = dcs.field(default_factory=FragVideo_p, repr=False)
-    voice: FragVoice_p = dcs.field(default_factory=FragVoice_p, repr=False)
+    emojis: list[FragEmoji] = dcs.field(default_factory=list, repr=False)
+    imgs: list[FragImage] = dcs.field(default_factory=list, repr=False)
+    ats: list[FragAt] = dcs.field(default_factory=list, repr=False)
+    links: list[FragLink] = dcs.field(default_factory=list, repr=False)
+    tiebapluses: list[FragTiebaPlus] = dcs.field(default_factory=list, repr=False)
+    video: FragVideo = dcs.field(default_factory=FragVideo, repr=False)
+    voice: FragVoice = dcs.field(default_factory=FragVoice, repr=False)
 
     @staticmethod
-    def from_tbdata(data_proto: Message) -> Contents_p:
+    def from_tbdata(data_proto: Message) -> Contents:
         content_protos = data_proto.content
 
         texts = []
@@ -588,50 +503,50 @@ class Contents_p(Containers[TypeFragment]):
         ats = []
         links = []
         tiebapluses = []
-        video = FragVideo_p()
-        voice = FragVoice_p()
+        video = FragVideo()
+        voice = FragVoice()
 
         def _frags():
             for proto in content_protos:
                 _type = proto.type
                 # 0纯文本 9电话号 18话题 27百科词条 40梗百科
                 if _type in [0, 9, 18, 27, 40]:
-                    frag = FragText_p.from_tbdata(proto)
+                    frag = FragText.from_tbdata(proto)
                     texts.append(frag)
                     yield frag
                 # 11:tid=5047676428
                 elif _type in [2, 11]:
-                    frag = FragEmoji_p.from_tbdata(proto)
+                    frag = FragEmoji.from_tbdata(proto)
                     emojis.append(frag)
                     yield frag
                 # 20:tid=5470214675
                 elif _type in [3, 20]:
-                    frag = FragImage_p.from_tbdata(proto)
+                    frag = FragImage.from_tbdata(proto)
                     imgs.append(frag)
                     yield frag
                 elif _type == 4:
-                    frag = FragAt_p.from_tbdata(proto)
+                    frag = FragAt.from_tbdata(proto)
                     ats.append(frag)
                     texts.append(frag)
                     yield frag
                 elif _type == 1:
-                    frag = FragLink_p.from_tbdata(proto)
+                    frag = FragLink.from_tbdata(proto)
                     links.append(frag)
                     texts.append(frag)
                     yield frag
                 elif _type == 10:  # voice
-                    frag = FragVoice_p.from_tbdata(proto)
+                    frag = FragVoice.from_tbdata(proto)
                     nonlocal voice
                     voice = frag
                     yield frag
                 elif _type == 5:  # video
-                    frag = FragVideo_p.from_tbdata(proto)
+                    frag = FragVideo.from_tbdata(proto)
                     nonlocal video
                     video = frag
                     yield frag
                 # 35|36:tid=7769728331 / 37:tid=7760184147
                 elif _type in [35, 36, 37]:
-                    frag = FragTiebaPlus_p.from_tbdata(proto)
+                    frag = FragTiebaPlus.from_tbdata(proto)
                     tiebapluses.append(frag)
                     texts.append(frag)
                     yield frag
@@ -643,9 +558,7 @@ class Contents_p(Containers[TypeFragment]):
 
         objs = list(_frags())
 
-        return Contents_p(
-            objs, texts, emojis, imgs, ats, links, tiebapluses, video, voice
-        )
+        return Contents(objs, texts, emojis, imgs, ats, links, tiebapluses, video, voice)
 
     @cached_property
     def text(self) -> str:
@@ -653,92 +566,7 @@ class Contents_p(Containers[TypeFragment]):
 
 
 @dcs.dataclass
-class Contents_pc(Containers[TypeFragment]):
-    """
-    内容碎片列表
-
-    Attributes:
-        objs (list[TypeFragment]): 所有内容碎片的混合列表
-
-        text (str): 文本内容
-
-        texts (list[TypeFragText]): 纯文本碎片列表
-        emojis (list[FragEmoji_pc]): 表情碎片列表
-        ats (list[FragAt_pc]): @碎片列表
-        links (list[FragLink_pc]): 链接碎片列表
-        tiebapluses (list[FragTiebaPlus_pc]): 贴吧plus碎片列表
-        voice (FragVoice_pc): 音频碎片
-    """
-
-    texts: list[TypeFragText] = dcs.field(default_factory=list, repr=False)
-    emojis: list[FragEmoji_pc] = dcs.field(default_factory=list, repr=False)
-    ats: list[FragAt_pc] = dcs.field(default_factory=list, repr=False)
-    links: list[FragLink_pc] = dcs.field(default_factory=list, repr=False)
-    tiebapluses: list[FragTiebaPlus_pc] = dcs.field(default_factory=list, repr=False)
-    voice: FragVoice_pc = dcs.field(default_factory=FragVoice_pc, repr=False)
-
-    @staticmethod
-    def from_tbdata(data_proto: Message) -> Contents_pc:
-        content_protos = data_proto.content
-
-        texts = []
-        emojis = []
-        ats = []
-        links = []
-        tiebapluses = []
-        voice = FragVoice_pc()
-
-        def _frags():
-            for proto in content_protos:
-                _type = proto.type
-                # 0纯文本 9电话号 18话题 27百科词条
-                if _type in [0, 9, 18, 27]:
-                    frag = FragText_pc.from_tbdata(proto)
-                    texts.append(frag)
-                    yield frag
-                # 11:tid=5047676428
-                elif _type in [2, 11]:
-                    frag = FragEmoji_pc.from_tbdata(proto)
-                    emojis.append(frag)
-                    yield frag
-                elif _type == 4:
-                    frag = FragAt_pc.from_tbdata(proto)
-                    ats.append(frag)
-                    texts.append(frag)
-                    yield frag
-                elif _type == 1:
-                    frag = FragLink_pc.from_tbdata(proto)
-                    links.append(frag)
-                    texts.append(frag)
-                    yield frag
-                elif _type == 10:  # voice
-                    frag = FragVoice_pc.from_tbdata(proto)
-                    nonlocal voice
-                    voice = frag
-                    yield frag
-                # 35|36:tid=7769728331 / 37:tid=7760184147
-                elif _type in [35, 36, 37]:
-                    frag = FragTiebaPlus_pc.from_tbdata(proto)
-                    tiebapluses.append(frag)
-                    texts.append(frag)
-                    yield frag
-                # outdated tiebaplus
-                elif _type == 34:
-                    continue
-                else:
-                    yield FragUnknown.from_tbdata(proto)
-
-        objs = list(_frags())
-
-        return Contents_pc(objs, texts, emojis, ats, links, tiebapluses, voice)
-
-    @cached_property
-    def text(self) -> str:
-        return "".join(frag.text for frag in self.texts)
-
-
-@dcs.dataclass
-class UserInfo_p:
+class UserInfo:
     """
     用户信息
 
@@ -783,7 +611,7 @@ class UserInfo_p:
     priv_reply: PrivReply = PrivReply.ALL
 
     @staticmethod
-    def from_tbdata(data_proto: Message) -> UserInfo_p:
+    def from_tbdata(data_proto: Message) -> UserInfo:
         user_id = data_proto.id
         portrait = data_proto.portrait
         if "?" in portrait:
@@ -798,17 +626,9 @@ class UserInfo_p:
         is_bawu = bool(data_proto.is_bawu)
         is_vip = bool(data_proto.new_tshow_icon)
         is_god = bool(data_proto.new_god_data.status)
-        priv_like = (
-            PrivLike(priv_like)
-            if (priv_like := data_proto.priv_sets.like)
-            else PrivLike.PUBLIC
-        )
-        priv_reply = (
-            PrivReply(priv_reply)
-            if (priv_reply := data_proto.priv_sets.reply)
-            else PrivReply.ALL
-        )
-        return UserInfo_p(
+        priv_like = PrivLike(priv_like) if (priv_like := data_proto.priv_sets.like) else PrivLike.PUBLIC
+        priv_reply = PrivReply(priv_reply) if (priv_reply := data_proto.priv_sets.reply) else PrivReply.ALL
+        return UserInfo(
             user_id,
             portrait,
             user_name,
@@ -828,7 +648,7 @@ class UserInfo_p:
     def __str__(self) -> str:
         return self.user_name or self.portrait or str(self.user_id)
 
-    def __eq__(self, obj: UserInfo_p) -> bool:
+    def __eq__(self, obj: UserInfo) -> bool:
         return self.user_id == obj.user_id
 
     def __hash__(self) -> int:
@@ -856,20 +676,20 @@ class UserInfo_p:
 
 
 @dcs.dataclass
-class Comment_p:
+class Comment:
     """
     楼中楼信息
 
     Attributes:
         text (str): 文本内容
-        contents (Contents_pc): 正文内容碎片列表
+        contents (Contents): 正文内容碎片列表
 
         fid (int): 所在吧id
         fname (str): 所在贴吧名
         tid (int): 所在主题帖id
         ppid (int): 所在楼层id
         pid (int): 楼中楼id
-        user (UserInfo_p): 发布者的用户信息
+        user (UserInfo): 发布者的用户信息
         author_id (int): 发布者的user_id
         reply_to_id (int): 被回复者的user_id
 
@@ -880,14 +700,14 @@ class Comment_p:
         is_thread_author (bool): 是否楼主
     """
 
-    contents: Contents_pc = dcs.field(default_factory=Contents_pc)
+    contents: Contents = dcs.field(default_factory=Contents)
 
     fid: int = 0
     fname: str = ""
     tid: int = 0
     ppid: int = 0
     pid: int = 0
-    user: UserInfo_p = dcs.field(default_factory=UserInfo_p)
+    user: UserInfo = dcs.field(default_factory=UserInfo)
     author_id: int = 0
     reply_to_id: int = 0
 
@@ -898,19 +718,19 @@ class Comment_p:
     is_thread_author: bool = False
 
     @staticmethod
-    def from_tbdata(data_proto: Message) -> Comment_p:
-        contents = Contents_pc.from_tbdata(data_proto)
+    def from_tbdata(data_proto: Message) -> Comment:
+        contents = Contents.from_tbdata(data_proto)
 
         reply_to_id = 0
         if contents:
             first_frag = contents[0]
             if (
-                isinstance(first_frag, FragText_p)
+                isinstance(first_frag, FragText)
                 and first_frag.text == "回复 "
                 and (reply_to_id := data_proto.content[1].uid)
             ):
                 reply_to_id = reply_to_id
-                if isinstance(contents[1], FragAt_p):
+                if isinstance(contents[1], FragAt):
                     del contents.ats[0]
                 contents.objs = contents.objs[2:]
                 contents.texts = contents.texts[2:]
@@ -926,7 +746,7 @@ class Comment_p:
         disagree = data_proto.agree.disagree_num
         create_time = data_proto.time
 
-        return Comment_p(
+        return Comment(
             contents,
             0,
             "",
@@ -943,7 +763,7 @@ class Comment_p:
             False,
         )
 
-    def __eq__(self, obj: Comment_p) -> bool:
+    def __eq__(self, obj: Comment) -> bool:
         return self.pid == obj.pid
 
     def __hash__(self) -> int:
@@ -981,16 +801,16 @@ class Post:
         is_thread_author (bool): 是否楼主
     """
 
-    contents: Contents_p = dcs.field(default_factory=Contents_p)
+    contents: Contents = dcs.field(default_factory=Contents)
     sign: str = ""
-    comments: list[Comment_p] = dcs.field(default_factory=list)
+    comments: list[Comment] = dcs.field(default_factory=list)
     is_aimeme: bool = False
 
     fid: int = 0
     fname: str = ""
     tid: int = 0
     pid: int = 0
-    user: UserInfo_p = dcs.field(default_factory=UserInfo_p)
+    user: UserInfo = dcs.field(default_factory=UserInfo)
     author_id: int = 0
 
     floor: int = 0
@@ -1002,11 +822,9 @@ class Post:
 
     @staticmethod
     def from_tbdata(data_proto: Message) -> Post:
-        contents = Contents_p.from_tbdata(data_proto)
+        contents = Contents.from_tbdata(data_proto)
         sign = "".join(p.text for p in data_proto.signature.content if p.type == 0)
-        comments = [
-            Comment_p.from_tbdata(p) for p in data_proto.sub_post_list.sub_post_list
-        ]
+        comments = [Comment.from_tbdata(p) for p in data_proto.sub_post_list.sub_post_list]
         is_aimeme = bool(data_proto.sprite_meme_info.meme_id)
         pid = data_proto.id
         author_id = data_proto.author_id
@@ -1042,15 +860,11 @@ class Post:
 
     @cached_property
     def text(self) -> str:
-        return (
-            f"{self.contents.text}\n{self.sign}"
-            if self.sign
-            else self.contents.text
-        )
+        return f"{self.contents.text}\n{self.sign}" if self.sign else self.contents.text
 
 
 @dcs.dataclass
-class Page_p:
+class Page:
     """
     页信息
 
@@ -1073,20 +887,18 @@ class Page_p:
     has_prev: bool = False
 
     @staticmethod
-    def from_tbdata(data_proto: Message) -> Page_p:
+    def from_tbdata(data_proto: Message) -> Page:
         page_size = data_proto.page_size
         current_page = data_proto.current_page
         total_page = data_proto.total_page
         total_count = data_proto.total_count
         has_more = bool(data_proto.has_more)
         has_prev = bool(data_proto.has_prev)
-        return Page_p(
-            page_size, current_page, total_page, total_count, has_more, has_prev
-        )
+        return Page(page_size, current_page, total_page, total_count, has_more, has_prev)
 
 
 @dcs.dataclass
-class Forum_p:
+class Forum:
     """
     吧信息
 
@@ -1111,273 +923,18 @@ class Forum_p:
     post_num: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: Message) -> Forum_p:
+    def from_tbdata(data_proto: Message) -> Forum:
         fid = data_proto.id
         fname = data_proto.name
         category = data_proto.first_class
         subcategory = data_proto.second_class
         member_num = data_proto.member_num
         post_num = data_proto.post_num
-        return Forum_p(fid, fname, category, subcategory, member_num, post_num)
+        return Forum(fid, fname, category, subcategory, member_num, post_num)
 
 
 @dcs.dataclass
-class FragImage_pt:
-    """
-    图像碎片
-
-    Attributes:
-        src (str): 小图链接 宽580px
-        big_src (str): 大图链接 宽720px
-        origin_src (str): 原图链接
-        show_width (int): 图像在客户端预览显示的宽度
-        show_height (int): 图像在客户端预览显示的高度
-        hash (str): 百度图床hash
-    """
-
-    src: str = dcs.field(default="", repr=False)
-    big_src: str = dcs.field(default="", repr=False)
-    origin_src: str = dcs.field(default="", repr=False)
-    show_width: int = 0
-    show_height: int = 0
-    hash: str = ""
-
-    @staticmethod
-    def from_tbdata(data_proto: Message) -> FragImage_pt:
-        src = data_proto.water_pic
-        big_src = data_proto.small_pic
-        origin_src = data_proto.big_pic
-
-        show_width = data_proto.width
-        show_height = data_proto.height
-
-        if hash_obj := _IMAGEHASH_EXP.search(src):
-            hash_ = hash_obj.group(1)
-        else:
-            hash_ = ""
-
-        return FragImage_pt(src, big_src, origin_src, show_width, show_height, hash_)
-
-
-@dcs.dataclass
-class Contents_pt(Containers[TypeFragment]):
-    """
-    内容碎片列表
-
-    Attributes:
-        objs (list[TypeFragment]): 所有内容碎片的混合列表
-
-        text (str): 文本内容
-
-        texts (list[TypeFragText]): 纯文本碎片列表
-        emojis (list[FragEmoji_pt]): 表情碎片列表
-        imgs (list[FragImage_pt]): 图像碎片列表
-        ats (list[FragAt_pt]): @碎片列表
-        links (list[FragLink_pt]): 链接碎片列表
-        tiebapluses (list[FragTiebaPlus_pt]): 贴吧plus碎片列表
-        video (FragVideo_pt): 视频碎片
-        voice (FragVoice_pt): 音频碎片
-    """
-
-    texts: list[TypeFragText] = dcs.field(default_factory=list, repr=False)
-    emojis: list[FragEmoji_pt] = dcs.field(default_factory=list, repr=False)
-    imgs: list[FragImage_pt] = dcs.field(default_factory=list, repr=False)
-    ats: list[FragAt_pt] = dcs.field(default_factory=list, repr=False)
-    links: list[FragLink_pt] = dcs.field(default_factory=list, repr=False)
-    tiebapluses: list[FragTiebaPlus_pt] = dcs.field(default_factory=list, repr=False)
-    video: FragVideo_pt = dcs.field(default_factory=FragVideo_pt, repr=False)
-    voice: FragVoice_pt = dcs.field(default_factory=FragVoice_pt, repr=False)
-
-    @staticmethod
-    def from_tbdata(data_proto: Message) -> Contents_pt:
-        content_protos = data_proto.content
-
-        texts = []
-        emojis = []
-        imgs = [FragImage_pt.from_tbdata(p) for p in data_proto.media]
-        ats = []
-        links = []
-        tiebapluses = []
-
-        def _frags():
-            for proto in content_protos:
-                _type = proto.type
-                # 0纯文本 9电话号 18话题 27百科词条
-                if _type in [0, 9, 18, 27]:
-                    frag = FragText_pt.from_tbdata(proto)
-                    texts.append(frag)
-                    yield frag
-                # 11:tid=5047676428
-                elif _type in [2, 11]:
-                    frag = FragEmoji_pt.from_tbdata(proto)
-                    emojis.append(frag)
-                    yield frag
-                elif _type == 4:
-                    frag = FragAt_pt.from_tbdata(proto)
-                    ats.append(frag)
-                    texts.append(frag)
-                    yield frag
-                elif _type == 1:
-                    frag = FragLink_pt.from_tbdata(proto)
-                    links.append(frag)
-                    texts.append(frag)
-                    yield frag
-                # 35|36:tid=7769728331 / 37:tid=7760184147
-                elif _type in [35, 36, 37]:
-                    frag = FragTiebaPlus_pt.from_tbdata(proto)
-                    tiebapluses.append(frag)
-                    texts.append(frag)
-                    yield frag
-                # outdated tiebaplus
-                elif _type == 34:
-                    continue
-                else:
-                    yield FragUnknown.from_tbdata(proto)
-
-        objs = list(_frags())
-
-        if ats:
-            del ats[0]
-            del objs[0]
-        objs += imgs
-
-        if data_proto.video_info.video_width:
-            video = FragVideo_pt.from_tbdata(data_proto.video_info)
-            objs.append(video)
-        else:
-            video = FragVideo_pt()
-
-        if data_proto.voice_info:
-            voice = FragVoice_pt.from_tbdata(data_proto.voice_info[0])
-            objs.append(voice)
-        else:
-            voice = FragVoice_pt()
-
-        return Contents_pt(
-            objs, texts, emojis, imgs, ats, links, tiebapluses, video, voice
-        )
-
-    @cached_property
-    def text(self) -> str:
-        return "".join(frag.text for frag in self.texts)
-
-
-@dcs.dataclass
-class UserInfo_pt:
-    """
-    用户信息
-
-    Attributes:
-        user_id (int): user_id
-        portrait (str): portrait
-        user_name (str): 用户名
-        nick_name_new (str): 新版昵称
-
-        level (int): 等级
-        glevel (int): 贴吧成长等级
-        ip (str): ip归属地
-        icons (list[str]): 印记信息
-
-        is_bawu (bool): 是否吧务
-        is_vip (bool): 是否超级会员
-        is_god (bool): 是否大神
-        priv_like (PrivLike): 关注吧列表的公开状态
-        priv_reply (PrivReply): 帖子评论权限
-
-        nick_name (str): 用户昵称
-        show_name (str): 显示名称
-        log_name (str): 用于在日志中记录用户信息
-    """
-
-    user_id: int = 0
-    portrait: str = ""
-    user_name: str = ""
-    nick_name_new: str = ""
-
-    level: int = 0
-    glevel: int = 0
-    ip: str = ""
-    icons: list[str] = dcs.field(default_factory=list)
-
-    is_bawu: bool = False
-    is_vip: bool = False
-    is_god: bool = False
-    priv_like: PrivLike = PrivLike.PUBLIC
-    priv_reply: PrivReply = PrivReply.ALL
-
-    @staticmethod
-    def from_tbdata(data_proto: Message) -> UserInfo_pt:
-        user_id = data_proto.id
-        portrait = data_proto.portrait
-        if "?" in portrait:
-            portrait = portrait[:-13]
-        user_name = data_proto.name
-        nick_name_new = data_proto.name_show
-        level = data_proto.level_id
-        glevel = data_proto.user_growth.level_id
-        ip = data_proto.ip_address
-        icons = [name for i in data_proto.iconinfo if (name := i.name)]
-        is_bawu = bool(data_proto.is_bawu)
-        is_vip = bool(data_proto.new_tshow_icon)
-        is_god = bool(data_proto.new_god_data.status)
-        priv_like = (
-            PrivLike(priv_like)
-            if (priv_like := data_proto.priv_sets.like)
-            else PrivLike.PUBLIC
-        )
-        priv_reply = (
-            PrivReply(priv_reply)
-            if (priv_reply := data_proto.priv_sets.reply)
-            else PrivReply.ALL
-        )
-        return UserInfo_pt(
-            user_id,
-            portrait,
-            user_name,
-            nick_name_new,
-            level,
-            glevel,
-            ip,
-            icons,
-            is_bawu,
-            is_vip,
-            is_god,
-            priv_like,
-            priv_reply,
-        )
-
-    def __str__(self) -> str:
-        return self.user_name or self.portrait or str(self.user_id)
-
-    def __eq__(self, obj: UserInfo_pt) -> bool:
-        return self.user_id == obj.user_id
-
-    def __hash__(self) -> int:
-        return self.user_id
-
-    def __bool__(self) -> bool:
-        return bool(self.user_id)
-
-    @property
-    def nick_name(self) -> str:
-        return self.nick_name_new
-
-    @property
-    def show_name(self) -> str:
-        return self.nick_name_new or self.user_name
-
-    @cached_property
-    def log_name(self) -> str:
-        if self.user_name:
-            return self.user_name
-        elif self.portrait:
-            return f"{self.nick_name_new}/{self.portrait}"
-        else:
-            return str(self.user_id)
-
-
-@dcs.dataclass
-class ShareThread_pt:
+class ShareThread:
     """
     被分享的主题帖信息
 
@@ -1394,7 +951,7 @@ class ShareThread_pt:
         vote_info (VoteInfo): 投票内容
     """
 
-    contents: Contents_pt = dcs.field(default_factory=Contents_pt)
+    contents: Contents = dcs.field(default_factory=Contents)
     title: str = ""
 
     fid: int = 0
@@ -1405,17 +962,17 @@ class ShareThread_pt:
     vote_info: VoteInfo = dcs.field(default_factory=VoteInfo)
 
     @staticmethod
-    def from_tbdata(data_proto: Message) -> ShareThread_pt:
-        contents = Contents_pt.from_tbdata(data_proto)
+    def from_tbdata(data_proto: Message) -> ShareThread:
+        contents = Contents.from_tbdata(data_proto)
         title = data_proto.title
         fid = data_proto.fid
         fname = data_proto.fname
         tid = int(tid) if (tid := data_proto.tid) else 0
         author_id = data_proto.content[0].uid if data_proto.content else 0
         vote_info = VoteInfo.from_tbdata(data_proto.poll_info)
-        return ShareThread_pt(contents, title, fid, fname, tid, author_id, vote_info)
+        return ShareThread(contents, title, fid, fname, tid, author_id, vote_info)
 
-    def __eq__(self, obj: ShareThread_pt) -> bool:
+    def __eq__(self, obj: ShareThread) -> bool:
         return self.pid == obj.pid
 
     def __hash__(self) -> int:
@@ -1423,15 +980,11 @@ class ShareThread_pt:
 
     @cached_property
     def text(self) -> str:
-        return (
-            f"{self.title}\n{self.contents.text}"
-            if self.title
-            else self.contents.text
-        )
+        return f"{self.title}\n{self.contents.text}" if self.title else self.contents.text
 
 
 @dcs.dataclass
-class Thread_p:
+class Thread:
     """
     主题帖信息
 
@@ -1461,20 +1014,20 @@ class Thread_p:
         create_time (int): 创建时间 10位时间戳 以秒为单位
     """
 
-    contents: Contents_pt = dcs.field(default_factory=Contents_pt)
+    contents: Contents = dcs.field(default_factory=Contents)
     title: str = ""
 
     fid: int = 0
     fname: str = ""
     tid: int = 0
     pid: int = 0
-    user: UserInfo_pt = dcs.field(default_factory=UserInfo_pt)
+    user: UserInfo = dcs.field(default_factory=UserInfo)
 
     type: int = 0
     is_share: bool = False
 
     vote_info: VoteInfo = dcs.field(default_factory=VoteInfo)
-    share_origin: ShareThread_pt = dcs.field(default_factory=ShareThread_pt)
+    share_origin: ShareThread = dcs.field(default_factory=ShareThread)
     view_num: int = 0
     reply_num: int = 0
     share_num: int = 0
@@ -1483,12 +1036,12 @@ class Thread_p:
     create_time: int = 0
 
     @staticmethod
-    def from_tbdata(data_proto: Message) -> Thread_p:
+    def from_tbdata(data_proto: Message) -> Thread:
         thread_proto = data_proto.thread
         title = thread_proto.title
         tid = thread_proto.id
         pid = thread_proto.post_id
-        user = UserInfo_pt.from_tbdata(thread_proto.author)
+        user = UserInfo.from_tbdata(thread_proto.author)
         type_ = thread_proto.thread_type
         is_share = bool(thread_proto.is_share_thread)
         view_num = data_proto.thread_freq_num
@@ -1500,15 +1053,15 @@ class Thread_p:
 
         if not is_share:
             real_thread_proto = thread_proto.origin_thread_info
-            contents = Contents_pt.from_tbdata(real_thread_proto)
+            contents = Contents.from_tbdata(real_thread_proto)
             vote_info = VoteInfo.from_tbdata(real_thread_proto.poll_info)
-            share_origin = ShareThread_pt()
+            share_origin = ShareThread()
         else:
-            contents = Contents_pt()
+            contents = Contents()
             vote_info = VoteInfo()
-            share_origin = ShareThread_pt.from_tbdata(thread_proto.origin_thread_info)
+            share_origin = ShareThread.from_tbdata(thread_proto.origin_thread_info)
 
-        return Thread_p(
+        return Thread(
             contents,
             title,
             0,
@@ -1528,7 +1081,7 @@ class Thread_p:
             create_time,
         )
 
-    def __eq__(self, obj: Thread_p) -> bool:
+    def __eq__(self, obj: Thread) -> bool:
         return self.pid == obj.pid
 
     def __hash__(self) -> int:
@@ -1536,11 +1089,7 @@ class Thread_p:
 
     @property
     def text(self) -> str:
-        return (
-            f"{self.title}\n{self.contents.text}"
-            if self.title
-            else self.contents.text
-        )
+        return f"{self.title}\n{self.contents.text}" if self.title else self.contents.text
 
     @property
     def author_id(self) -> int:
@@ -1568,25 +1117,21 @@ class Posts(Containers[Post]):
     """
 
     err: Exception | None = dcs.field(default=None, init=False, repr=False)
-    page: Page_p = dcs.field(default_factory=Page_p)
-    forum: Forum_p = dcs.field(default_factory=Forum_p)
-    thread: Thread_p = dcs.field(default_factory=Thread_p)
+    page: Page = dcs.field(default_factory=Page)
+    forum: Forum = dcs.field(default_factory=Forum)
+    thread: Thread = dcs.field(default_factory=Thread)
 
     @staticmethod
     def from_tbdata(data_proto: Message) -> Posts:
-        page = Page_p.from_tbdata(data_proto.page)
-        forum = Forum_p.from_tbdata(data_proto.forum)
-        thread = Thread_p.from_tbdata(data_proto)
+        page = Page.from_tbdata(data_proto.page)
+        forum = Forum.from_tbdata(data_proto.forum)
+        thread = Thread.from_tbdata(data_proto)
 
         thread.fid = forum.fid
         thread.fname = forum.fname
 
-        objs = [
-            Post.from_tbdata(p)
-            for p in data_proto.post_list
-            if not p.chat_content.bot_uk
-        ]
-        users = {p.id: UserInfo_p.from_tbdata(p) for p in data_proto.user_list}
+        objs = [Post.from_tbdata(p) for p in data_proto.post_list if not p.chat_content.bot_uk]
+        users = {p.id: UserInfo.from_tbdata(p) for p in data_proto.user_list}
         for post in objs:
             post.fid = forum.fid
             post.fname = forum.fname
