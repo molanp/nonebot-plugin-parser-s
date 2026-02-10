@@ -7,7 +7,6 @@
 
 </div>
 
-
 ## 📖 介绍
 
 | 平台       | 触发的消息形态                    | 视频 | 图集          | 音频   |
@@ -26,8 +25,8 @@
 | 汽水音乐   | 链接(分享链接)                    | ❌️   | ❌️            | ✅​    |
 | 酷我音乐   | 链接(分享链接)                    | ❌️   | ❌️            | ✅​    |
 | 百度贴吧   | 链接                              | 没写 | ✅​(图文帖子) | 不存在 |
-| TapTap  | 链接(游戏详情、帖子链接)              | ✅  | ✅  | ❌️  |
-| 今日头条 | 链接(视频链接)                    | ✅  | ❌️  | ❌️  |
+| TapTap     | 链接(游戏详情、帖子链接)          | ✅   | ✅            | ❌️     |
+| 今日头条   | 链接(视频链接)                    | ✅   | ❌️            | ❌️     |
 
 支持的链接，可参考 [测试链接](https://github.com/fllesser/nonebot-plugin-parser/blob/master/tests/others/test_urls.md)
 
@@ -112,7 +111,6 @@ parser_need_forward_contents=True
 
 </details>
 
-
 ## 🎉 使用
 
 |   指令   |         权限          | 需要@ | 范围 |       说明        |
@@ -127,6 +125,14 @@ parser_need_forward_contents=True
 
 > [!IMPORTANT]
 > 插件自 `v2.2.0` 版本开始支持自定义解析器，通过继承 `BaseParser` 类并实现 `platform`, `handle` 即可
+>
+> 若插件需要支持富文本内容
+>
+> 请将富文本列表传入 `self.result` 的 `contents` 字段(对应的纯文本内容[应包含占位符]应传入 `text` 字段)
+>
+> 并在 **自定义** 模板中使用 `{{ result.content | safe}}` 展示
+>
+> 默认兜底模板 **不支持** 富文本内容
 
 <details>
 <summary>完整示例</summary>
