@@ -9,7 +9,7 @@ from collections.abc import AsyncGenerator
 import qrcode  # pyright: ignore[reportMissingModuleSource]
 from nonebot import logger, require
 
-from .utils import build_contents
+from .utils import build_content
 from ..config import pconfig, _nickname
 from ..helper import UniHelper, UniMessage, ForwardNodeInner
 from ..exception import DownloadException, ZeroSizeException, DownloadLimitException
@@ -231,12 +231,11 @@ class Renderer:
         """解析 ParseResult 为模板可用的字典数据"""
 
         logo_path = Path(__file__).parent / "resources" / f"{result.platform.name}.png"
-        contents, cover_path = await build_contents(result)
+        content, cover_path = await build_content(result)
 
         # if ori := result.extra.get("origin"):
         #     if oric := ori.get("contents"):
         #         ori["contents"], _ = await self._build_contents(oric)
-
         # 这些是一定会有的字段
         data: dict[str, Any] = {
             "title": result.title,
@@ -248,7 +247,7 @@ class Renderer:
                 "name": result.platform.name,
                 "logo_path": (logo_path.as_uri() if logo_path.exists() else None),
             },
-            "contents": contents,
+            "content": content,
             "cover_path": cover_path,
         }
 

@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tieba Post</title>
+  {% include "share.html" %}
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
@@ -16,14 +17,14 @@
       --border-radius: 8px;
       --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
-    
+
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
       font-family: "Noto Sans SC", system-ui, sans-serif;
     }
-    
+
     body {
       display: flex;
       justify-content: center;
@@ -116,31 +117,13 @@
       border-left: 4px solid var(--secondary-color);
     }
 
-    .text {
-      font-size: 15px;
-      line-height: 1.6;
-      color: #333;
-      margin-bottom: 20px;
-    }
-
-    .image-container {
-      margin: 16px 0;
-      text-align: center;
-    }
-
-    .image-container img {
-      max-width: 100%;
-      border-radius: 4px;
-      margin-bottom: 8px;
-    }
-
     /* 评论区域 */
     .comments-section {
       padding: 0 24px 24px;
       border-top: 1px solid #eee;
       margin-top: 20px;
     }
-    
+
     .comments-header {
       font-size: 18px;
       font-weight: 700;
@@ -150,11 +133,11 @@
       align-items: center;
       gap: 10px;
     }
-    
+
     .comments-header i {
       color: var(--secondary-color);
     }
-    
+
     /* 主评论容器 */
     .comment-container {
       display: flex;
@@ -163,20 +146,20 @@
       padding-bottom: 20px;
       border-bottom: 1px dashed #eee;
     }
-    
+
     .comment-container:last-child {
       border-bottom: none;
       margin-bottom: 0;
       padding-bottom: 0;
     }
-    
+
     /* 头像区域 */
     .comment-avatar-wrapper {
       flex-shrink: 0;
       width: 48px;
       height: 48px;
     }
-    
+
     .comment-avatar {
       width: 100%;
       height: 100%;
@@ -184,13 +167,13 @@
       object-fit: cover;
       border: 2px solid #f0f0f0;
     }
-    
+
     /* 评论内容区域 */
     .comment-content-wrapper {
       flex: 1;
       min-width: 0;
     }
-    
+
     /* 作者信息行 */
     .comment-author-row {
       display: flex;
@@ -198,7 +181,7 @@
       align-items: center;
       margin-bottom: 8px;
     }
-    
+
     .comment-author-info {
       display: flex;
       align-items: center;
@@ -206,14 +189,14 @@
       flex-wrap: wrap;
       flex: 1;
     }
-    
+
     .comment-author-name {
       font-weight: 600;
       font-size: 14px;
       color: var(--dark-color);
       line-height: 1.2;
     }
-    
+
     /* 评论时间 */
     .comment-time {
       font-size: 12px;
@@ -221,7 +204,7 @@
       white-space: nowrap;
       margin-left: 8px;
     }
-    
+
     /* 评论内容 */
     .comment-text {
       font-size: 14px;
@@ -230,7 +213,7 @@
       margin-bottom: 10px;
       word-wrap: break-word;
     }
-    
+
     /* 统计信息 */
     .comment-stats {
       display: flex;
@@ -238,13 +221,13 @@
       font-size: 12px;
       color: var(--gray-color);
     }
-    
+
     .comment-stat {
       display: flex;
       align-items: center;
       gap: 4px;
     }
-    
+
     /* 回复样式 */
     .comment-replies {
       margin-top: 15px;
@@ -252,7 +235,7 @@
       padding-left: 48px;
       border-left: 2px solid #f0f0f0;
     }
-    
+
     .reply-container {
       display: flex;
       gap: 12px;
@@ -260,13 +243,13 @@
       padding-bottom: 15px;
       border-bottom: 1px dashed #f0f0f0;
     }
-    
+
     .reply-container:last-child {
       border-bottom: none;
       margin-bottom: 0;
       padding-bottom: 0;
     }
-    
+
     /* 回复头像区域 */
     .reply-avatar-wrapper {
       flex-shrink: 0;
@@ -274,7 +257,7 @@
       height: 40px;
       margin-top: 2px;
     }
-    
+
     .reply-avatar {
       width: 100%;
       height: 100%;
@@ -282,13 +265,13 @@
       object-fit: cover;
       border: 2px solid #f0f0f0;
     }
-    
+
     /* 回复内容区域 */
     .reply-content-wrapper {
       flex: 1;
       min-width: 0;
     }
-    
+
     /* 回复作者信息行 */
     .reply-author-row {
       display: flex;
@@ -296,7 +279,7 @@
       align-items: center;
       margin-bottom: 6px;
     }
-    
+
     .reply-author-info {
       display: flex;
       align-items: center;
@@ -304,14 +287,14 @@
       flex-wrap: wrap;
       flex: 1;
     }
-    
+
     .reply-author-name {
       font-weight: 600;
       font-size: 13px;
       color: var(--dark-color);
       line-height: 1.2;
     }
-    
+
     /* 回复时间 */
     .reply-time {
       font-size: 11px;
@@ -319,7 +302,7 @@
       white-space: nowrap;
       margin-left: 6px;
     }
-    
+
     /* 回复内容 */
     .reply-text {
       font-size: 13px;
@@ -332,14 +315,14 @@
     /* 底部信息栏 */
     .footer-section {
       background-color: var(--dark-color);
-      color: rgba(255,255,255,0.8);
+      color: rgba(255, 255, 255, 0.8);
       padding: 15px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-size: 12px;
     }
-    
+
     .footer-brand {
       font-weight: 600;
       letter-spacing: 0.5px;
@@ -348,7 +331,7 @@
       gap: 8px;
       align-items: center;
     }
-    
+
     .footer-info {
       display: flex;
       gap: 15px;
@@ -361,7 +344,7 @@
 
   <div class="card">
     <div class="decorative-stripe"></div>
-    
+
     <div class="content-section">
       <div class="header">
         <img src="{{ result.author.avatar_path }}" class="avatar" alt="avatar" />
@@ -377,26 +360,7 @@
       <div class="title">{{ result.title }}</div>
       {% endif %}
 
-      {% if result.text %}
-      <div class="text">{{ result.text | e | replace("\n", "<br>") | safe }}</div>
-      {% endif %}
-
-      {% if result.img_contents %}
-      <div class="image-container">
-        {% for img in result.img_contents %}
-        <img src="{{ img.path }}" alt="image" />
-        {% endfor %}
-      </div>
-      {% endif %}
-
-      {% if result.graphics_contents %}
-      <div class="image-container">
-        {% for g in result.graphics_contents %}
-        <img src="{{ g.path }}" alt="graphics" />
-        {% if g.alt %}<div class="extra-info">{{ g.alt }}</div>{% endif %}
-        {% endfor %}
-      </div>
-      {% endif %}
+      <div class="text">{{ result.content | safe }}</div>
     </div>
 
     <!-- 评论区域 -->
@@ -406,14 +370,14 @@
       <div class="comments-header">
         <i class="fas fa-comments"></i> 评论 ({{ comments|length }})
       </div>
-      
+
       {% for comment in comments %}
       <div class="comment-container">
         <!-- 左侧头像 -->
         <div class="comment-avatar-wrapper">
           <img src="{{ comment.author.avatar }}" alt="用户头像" class="comment-avatar">
         </div>
-        
+
         <!-- 右侧内容 -->
         <div class="comment-content-wrapper">
           <!-- 作者信息行 -->
@@ -423,12 +387,12 @@
             </div>
             <span class="comment-time">{{ comment.formatted_time }}</span>
           </div>
-          
+
           <!-- 评论内容 -->
           <div class="comment-text">
-            {{ comment.content | e | replace("\n", "<br>") | safe }}
+            {{ comment.content | safe }}
           </div>
-          
+
           <!-- 统计信息 -->
           <div class="comment-stats">
             {% if comment.ups %}
@@ -444,7 +408,7 @@
             </span>
             {% endif %}
           </div>
-          
+
           <!-- 回复列表 -->
           {% if comment.child_posts and comment.child_posts|length > 0 %}
           <div class="comment-replies">
@@ -454,7 +418,7 @@
               <div class="reply-avatar-wrapper">
                 <img src="{{ reply.author.avatar }}" alt="回复者头像" class="reply-avatar">
               </div>
-              
+
               <!-- 回复右侧内容 -->
               <div class="reply-content-wrapper">
                 <!-- 回复作者信息行 -->
@@ -464,12 +428,12 @@
                   </div>
                   <span class="reply-time">{{ reply.formatted_time }}</span>
                 </div>
-                
+
                 <!-- 回复内容 -->
                 <div class="reply-text">
-                  {{ reply.content | e | replace("\n", "<br>") | safe }}
+                  {{ reply.content | safe }}
                 </div>
-                
+
                 <!-- 回复统计信息 -->
                 <div class="comment-stats">
                   {% if reply.ups %}
@@ -494,10 +458,11 @@
     <div class="footer-section">
       <div class="footer-brand">
         <i class="fas fa-layer-group"></i>
-        <span>百度贴吧 Parser</span>
+        <span>{{ bot_name }} Parse</span>
       </div>
       <div class="footer-info">
-        <span>{{ result.url }}</span>
+        <i class="fas fa-clock" style="margin-right: 4px;"></i>
+        <span>Rendering at {{ rendering_time }}</span>
       </div>
     </div>
   </div>

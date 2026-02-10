@@ -84,10 +84,10 @@ def build_images_grid(
 
 
 @overload
-async def build_contents(result: ParseResult) -> tuple[str, str | None]: ...
+async def build_content(result: ParseResult) -> tuple[str, str | None]: ...
 @overload
-async def build_contents(result: ParseResult, no_cover=True) -> str: ...
-async def build_contents(result: ParseResult, no_cover: bool = False) -> str | tuple[str, str | None]:
+async def build_content(result: ParseResult, no_cover=True) -> str: ...
+async def build_content(result: ParseResult, no_cover: bool = False) -> str | tuple[str, str | None]:
     """构建模板可用的内容 HTML 字符串。
 
     文本、图片、表情、graphics 在这里直接拼成完整 HTML

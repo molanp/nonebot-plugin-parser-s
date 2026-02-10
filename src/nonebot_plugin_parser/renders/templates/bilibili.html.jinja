@@ -835,7 +835,7 @@
             {% endif %}
 
             {# --- 正文描述 --- #}
-            <div id="main">{{ result.contents | safe }}</div>
+            <div id="main">{{ result.content | safe }}</div>
 
             {# --- 旧版 Repost (保留兼容性) --- #}
             {% if result.repost %}
@@ -964,9 +964,6 @@
                 <span>{{ bot_name }} Parser || Designed By LoCCai</span>
             </div>
             <div class="footer-info">
-                {% if extra.render_info %}
-                <span><i class="fas fa-microchip"></i> {{ extra.render_info.engine }}</span>
-                {% endif %}
                 <i class="fas fa-clock" style="margin-right: 4px;"></i>
                 <span>Rendering at {{ rendering_time }}</span>
             </div>
