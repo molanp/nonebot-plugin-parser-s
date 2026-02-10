@@ -88,7 +88,7 @@ class WeiBoParser(BaseParser):
         data = detail.data
 
         soup = BeautifulSoup(data.content, "html.parser")
-        contents: list[MediaContent] = []
+        contents: list[MediaContent | str] = []
         text_buffer: list[str] = []
 
         for element in soup.find_all(["p", "img"]):
@@ -101,12 +101,12 @@ class WeiBoParser(BaseParser):
                 text = text.replace("\u200b", "")
                 if text:
                     text_buffer.append(text)
+                    contents.append(text)
             elif element.name == "img":
                 src = element.get("src")
                 if isinstance(src, str):
-                    text = "\n\n".join(text_buffer)
-                    contents.append(self.create_graphics_content(src, text=text))
-                    text_buffer.clear()
+                    contents.extend(self.create_image_contents([src]))
+                    text_buffer.append("[图片]")
 
         author = self.create_author(
             data.userinfo.screen_name,
