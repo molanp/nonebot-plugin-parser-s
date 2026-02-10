@@ -35,9 +35,9 @@
     grid-template-columns: 1fr;
   }
 
-  /* 单图：使用正方形容器，图片居中裁切 */
+  /* 单图：只限制最大高度 = 容器宽度（800px），宽度铺满，超高部分裁剪 */
   .images-grid.single .image-item {
-    aspect-ratio: 1/1;
+    max-height: 800px;
   }
 
   .images-grid.double {
