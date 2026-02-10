@@ -266,6 +266,7 @@ real_url = await self.get_redirect_url(
     url="https://short.url/abc",
     headers=self.headers  # 可选
 )
+```
 
 > 创建贴纸表情
 
@@ -273,9 +274,9 @@ real_url = await self.get_redirect_url(
 stickers = self.create_sticker_contents(
     url="http://xx",
     size="small"  # 可选
-    # small和文字大小相同
-    # medium是文字大小两倍
-    # large是文字大小三倍
+    # small比文字大一点
+    # medium是文字大小两倍大一点
+
 )
 ```
 
