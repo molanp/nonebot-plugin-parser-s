@@ -292,7 +292,11 @@ stickers = self.create_sticker_contents(
 
 ## 🎉 致谢
 
-[nonebot-plugin-resolver](https://github.com/zhiyu1998/nonebot-plugin-resolver)
-[nonebot-plugin-parser](https://github.com/fllesser/nonebot-plugin-parser)
-[nonebot-plugin-parser-m](https://github.com/LoCCai/nonebot-plugin-parser-m)
-[parse-video-py](https://github.com/wujunwei928/parse-video-py)
+- [nonebot-plugin-resolver](https://github.com/zhiyu1998/nonebot-plugin-resolver) 本插件的上游的上游的上游
+- [nonebot-plugin-parser](https://github.com/fllesser/nonebot-plugin-parser) 本插件的上游的上游(时不时从此版本同步一些功能)
+- [nonebot-plugin-parser-m](https://github.com/LoCCai/nonebot-plugin-parser-m) 本插件的上游(由此版本修改)
+- [parse-video-py](https://github.com/wujunwei928/parse-video-py) Python短视频去水印爬虫
+- [Spider_XHS](https://github.com/cv-cat/Spider_XHS) 小红书爬虫数据采集，小红书全域运营解决方案
+- [aiotieba](https://github.com/lumina37/aiotieba) 贴吧接口合集✨可用于工具箱/吧务管理/数据采集
+- [xhs](https://github.com/ReaJason/xhs) 基于小红书 Web 端进行的请求封装。
+- [xhshow](https://github.com/Cloxl/xhshow) 小红书xs纯算 小红书x-s x-s-common xsc 等字段 纯算逆向
