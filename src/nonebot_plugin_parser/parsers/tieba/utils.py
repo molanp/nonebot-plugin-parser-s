@@ -116,6 +116,7 @@ def build_contents(post: Post, text_parts: list[str]) -> tuple[list[MediaContent
                 f"{STICKER_PROXY}https://github.com/microlong666/Tieba_mobile_emotions/blob/master/{part.id}.png",
                 ext_headers=headers,
             )
+            # 这里表情地址也可以用 https://tb3.bdstatic.com/emoji/{part.id}@2x.png , 只不过比上面的小一点
             contents.append(StickerContent(sticker_task, "small"))
             text_parts.append(f"#({part.desc})")
         elif isinstance(part, FragImage):

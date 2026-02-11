@@ -1,3 +1,7 @@
+# Ref https://github.com/lumina37/aiotieba/blob/ad99009d6584bb5341b8cf11cd0095085f81f414/aiotieba/api/get_posts/_classdef.py
+# 精简优化版
+
+
 # pyright: reportAttributeAccessIssue=false
 # pyright: reportIncompatibleMethodOverride=false
 # pyright: reportArgumentType=false
