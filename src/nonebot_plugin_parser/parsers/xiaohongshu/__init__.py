@@ -1,16 +1,23 @@
 import re
-from typing import ClassVar
+from typing import Literal, ClassVar, overload
+from urllib.parse import parse_qsl
 
-from httpx import Cookies, AsyncClient
-from nonebot import logger
+from curl_cffi import AsyncSession
 
 from ..base import Platform, BaseParser, PlatformEnum, ParseException, handle, pconfig
 from ..data import MediaContent
+from .explore import InitialState as exploreInitialState
+from .explore import decoder as exploreDecoder
+from .discovery import InitialState as discoveryInitialState
+from .discovery import decoder as discoveryDecoder
 
 
 class XiaoHongShuParser(BaseParser):
     # 平台信息
     platform: ClassVar[Platform] = Platform(name=PlatformEnum.XIAOHONGSHU, display_name="小红书")
+    session: AsyncSession
+    # 小红书笔记详情页对真实浏览器仍有速率限制，达到限制后需要时间恢复
+    # 暂时不知ck能否缓解此问题
 
     def __init__(self):
         super().__init__()
@@ -34,108 +41,122 @@ class XiaoHongShuParser(BaseParser):
         if pconfig.xhs_ck:
             self.headers["cookie"] = pconfig.xhs_ck
             self.ios_headers["cookie"] = pconfig.xhs_ck
+        self.session = AsyncSession(headers=self.headers, timeout=15, impersonate="chrome131")
 
     @handle("xhslink.com", r"xhslink\.com/[A-Za-z0-9._?%&+=/#@-]+")
     async def _parse_short_link(self, searched: re.Match[str]):
-        url = f"https://{searched.group(0)}"
+        url = f"https://{searched[0]}"
         return await self.parse_with_redirect(url, self.ios_headers)
 
-    # https://www.xiaohongshu.com/explore/68feefe40000000007030c4a?xsec_token=ABjAKjfMHJ7ck4UjPlugzVqMb35utHMRe_vrgGJ2AwJnc=&xsec_source=pc_feed
-    # https://www.xiaohongshu.com/discovery/item/68e8e3fa00000000030342ec?app_platform=android&ignoreEngage=true&app_version=9.6.0&share_from_user_hidden=true&xsec_source=app_share&type=normal&xsec_token=CBW9rwIV2qhcCD-JsQAOSHd2tTW9jXAtzqlgVXp6c52Sw%3D&author_share=1&xhsshare=QQ&shareRedId=ODs3RUk5ND42NzUyOTgwNjY3OTo8S0tK&apptime=1761372823&share_id=3b61945239ac403db86bea84a4f15124&share_channel=qq
-    @handle("xiaohongshu.com", r"(explore|discovery/item)/(?P<query>(?P<xhs_id>[0-9a-zA-Z]+)\?[A-Za-z0-9._%&+=/#@-]+)")
+    # discovery 链接需要在控制台使用手机模式打开，不然会跳转 explore
+    # https://www.xiaohongshu.com/discovery/item/691e68a8000000001e02bcda?xsec_token=CBunzr4Cq8N7jbcXqpWDxGn11k7XwVIJ59KOvkRS_Qabw=
+    # https://www.xiaohongshu.com/explore/691e68a8000000001e02bcda?xsec_token=CBunzr4Cq8N7jbcXqpWDxGn11k7XwVIJ59KOvkRS_Qabw=
+    @handle(
+        "xiaohongshu.com",
+        r"(?P<type>explore|discovery/item)/(?P<note_id>[0-9a-zA-Z]+)\?(?P<qs>[A-Za-z0-9._%&+=/#@-]+)",
+    )
     async def _parse_common(self, searched: re.Match[str]):
         xhs_domain = "https://www.xiaohongshu.com"
-        query, xhs_id = searched.group("query", "xhs_id")
+        # parse_type = searched["type"]
+        note_id = searched["note_id"]
+        qs = searched["qs"]
 
-        try:
-            return await self.parse_explore(f"{xhs_domain}/explore/{query}", xhs_id)
-        except Exception as e:
-            logger.warning(f"parse_explore failed, error: {e}, fallback to parse_discovery")
-            return await self.parse_discovery(f"{xhs_domain}/discovery/item/{query}")
+        # 原始 URL（保留所有 query 参数）
+        full_url = f"{xhs_domain}/explore/{note_id}"
 
-    async def parse_explore(self, url: str, xhs_id: str):
-        from . import explore
+        # 解析 query string，检查 xsec_token
+        params_dict = dict(parse_qsl(qs, keep_blank_values=True))
+        xsec_token = params_dict.get("xsec_token")
+        if not xsec_token:
+            raise ParseException("缺少 xsec_token, 无法解析小红书链接")
 
-        async with AsyncClient(headers=self.headers, timeout=self.timeout) as client:
-            response = await client.get(url)
-            # may be 302
-            if response.status_code > 400:
-                response.raise_for_status()
+        full_url += f"?xsec_token={xsec_token}"
 
-        html = response.text
-        raw = self._extract_initial_state_raw(html)
+        # if parse_type == "explore":
+        # 测试来看似乎都可以走 explore 解析，因为fetch没有手机的尺寸，访问discovery会302
+        return await self.parse_explore(full_url, note_id)
 
-        # Decode the JSON into InitialState struct
-        init_state = explore.decoder.decode(raw)
+        # # discovery/item
+        # return await self.parse_discovery(full_url)
 
-        # Access: ["note"]["noteDetailMap"][xhs_id]["note"]
-        note_detail_wrapper = init_state.note.noteDetailMap.get(xhs_id)
-        if not note_detail_wrapper:
-            raise ParseException(f"can't find note detail for xhs_id: {xhs_id}")
-
-        note_detail = note_detail_wrapper.note
-
-        contents = []
-        # 添加视频内容
-        if video_url := note_detail.video_url:
-            # 使用第一张图片作为封面
-            cover_url = note_detail.image_urls[0] if note_detail.image_urls else None
-            contents.append(self.create_video_content(video_url, cover_url))
-
-        # 添加图片内容
-        elif image_urls := note_detail.image_urls:
-            contents.extend(self.create_image_contents(image_urls))
-
-        # 构建作者
-        author = self.create_author(note_detail.nickname, note_detail.avatar_url)
-
-        return self.result(
-            title=note_detail.title,
-            text=note_detail.desc,
-            author=author,
-            contents=contents,
-        )
-
-    async def parse_discovery(self, url: str):
-        from . import discovery
-
-        async with AsyncClient(
-            headers=self.ios_headers,
-            timeout=self.timeout,
-            follow_redirects=True,
-            cookies=Cookies(),
-            trust_env=False,
-        ) as client:
-            response = await client.get(url)
+    @overload
+    async def _fetch_initial_state(self, url: str, mode: Literal["explore"]) -> exploreInitialState: ...
+    @overload
+    async def _fetch_initial_state(self, url: str, mode: Literal["discovery"]) -> discoveryInitialState: ...
+    async def _fetch_initial_state(
+        self, url: str, mode: Literal["explore", "discovery"]
+    ) -> exploreInitialState | discoveryInitialState:
+        """
+        mode: "explore" | "discovery"
+        """
+        response = await self.session.get(url)
+        # may be 302
+        if response.status_code > 400:
             response.raise_for_status()
-            html = response.text
-
-        raw = self._extract_initial_state_raw(html)
-        init_state = discovery.decoder.decode(raw)
-        note_data = init_state.noteData.data.noteData
-        contents: list[MediaContent] = []
-        if video_url := note_data.video_url:
-            if preload_data := init_state.noteData.normalNotePreloadData:
-                img_urls = preload_data.image_urls
-            else:
-                img_urls = note_data.image_urls
-            contents.append(self.create_video_content(video_url, img_urls[0]))
-        elif img_urls := note_data.image_urls:
-            contents.extend(self.create_image_contents(img_urls))
-
-        author = self.create_author(note_data.user.nickName, note_data.user.avatar)
-
-        return self.result(
-            title=note_data.title,
-            author=author,
-            contents=contents,
-            text=note_data.desc,
-            timestamp=note_data.time // 1000,
-        )
-
-    def _extract_initial_state_raw(self, html: str) -> str:
+        html = response.text
         pattern = r"window\.__INITIAL_STATE__=(.*?)</script>"
         if matched := re.search(pattern, html):
-            return matched[1].replace("undefined", "null")
+            raw = matched[1].replace("undefined", "null")
         else:
             raise ParseException("小红书分享链接失效或内容已删除")
+        if mode == "explore":
+            return exploreDecoder.decode(raw)
+        else:
+            return discoveryDecoder.decode(raw)
+
+    def _build_result_from_note(
+        self,
+        *,
+        title: str,
+        text: str,
+        author_name: str,
+        author_avatar: str,
+        video_url: str | None,
+        image_urls: list[str],
+        timestamp: int,
+        cover_from_images: bool = True,
+    ):
+        contents: list[MediaContent] = []
+
+        if video_url:
+            cover_url = image_urls[0] if cover_from_images and image_urls else None
+            contents.append(self.create_video_content(video_url, cover_url))
+        elif image_urls:
+            contents.extend(self.create_image_contents(image_urls))
+
+        author = self.create_author(author_name, author_avatar)
+
+        return self.result(title=title, text=text, author=author, contents=contents, timestamp=timestamp)
+
+    async def parse_explore(self, url: str, note_id: str):
+        init_state = await self._fetch_initial_state(url, mode="explore")
+        note_detail = init_state.note.noteDetailMap[note_id].note
+
+        return self._build_result_from_note(
+            title=note_detail.title,
+            text=note_detail.desc,
+            author_name=note_detail.nickname,
+            author_avatar=note_detail.avatar_url,
+            video_url=note_detail.video_url,
+            image_urls=note_detail.image_urls,
+            timestamp=note_detail.lastUpdateTime // 1000,
+        )
+
+    # async def parse_discovery(self, url: str):
+    #     init_state = await self._fetch_initial_state(url, mode="discovery")
+    #     note_data = init_state.noteData.data.noteData
+
+    #     if note_data.video_url and (preload_data := init_state.noteData.normalNotePreloadData):
+    #         img_urls = preload_data.image_urls
+    #     else:
+    #         img_urls = note_data.image_urls
+    #     return self._build_result_from_note(
+    #         title=note_data.title,
+    #         text=note_data.desc,
+    #         author_name=note_data.user.nickName,
+    #         author_avatar=note_data.user.avatar,
+    #         video_url=note_data.video_url,
+    #         image_urls=img_urls,
+    #         timestamp=note_data.time // 1000,
+    #         cover_from_images=True,
+    #     )

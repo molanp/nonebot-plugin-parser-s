@@ -34,7 +34,9 @@
 
 把插件文件夹放到插件加载目录
 
-</details>
+## TODO
+
+- [ ] 把所有网络请求换成 `curl_cffi`
 
 ## ⚙️ 配置
 
@@ -61,7 +63,7 @@ parser_bili_video_codes=["avc", "av01", "hev"]
 # 360p(16), 480p(32), 720p(64), 1080p(80), 1080p+(112), 1080p_60(116), 4k(120)
 parser_bili_video_quality=80
 
-# [可选] 小红书 Cookie, 部分链接解析有水印，可填
+# [可选] 小红书 Cookie, 部分链接无法解析，可填
 parser_xhs_ck=""
 
 # [可选] Youtube Cookie, Youtube 视频因人机检测下载失败，需填
