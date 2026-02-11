@@ -68,9 +68,12 @@ class XiaoHongShuParser(BaseParser):
         params_dict = dict(parse_qsl(qs, keep_blank_values=True))
         xsec_token = params_dict.get("xsec_token")
         if not xsec_token:
+            # TODO: 无需 xsec_token 解析, 即自动搜索获取 xsec_token
+            # 参考 https://github.com/Cloxl/xhshow
+            # 使用搜索 API 进行获取, 但极易死号
             raise ParseException("缺少 xsec_token, 无法解析小红书链接")
 
-        full_url += f"?xsec_token={xsec_token}"
+        full_url += f"?xsec_token={xsec_token}&xsec_source=pc_share"
 
         # if parse_type == "explore":
         # 测试来看似乎都可以走 explore 解析，因为fetch没有手机的尺寸，访问discovery会302
