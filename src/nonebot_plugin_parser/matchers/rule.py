@@ -9,7 +9,7 @@ from nonebot.typing import T_State
 from nonebot.matcher import Matcher
 from nonebot.plugin.on import get_matcher_source
 from nonebot.permission import Permission
-from nonebot_plugin_uninfo import Session, UniSession
+from nonebot_plugin_uninfo import Uninfo
 from nonebot_plugin_alconna.uniseg import Hyper, UniMsg
 
 from .filter import is_enabled
@@ -141,19 +141,14 @@ class KeywordRegexRule:
         return f"KeywordRegex(key_pattern_list={self.key_pattern_list})"
 
     def __eq__(self, other: object) -> bool:
-        return (
-            isinstance(other, KeywordRegexRule)
-            and self.key_pattern_list == other.key_pattern_list
-        )
+        return isinstance(other, KeywordRegexRule) and self.key_pattern_list == other.key_pattern_list
 
     def __hash__(self) -> int:
         return hash(frozenset(self.key_pattern_list))
 
-    async def __call__(
-        self, message: UniMsg, state: T_State, sess: Session | None = UniSession()
-    ) -> bool:
+    async def __call__(self, message: UniMsg, state: T_State, sess: Uninfo) -> bool:
         # 检查用户是否在黑名单中
-        if sess and sess.user.id in pconfig.blacklist_users:
+        if sess.user.id in pconfig.blacklist_users:
             logger.debug(f"User {sess.user.id} is in blacklist, ignoring parse request")
             return False
 
@@ -165,9 +160,7 @@ class KeywordRegexRule:
             if keyword not in text:
                 continue
             if searched := pattern.search(text):
-                state[PSR_SEARCHED_KEY] = SearchResult(
-                    text=text, keyword=keyword, searched=searched
-                )
+                state[PSR_SEARCHED_KEY] = SearchResult(text=text, keyword=keyword, searched=searched)
                 return True
             logger.debug(f"keyword '{keyword}' is in '{text}', but not matched")
         return False
@@ -177,9 +170,7 @@ def keyword_regex(*args: tuple[str, str | re.Pattern[str]]) -> Rule:
     return Rule(KeywordRegexRule(KeyPatternList(*args)))
 
 
-def on_keyword_regex(
-    *args: tuple[str, str | re.Pattern[str]], priority: int = 5
-) -> type[Matcher]:
+def on_keyword_regex(*args: tuple[str, str | re.Pattern[str]], priority: int = 5) -> type[Matcher]:
     return Matcher.new(
         "message",
         is_enabled & keyword_regex(*args),
@@ -189,9 +180,7 @@ def on_keyword_regex(
     )
 
 
-async def _is_super_private(sess: Session | None = UniSession()) -> bool:
-    if not sess:
-        return False
+async def _is_super_private(sess: Uninfo) -> bool:
     return sess.scene.is_private and sess.user.id in gconfig.superusers
 
 

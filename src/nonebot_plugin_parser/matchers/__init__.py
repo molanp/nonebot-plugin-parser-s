@@ -1,6 +1,5 @@
 import re
 from typing import TypeVar
-from pathlib import Path
 
 from nonebot import logger, get_driver, on_command
 from nonebot.params import CommandArg
@@ -13,15 +12,12 @@ from ..helper import UniHelper, UniMessage
 from ..parsers import BaseParser, ParseResult, BilibiliParser
 from ..renders import get_renderer
 from ..download import DOWNLOADER
-from ..parsers.data import AudioContent, VideoContent
 
 
 def _get_enabled_parser_classes() -> list[type[BaseParser]]:
     disabled_platforms = set(pconfig.disabled_platforms)
     all_subclass = BaseParser.get_all_subclass()
-    return [
-        _cls for _cls in all_subclass if _cls.platform.name not in disabled_platforms
-    ]
+    return [_cls for _cls in all_subclass if _cls.platform.name not in disabled_platforms]
 
 
 # 关键词 -> Parser 映射
@@ -93,69 +89,21 @@ async def parser_handler(
             msg_sent = await message.send()
             # 保存消息ID与解析结果的关联
             if msg_sent:
-                # 添加详细调试日志，查看msg_sent的类型和属性
-                logger.debug(
-                    f"消息发送返回对象: type={type(msg_sent)}, repr={msg_sent!r}"
-                )
-                logger.debug(f"msg_sent属性: {dir(msg_sent)}")
+                msg_id = None
                 try:
-                    # 尝试获取消息ID
-                    msg_id = None
-                    # 检查是否为Event类型
-                    if hasattr(msg_sent, "get_event_name"):
-                        from nonebot_plugin_alconna.uniseg import get_message_id
-
-                        try:
-                            msg_id = get_message_id(msg_sent)  # type: ignore
-                            logger.debug(f"通过get_message_id获取到消息ID: {msg_id}")
-                        except TypeError as e:
-                            # 如果不是Event类型，跳过
-                            logger.debug(f"get_message_id类型错误: {e}")
-                    # 尝试直接从对象获取id或message_id属性
-                    if hasattr(msg_sent, "id"):
-                        msg_id = str(msg_sent.id)  # type: ignore
-                        logger.debug(f"通过id属性获取到消息ID: {msg_id}")
-                    elif hasattr(msg_sent, "message_id"):
-                        msg_id = str(msg_sent.message_id)  # type: ignore
-                        logger.debug(f"通过message_id属性获取到消息ID: {msg_id}")
-                    elif hasattr(msg_sent, "message_ids"):
-                        # 处理可能返回多个消息ID的情况
-                        msg_ids = getattr(msg_sent, "message_ids")
-                        if msg_ids:
-                            msg_id = str(msg_ids[0])  # type: ignore
-                            logger.debug(f"通过message_ids属性获取到消息ID: {msg_id}")
-                    elif hasattr(msg_sent, "msg_ids"):
-                        # 处理Receipt对象的msg_ids属性
-                        receipt_msg_ids = getattr(msg_sent, "msg_ids")
-                        logger.debug(f"Receipt.msg_ids: {receipt_msg_ids}")
-                        if receipt_msg_ids:
-                            # 处理msg_ids是列表的情况
-                            if isinstance(receipt_msg_ids, list):
-                                for msg_id_info in receipt_msg_ids:
-                                    if (
-                                        isinstance(msg_id_info, dict)
-                                        and "message_id" in msg_id_info
-                                    ):
-                                        msg_id = str(msg_id_info["message_id"])
-                                        logger.debug(
-                                            f"通过Receipt.msg_ids[0]['message_id']获取到消息ID: {msg_id}"
-                                        )
-                                        break
-                            # 处理msg_ids是单个消息ID的情况
-                            else:
-                                msg_id = str(receipt_msg_ids)  # type: ignore
-                                logger.debug(
-                                    f"通过Receipt.msg_ids获取到消息ID: {msg_id}"
-                                )
-
+                    # 处理Receipt对象的msg_ids属性
+                    receipt_msg_ids = msg_sent.msg_ids
+                    logger.debug(f"Receipt.msg_ids: {receipt_msg_ids}")
+                    if receipt_msg_ids:
+                        for msg_id_info in receipt_msg_ids:
+                            if isinstance(msg_id_info, dict) and "message_id" in msg_id_info:
+                                msg_id = str(msg_id_info["message_id"])
+                                logger.debug(f"通过Receipt.msg_ids[0]['message_id']获取到消息ID: {msg_id}")
+                                break
                     if msg_id:
                         _MSG_ID_RESULT_MAP[msg_id] = result
-                        logger.debug(
-                            f"保存消息ID与解析结果的关联: msg_id={msg_id}, url={cache_key}"
-                        )
-                        logger.debug(
-                            f"当前_MSG_ID_RESULT_MAP大小: {len(_MSG_ID_RESULT_MAP)}"
-                        )
+                        logger.debug(f"保存消息ID与解析结果的关联: msg_id={msg_id}, url={cache_key}")
+                        logger.debug(f"当前_MSG_ID_RESULT_MAP大小: {len(_MSG_ID_RESULT_MAP)}")
                     else:
                         logger.debug("未获取到消息ID")
                 except (NotImplementedError, TypeError, AttributeError) as e:
@@ -179,7 +127,7 @@ async def _(message: Message = CommandArg()):
     if not matched:
         await UniMessage("请发送正确的 BV 号").finish()
 
-    bvid, page_num = matched.group(1), matched.group(2)
+    bvid, page_num = matched[1], matched[2]
     page_idx = int(page_num) if page_num else 0
 
     parser = get_parser_by_type(BilibiliParser)

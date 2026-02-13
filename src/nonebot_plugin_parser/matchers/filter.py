@@ -5,7 +5,7 @@ from nonebot import on_command
 from nonebot.rule import to_me
 from nonebot.matcher import Matcher
 from nonebot.permission import SUPERUSER
-from nonebot_plugin_uninfo import ADMIN, Session, UniSession
+from nonebot_plugin_uninfo import ADMIN, Uninfo
 
 from ..config import pconfig
 
@@ -29,7 +29,7 @@ def save_disabled_groups():
 _DISABLED_GROUPS_SET: set[str] = load_or_initialize_set()
 
 
-def get_group_key(session: Session) -> str:
+def get_group_key(session: Uninfo) -> str:
     """获取群组的唯一标识符
 
     由平台名称和会话场景 ID 组成，例如 `QQClient_123456789`。
@@ -38,7 +38,7 @@ def get_group_key(session: Session) -> str:
 
 
 # Rule
-def is_enabled(session: Session = UniSession()) -> bool:
+def is_enabled(session: Uninfo) -> bool:
     """判断当前会话是否在关闭解析的名单中"""
     if session.scene.is_private:
         return True
@@ -48,7 +48,7 @@ def is_enabled(session: Session = UniSession()) -> bool:
 
 
 @on_command("开启解析", rule=to_me(), permission=SUPERUSER | ADMIN(), block=True).handle()
-async def _(matcher: Matcher, session: Session = UniSession()):
+async def _(matcher: Matcher, session: Uninfo):
     """开启解析"""
     group_key = get_group_key(session)
     if group_key in _DISABLED_GROUPS_SET:
@@ -60,7 +60,7 @@ async def _(matcher: Matcher, session: Session = UniSession()):
 
 
 @on_command("关闭解析", rule=to_me(), permission=SUPERUSER | ADMIN(), block=True).handle()
-async def _(matcher: Matcher, session: Session = UniSession()):
+async def _(matcher: Matcher, session: Uninfo):
     """关闭解析"""
     group_key = get_group_key(session)
     if group_key not in _DISABLED_GROUPS_SET:
