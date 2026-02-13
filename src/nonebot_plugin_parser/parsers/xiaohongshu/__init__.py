@@ -53,7 +53,7 @@ class XiaoHongShuParser(BaseParser):
     # https://www.xiaohongshu.com/explore/691e68a8000000001e02bcda?xsec_token=CBunzr4Cq8N7jbcXqpWDxGn11k7XwVIJ59KOvkRS_Qabw=
     @handle(
         "xiaohongshu.com",
-        r"(?P<type>explore|discovery/item)/(?P<note_id>[0-9a-zA-Z]+)\?(?P<qs>[A-Za-z0-9._%&+=/#@-]+)",
+        r"(?P<type>explore|search_result|discovery/item)/(?P<note_id>[0-9a-zA-Z]+)\?(?P<qs>[A-Za-z0-9._%&+=/#@-]+)",
     )
     async def _parse_common(self, searched: re.Match[str]):
         xhs_domain = "https://www.xiaohongshu.com"
