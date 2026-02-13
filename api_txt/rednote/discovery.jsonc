@@ -1,4 +1,8 @@
+// 手机版页面数据中没有表情包映射，因为手机网页版不显示评论区
+// 数据是没登陆获取的，登陆后应该会给更多评论
+
 {
+  // global 整个可以折叠起来，除了迭代陷阱没任何用
   "global": {
     "appSettings": {
       "__v_isShallow": false,
@@ -66,6 +70,7 @@
       "_value": "zh_cn"
     }
   },
+  // fakeModal 整个可以折叠起来，除了迭代陷阱没任何用
   "fakeModal": {
     "fakeModalVisible": {
       "__v_isShallow": false,
@@ -78,8 +83,14 @@
       "__v_isShallow": false,
       "dep": "<迭代陷阱>",
       "__v_isRef": true,
-      "_rawValue": { "source": "", "deeplink": "" },
-      "_value": { "source": "", "deeplink": "" }
+      "_rawValue": {
+        "source": "",
+        "deeplink": ""
+      },
+      "_value": {
+        "source": "",
+        "deeplink": ""
+      }
     },
     "enableFakeModal": {
       "__v_isShallow": false,
@@ -96,7 +107,7 @@
   },
   "noteData": {
     "routeQuery": {
-      "type": "normal",
+      "type": "normal", // 还有一种是 video
       "xsec_token": "CBunzr4Cq8N7jbcXqpWDxGn11k7XwVIJ59KOvkRS_Qabw=",
       "xsec_source": "pc_share"
     },
@@ -106,19 +117,21 @@
         "desc": "#转载[话题]# #聊天[话题]# #头像分享[话题]# #头像[话题]# #审美积累[话题]# #宝宝[话题]# #小猫[话题]# #猫[话题]# #猫咪[话题]# #表情包[话题]#",
         "interactInfo": {
           "niceCount": "",
-          "likedCount": "2.6万",
-          "commentCount": "156",
-          "shareCount": "1132",
-          "followed": false,
-          "sticky": false,
-          "liked": false,
-          "collected": false,
-          "collectedCount": "2257",
+          "likedCount": "2.6万", // 点赞数量
+          "commentCount": "156", // 评论数量
+          "shareCount": "1132", // 分享数量
+          "followed": false, // 已关注
+          "sticky": false, // 不知道
+          "liked": false, // 已点赞
+          "collected": false, // 已收藏
+          "collectedCount": "2257", // 收藏数量
           "relation": "none"
         },
         "atUserList": [],
-        "time": 1763600552000,
-        "shareInfo": { "unShare": false },
+        "time": 1763600552000, // 发布时间
+        "shareInfo": {
+          "unShare": false
+        },
         "noteId": "691e68a8000000001e02bcda",
         "type": "normal",
         "user": {
@@ -131,6 +144,7 @@
           {
             "height": 545,
             "width": 605,
+            // 一般走这个 url 就行了
             "url": "http://sns-webpic-qc.xhscdn.com/202602112012/dd4af750c7aa87e735c7a72a17b62d4c/notes_pre_post/1040g3k031p3cfthu2o005np7rjb0bsoqe6f9bog!h5_1080jpg",
             "traceId": "",
             "infoList": [
@@ -243,36 +257,68 @@
             ]
           }
         ],
+        // 标签列表，desc里面已经包含，没啥渲染的必要
         "tagList": [
-          { "id": "5e4a29850000000001001bee", "name": "转载", "type": "topic" },
-          { "id": "5c07cc2e9346b10001ccf341", "name": "聊天", "type": "topic" },
+          {
+            "id": "5e4a29850000000001001bee",
+            "name": "转载",
+            "type": "topic"
+          },
+          {
+            "id": "5c07cc2e9346b10001ccf341",
+            "name": "聊天",
+            "type": "topic"
+          },
           {
             "id": "5be6aee679d44e0001b2a056",
             "name": "头像分享",
             "type": "topic"
           },
-          { "type": "topic", "id": "5be00fafcfc9bd000193136d", "name": "头像" },
+          {
+            "type": "topic",
+            "id": "5be00fafcfc9bd000193136d",
+            "name": "头像"
+          },
           {
             "id": "5bf7d9b01a187500013da12b",
             "name": "审美积累",
             "type": "topic"
           },
-          { "id": "541d80f2b4c4d665eee27c02", "name": "宝宝", "type": "topic" },
-          { "id": "5c173c55000000000302bb6a", "name": "小猫", "type": "topic" },
-          { "name": "猫", "type": "topic", "id": "540d5fa5b4c4d60f94ee4ec2" },
-          { "id": "5be67e06f6cdcd00010a6a9e", "name": "猫咪", "type": "topic" },
+          {
+            "id": "541d80f2b4c4d665eee27c02",
+            "name": "宝宝",
+            "type": "topic"
+          },
+          {
+            "id": "5c173c55000000000302bb6a",
+            "name": "小猫",
+            "type": "topic"
+          },
+          {
+            "name": "猫",
+            "type": "topic",
+            "id": "540d5fa5b4c4d60f94ee4ec2"
+          },
+          {
+            "id": "5be67e06f6cdcd00010a6a9e",
+            "name": "猫咪",
+            "type": "topic"
+          },
           {
             "id": "5be16060743d3a000186cfe9",
             "name": "表情包",
             "type": "topic"
           }
         ],
+        // 最后更新时间
         "lastUpdateTime": 1763600553000,
+        // 封面链接(自己拼)，一般用第一个图片就行了
         "cover": {
           "fileId": "notes_pre_post/1040g3k031p3cfthu2o005np7rjb0bsoqe6f9bog"
         }
       },
       "commentData": {
+        // 评论数量
         "commentCount": 156,
         "comments": [
           {
@@ -282,28 +328,37 @@
               "nickname": "她是王辣辣",
               "image": "https://sns-avatar-qc.xhscdn.com/avatar/1040g2jo31dv5p295086g5p41pkdk3t1c8gkadlg?imageView2/2/w/120/format/jpg"
             },
+            // 子评论数量
             "subCommentCount": 17,
             "ipLocation": "海南",
             "noteId": "691e68a8000000001e02bcda",
+            // 表情表情后续可以替换
             "content": "图一是我2020年上网课的头像，突然回到那年了[扯脸H]",
             "liked": false,
+            // 评论发布时间
             "time": 1763626759000,
             "commentType": 0,
             "id": "691ecf07000000000601b0e0",
+            // 点赞数
             "likeViewCount": "225",
             "atUsers": [],
             "likeCount": 0,
+            // 子评论列表
             "subComments": [
               {
+                // 点赞数
                 "likeViewCount": "29",
                 "id": "691ed850000000003801734e",
                 "atUsers": [],
                 "status": 0,
+                // 子评论发布时间
                 "time": 1763629137000,
                 "ipLocation": "广东",
                 "subCommentCount": 0,
                 "commentType": 0,
-                "targetComment": { "id": "691ecf07000000000601b0e0" },
+                "targetComment": {
+                  "id": "691ecf07000000000601b0e0"
+                },
                 "noteId": "691e68a8000000001e02bcda",
                 "content": "！原来这么古早了",
                 "likeCount": 0,
@@ -316,7 +371,9 @@
               },
               {
                 "liked": false,
-                "targetComment": { "id": "691ed850000000003801734e" },
+                "targetComment": {
+                  "id": "691ed850000000003801734e"
+                },
                 "ipLocation": "安徽",
                 "atUsers": [],
                 "likeCount": 0,
@@ -348,7 +405,9 @@
                   "nickname": "栗子",
                   "image": "https://sns-avatar-qc.xhscdn.com/avatar/1040g2jo31kafm7oc2u705np7rjb0bsoq0kupqng?imageView2/2/w/120/format/jpg"
                 },
-                "targetComment": { "id": "691edc42000000001502edb4" },
+                "targetComment": {
+                  "id": "691edc42000000001502edb4"
+                },
                 "ipLocation": "广东",
                 "noteId": "691e68a8000000001e02bcda",
                 "liked": false,
@@ -370,7 +429,9 @@
                 "atUsers": [],
                 "liked": false,
                 "commentType": 0,
-                "targetComment": { "id": "69285279000000003900b36c" },
+                "targetComment": {
+                  "id": "69285279000000003900b36c"
+                },
                 "id": "69285281000000003800701f",
                 "content": "[偷笑R]",
                 "subCommentCount": 0,
@@ -390,7 +451,9 @@
                 "time": 1764250244000,
                 "content": "[偷笑R]",
                 "atUsers": [],
-                "targetComment": { "id": "69285279000000003900b36c" },
+                "targetComment": {
+                  "id": "69285279000000003900b36c"
+                },
                 "likeViewCount": "0",
                 "noteId": "691e68a8000000001e02bcda",
                 "liked": false,
@@ -424,7 +487,9 @@
                 "noteId": "691e68a8000000001e02bcda",
                 "liked": false,
                 "subCommentCount": 0,
-                "targetComment": { "id": "69285279000000003900b36c" }
+                "targetComment": {
+                  "id": "69285279000000003900b36c"
+                }
               }
             ],
             "noteId": "691e68a8000000001e02bcda",
@@ -463,11 +528,15 @@
                 "commentType": 0,
                 "noteId": "691e68a8000000001e02bcda",
                 "content": "可爱到爆炸这个小宝贝",
-                "targetComment": { "id": "69253c96000000003802f1a8" },
+                "targetComment": {
+                  "id": "69253c96000000003802f1a8"
+                },
                 "likeViewCount": "0"
               },
               {
-                "targetComment": { "id": "69253c96000000003802f1a8" },
+                "targetComment": {
+                  "id": "69253c96000000003802f1a8"
+                },
                 "likeCount": 0,
                 "liked": false,
                 "time": 1764519577000,
@@ -523,7 +592,9 @@
                     "originUrl": "http://sns-img-qc.xhscdn.com/comment/1040g2h031p7jbk4k3cdg5q186s53947rc7s2tpo"
                   }
                 ],
-                "targetComment": { "id": "69229dde000000003803205a" },
+                "targetComment": {
+                  "id": "69229dde000000003803205a"
+                },
                 "noteId": "691e68a8000000001e02bcda",
                 "content": "so cute",
                 "liked": false,
@@ -548,7 +619,9 @@
                 "subCommentCount": 0,
                 "commentType": 3,
                 "status": 0,
-                "targetComment": { "id": "6922b9490000000016020739" },
+                "targetComment": {
+                  "id": "6922b9490000000016020739"
+                },
                 "ipLocation": "浙江",
                 "content": "",
                 "atUsers": [],
@@ -583,7 +656,10 @@
               }
             ],
             "atUsers": [
-              { "userId": "6828370a000000000d0090fb", "nickname": "六元派." }
+              {
+                "userId": "6828370a000000000d0090fb",
+                "nickname": "六元派."
+              }
             ],
             "likeCount": 0,
             "likeViewCount": "4",
@@ -632,6 +708,7 @@
         "time": 1770811943122,
         "commentCountL1": 100
       },
+      // 这个没啥用，相关推荐，折叠就行了
       "relatedNotes": [
         {
           "id": "698c27b8000000000e00e0d2",
@@ -874,6 +951,7 @@
           }
         }
       ],
+      // 用户其他作品，是鼠标放用户头像时悬浮显示的那个，也没啥用
       "userOtherNotesData": [
         {
           "collects": "3",
@@ -969,7 +1047,9 @@
         }
       ]
     },
-    "config": { "articleExpand": false },
+    "config": {
+      "articleExpand": false
+    },
     "flags": "",
     "serverFlags": "",
     "initializedLaunchOpenAppTag": [
@@ -996,12 +1076,30 @@
       "to-note-related-header-btn"
     ],
     "openTagMetaData": {
-      "to-note-gallery-swipe-auto": { "init": 1571, "ready": 0 },
-      "to-profile-author-btn": { "init": 1576, "ready": 0 },
-      "to-note-cmt-header-btn": { "init": 1595, "ready": 0 },
-      "video-comment-btn": { "init": 1625, "ready": 0 },
-      "to-note-user-other-dual-col-btn": { "init": 3608, "ready": 0 },
-      "to-note-related-header-btn": { "init": 3625, "ready": 0 }
+      "to-note-gallery-swipe-auto": {
+        "init": 1571,
+        "ready": 0
+      },
+      "to-profile-author-btn": {
+        "init": 1576,
+        "ready": 0
+      },
+      "to-note-cmt-header-btn": {
+        "init": 1595,
+        "ready": 0
+      },
+      "video-comment-btn": {
+        "init": 1625,
+        "ready": 0
+      },
+      "to-note-user-other-dual-col-btn": {
+        "init": 3608,
+        "ready": 0
+      },
+      "to-note-related-header-btn": {
+        "init": 3625,
+        "ready": 0
+      }
     },
     "collectionData": {
       "id": "",
@@ -1010,8 +1108,12 @@
       "noteNum": 0,
       "paid": false,
       "totalEpisodes": 0,
+      // 小红书 App 的跳转 baseUrl
       "deeplink": "xhsdiscover://home/explore",
-      "userInfo": { "nickName": "", "avatarUrl": "" },
+      "userInfo": {
+        "nickName": "",
+        "avatarUrl": ""
+      },
       "type": 0,
       "shareInfo": {
         "shareDesc": "",
@@ -1020,11 +1122,15 @@
         "stareTitle": ""
       },
       "noteList": [],
-      "error": { "msg": "", "status": 200 }
+      "error": {
+        "msg": "",
+        "status": 200
+      }
     },
     "realUserId": "",
     "hasError": false,
     "expGroups": "",
+    // 相关推荐
     "hotlistData": [
       {
         "word_type": "无",
@@ -1223,8 +1329,13 @@
       "userNotes": [],
       "showLaunchAppModal": false,
       "show": false,
-      "routeQuery": { "code": "200" },
-      "launchAppModalParams": { "source": "", "deeplink": "" }
+      "routeQuery": {
+        "code": "200"
+      },
+      "launchAppModalParams": {
+        "source": "",
+        "deeplink": ""
+      }
     },
     "normalNotePreloadData": null
   },

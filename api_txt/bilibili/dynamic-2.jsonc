@@ -1,5 +1,4 @@
-https://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?dynamic_id=1159504791855955984
-
+// https://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?dynamic_id=1159504791855955984
 {
   "code": 0,
   "message": "OK",

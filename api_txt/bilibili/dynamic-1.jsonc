@@ -1,5 +1,4 @@
-https://api.bilibili.com/x/polymer/web-dynamic/v1/detail?id=1159504791855955984&features=itemOpusStyle
-
+// https://api.bilibili.com/x/polymer/web-dynamic/v1/detail?id=1159504791855955984&features=itemOpusStyle
 {
   "code": 0,
   "message": "0",
@@ -47,9 +46,7 @@ https://api.bilibili.com/x/polymer/web-dynamic/v1/detail?id=1159504791855955984&
                   "layer_config": {
                     "is_critical": true,
                     "tags": {
-                      "AVATAR_LAYER": {
-
-                      },
+                      "AVATAR_LAYER": {},
                       "GENERAL_CFG": {
                         "config_type": 1,
                         "general_config": {
@@ -103,9 +100,7 @@ https://api.bilibili.com/x/polymer/web-dynamic/v1/detail?id=1159504791855955984&
                           }
                         }
                       },
-                      "ICON_LAYER": {
-
-                      }
+                      "ICON_LAYER": {}
                     }
                   },
                   "resource": {
