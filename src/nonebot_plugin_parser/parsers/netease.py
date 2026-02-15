@@ -17,9 +17,7 @@ from ..constants import COMMON_HEADER
 
 class NCMParser(BaseParser):
     # 平台信息
-    platform: ClassVar[Platform] = Platform(
-        name=PlatformEnum.NETEASE, display_name="网易云音乐"
-    )
+    platform: ClassVar[Platform] = Platform(name=PlatformEnum.NETEASE, display_name="网易云音乐")
 
     def __init__(self):
         super().__init__()
@@ -40,9 +38,7 @@ class NCMParser(BaseParser):
         from httpx import AsyncClient
 
         headers = COMMON_HEADER.copy()
-        async with AsyncClient(
-            headers=headers, verify=False, follow_redirects=True, timeout=self.timeout
-        ) as client:
+        async with AsyncClient(headers=headers, verify=False, follow_redirects=True, timeout=self.timeout) as client:
             response = await client.get(url)
             response.raise_for_status()
             return str(response.url)
@@ -55,9 +51,7 @@ class NCMParser(BaseParser):
             ncm_url = await self._get_redirect_url(ncm_url)
 
         # 获取网易云歌曲id
-        matched = re.search(r"(?:\?|&)id=(\d+)", ncm_url) or re.search(
-            r"song/(\d+)", ncm_url
-        )
+        matched = re.search(r"(?:\?|&)id=(\d+)", ncm_url) or re.search(r"song/(\d+)", ncm_url)
 
         if not matched:
             raise ParseException(f"无效网易云链接: {ncm_url}")
@@ -80,9 +74,7 @@ class NCMParser(BaseParser):
                         }
                     )
 
-                    async with AsyncClient(
-                        headers=headers, verify=False, timeout=self.timeout
-                    ) as client:
+                    async with AsyncClient(headers=headers, verify=False, timeout=self.timeout) as client:
                         api_url = "https://api.bugpk.com/api/163_music"
                         # 使用GET请求，参数包括ids、level和type
                         params = {"ids": ncm_id, "level": quality, "type": "json"}
@@ -92,14 +84,10 @@ class NCMParser(BaseParser):
 
                         # 检查接口返回状态
                         if data.get("status") != 200:
-                            logger.warning(
-                                f"网易云接口返回错误: {data}，尝试下一种音质"
-                            )
+                            logger.warning(f"网易云接口返回错误: {data}，尝试下一种音质")
                             continue
 
-                        logger.info(
-                            f"使用音质: {quality} 解析成功: {data['name']} - {data['ar_name']}"
-                        )
+                        logger.info(f"使用音质: {quality} 解析成功: {data['name']} - {data['ar_name']}")
                         audio_info = f"音质: {quality} | 大小: {data.get('size', '')}"
 
                         # 提取歌词信息
@@ -136,23 +124,24 @@ class NCMParser(BaseParser):
 
         # 解析网易云音乐
         result = await self.parse_ncm(share_url)
+        contents: list[MediaContent] = []
 
-        # 创建有意义的音频文件名
-        audio_name = f"{result['title']}-{result['author']}.mp3"
         # 创建音频内容
-        audio_content = self.create_audio_content(
-            result["audio_url"], 0.0, audio_name=audio_name  # 暂时无法从API获取准确时长
-        )
+        if result["audio_url"]:
+            # 创建有意义的音频文件名
+            audio_name = f"{result['title']}-{result['author']}.mp3"
+            contents.append(
+                self.create_audio_content(
+                    result["audio_url"],
+                    0.0,
+                    audio_name=audio_name,  # 暂时无法从API获取准确时长
+                )
+            )
 
         # 创建封面图片内容
         from ..download import DOWNLOADER
 
-        cover_content = ImageContent(
-            DOWNLOADER.download_img(result["cover_url"], ext_headers=self.headers)
-        )
-
-        # 构建内容列表
-        contents: list[MediaContent] = [cover_content, audio_content]
+        contents.append(ImageContent(DOWNLOADER.download_img(result["cover_url"], ext_headers=self.headers)))
 
         # 构建文本内容
         text = f"{result['audio_info']}"
