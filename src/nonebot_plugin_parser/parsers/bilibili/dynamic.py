@@ -96,6 +96,8 @@ class DynamicMajor(Struct):
         # 从视频archive获取封面
         elif self.type == "MAJOR_TYPE_ARCHIVE" and self.archive and self.archive.cover:
             return [self.archive.cover]
+        elif self.type == "MAJOR_TYPE_OPUS" and self.opus:
+            return [pic.url for pic in self.opus.pics]
         return []
 
     @property

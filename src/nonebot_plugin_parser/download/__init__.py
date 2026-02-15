@@ -417,12 +417,3 @@ class StreamDownloader:
 
 
 DOWNLOADER: StreamDownloader = StreamDownloader()
-
-try:
-    import yt_dlp as yt_dlp  # pyright: ignore[reportMissingModuleSource]
-
-    from .ytdlp import YtdlpDownloader
-
-    YTDLP_DOWNLOADER = YtdlpDownloader()
-except ImportError:
-    YTDLP_DOWNLOADER = None

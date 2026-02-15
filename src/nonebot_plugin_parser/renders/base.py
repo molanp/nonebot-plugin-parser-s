@@ -205,12 +205,16 @@ class Renderer:
         # env = Environment(loader=FileSystemLoader(self.templates_dir))
         # template = env.get_template(template_name)
         # # 渲染
-        # with open(f"{template_name}.{uuid.uuid4()}.html", "w", encoding="utf8") as f:
-        #     f.write(template.render(**{
-        #         "result": template_data,
-        #         "rendering_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        #         "bot_name": _nickname,
-        #     }))
+        # with open(f"{self.templates_dir.parent.parent}/{datetime.datetime.now().strftime('%Y-%m-%d-%H%M%S')}.html", "w", encoding="utf8") as f:
+        #     f.write(
+        #         template.render(
+        #             **{
+        #                 "result": template_data,
+        #                 "rendering_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        #                 "bot_name": _nickname,
+        #             }
+        #         )
+        #     )
 
         return await template_to_pic(
             template_path=str(self.templates_dir),
@@ -249,6 +253,7 @@ class Renderer:
             },
             "content": content,
             "cover_path": cover_path,
+            "text": result.text,
         }
 
         if result.author:

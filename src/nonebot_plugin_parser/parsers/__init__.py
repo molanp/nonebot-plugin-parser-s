@@ -1,6 +1,17 @@
 # 导出所有 Parser 类
 from .nga import NGAParser as NGAParser
 from .base import BaseParser as BaseParser
+from .base import handle
+from .data import (
+    Author,
+    Platform,
+    ParseResult,
+    AudioContent,
+    ImageContent,
+    VideoContent,
+    DynamicContent,
+    GraphicsContent,
+)
 from .kuwo import KuWoParser as KuWoParser
 from .acfun import AcfunParser as AcfunParser
 from .kugou import KuGouParser as KuGouParser
@@ -14,24 +25,7 @@ from .toutiao import ToutiaoParser as ToutiaoParser
 from .twitter import TwitterParser as TwitterParser
 from .bilibili import BilibiliParser as BilibiliParser
 from .kuaishou import KuaiShouParser as KuaiShouParser
-from ..download import YTDLP_DOWNLOADER
 from .xiaohongshu import XiaoHongShuParser as XiaoHongShuParser
-
-if YTDLP_DOWNLOADER is not None:
-    from .tiktok import TikTokParser as TikTokParser
-    from .youtube import YouTubeParser as YouTubeParser
-
-from .base import handle
-from .data import (
-    Author,
-    Platform,
-    ParseResult,
-    AudioContent,
-    ImageContent,
-    VideoContent,
-    DynamicContent,
-    GraphicsContent,
-)
 
 __all__ = [
     "AcfunParser",

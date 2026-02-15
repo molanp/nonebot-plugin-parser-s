@@ -16,8 +16,6 @@ from ...constants import COMMON_HEADER
 
 headers = COMMON_HEADER.copy()
 
-STICKER_PROXY = "https://gh-proxy.top/"
-
 
 def get_message(name: str):
     fds = descriptor_pb2.FileDescriptorSet()
@@ -113,10 +111,9 @@ def build_contents(post: Post, text_parts: list[str]) -> tuple[list[MediaContent
             text_parts.append(part.text)
         elif isinstance(part, FragEmoji):
             sticker_task = DOWNLOADER.download_img(
-                f"{STICKER_PROXY}https://github.com/microlong666/Tieba_mobile_emotions/blob/master/{part.id}.png",
+                f"https://tb3.bdstatic.com/emoji/{part.id}@2x.png",
                 ext_headers=headers,
             )
-            # 这里表情地址也可以用 https://tb3.bdstatic.com/emoji/{part.id}@2x.png , 只不过比上面的小一点
             contents.append(StickerContent(sticker_task, "small"))
             text_parts.append(f"#({part.desc})")
         elif isinstance(part, FragImage):
@@ -131,9 +128,9 @@ def build_contents(post: Post, text_parts: list[str]) -> tuple[list[MediaContent
                 contents.append(f"@{part.text}&nbsp;")
             # 纯文本同样追加到上一段
             if text_parts:
-                text_parts[-1] += f"@{part.text}\u200b"
+                text_parts[-1] += f"@{part.text} "
             else:
-                text_parts.append(f"@{part.text}\u200b")
+                text_parts.append(f"@{part.text} ")
         elif isinstance(part, FragLink):
             url_str = str(part.url)
             if contents and isinstance(contents[-1], str):
@@ -170,7 +167,7 @@ def build_comment_content(contents: Contents) -> str:
         if isinstance(part, FragText):
             content += part.text
         elif isinstance(part, FragEmoji):
-            content += f'<img class="sticker small" src="{STICKER_PROXY}https://github.com/microlong666/Tieba_mobile_emotions/blob/master/{part.id}.png">'
+            content += f'<img class="sticker small" src="https://tb3.bdstatic.com/emoji/{part.id}@2x.png">'
         elif isinstance(part, FragImage):
             content += (
                 '<div class="images-container">'

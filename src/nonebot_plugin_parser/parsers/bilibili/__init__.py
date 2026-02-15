@@ -10,6 +10,7 @@ from collections.abc import AsyncGenerator
 import httpx
 from msgspec import convert
 from nonebot import logger
+from markupsafe import escape
 from bilibili_api import HEADERS, Credential, select_client, request_settings
 from bilibili_api.live import LiveRoom
 from bilibili_api.opus import Opus
@@ -284,8 +285,6 @@ class BilibiliParser(BaseParser):
         # 纯专栏：直接走 opus 逻辑
         if await dynamic.is_article():
             return await self._parse_opus_obj(dynamic.turn_to_opus())
-        elif await dynamic.is_opus():
-            return await self._parse_opus_obj(dynamic.turn_to_opus(), True)
 
         dynamic_info_data = await dynamic.get_info()
         logger.debug(f"B站动态链接 dynamic_info_data 原始：{dynamic_info_data}")
@@ -295,7 +294,7 @@ class BilibiliParser(BaseParser):
         author = self.create_author(dynamic_info.name, dynamic_info.avatar)
 
         # 标题 & 文本
-        dynamic_title = dynamic_info.title or "B站动态"
+        dynamic_title = dynamic_info.title
         dynamic_text = dynamic_info.text
         plain_text = dynamic_text if dynamic_text and dynamic_text != dynamic_title else ""
 
@@ -348,7 +347,7 @@ class BilibiliParser(BaseParser):
                 size = "small" if e["size"] == 1 else "medium"
                 contents.append(self.create_sticker_content(e["icon_url"], size))
             else:
-                contents.append(node.get("text", ""))
+                contents.append(escape(node.get("text", "")))
         contents.extend(self.create_image_contents(dynamic_info.image_urls))
         return contents
 
@@ -388,8 +387,8 @@ class BilibiliParser(BaseParser):
         _ = orig_item.cover_url or (orig_item.image_urls[0] if orig_item.image_urls else None)
 
         # 图文 / 专栏
-        if major_type == "OPUS" and opus_jump_url:
-            return await self._handle_repost_article(opus_jump_url)
+        # if major_type == "OPUS" and opus_jump_url:
+        #     return await self._handle_repost_article(opus_jump_url)
 
         # 视频
         if major_type == "ARCHIVE" and archive_bvid:
@@ -441,7 +440,7 @@ class BilibiliParser(BaseParser):
         if opus_id is None:
             return None
         try:
-            return await self.parse_opus(opus_id, True)
+            return await self.parse_opus(opus_id)
         except Exception as e:
             logger.warning(f"解析转发专栏失败: {e}")
             return None
@@ -500,7 +499,7 @@ class BilibiliParser(BaseParser):
         # 3. 默认：普通动态
         return dynamic_id, 17
 
-    async def parse_opus(self, opus_id: int, is_repost: bool = False):
+    async def parse_opus(self, opus_id: int):
         """解析图文信息
 
         Args:
@@ -509,7 +508,7 @@ class BilibiliParser(BaseParser):
         """
         opus = Opus(opus_id, await self.credential)
         logger.debug(f"B站OPUS解析 图文 原始：{opus}")
-        return await self._parse_opus_obj(opus, is_repost)
+        return await self._parse_opus_obj(opus)
 
     async def parse_read(self, read_id: int):
         """解析专栏信息, 使用 Opus 接口
@@ -523,12 +522,11 @@ class BilibiliParser(BaseParser):
         logger.debug(f"B站OPUS解析 专栏 原始：{bili_opus}")
         return await self._parse_opus_obj(bili_opus)
 
-    async def _parse_opus_obj(self, bili_opus: Opus, is_dynamic: bool = False):
+    async def _parse_opus_obj(self, bili_opus: Opus):
         """解析图文信息
 
         Args:
             opus_id (int): 图文 id
-            is_dynamic (bool, optional): 是否为动态. 转发则使用九宫格排版图片. Defaults to False.
         Returns:
             ParseResult: 解析结果
         """
@@ -566,16 +564,10 @@ class BilibiliParser(BaseParser):
         for node in opus_data.gen_text_img():
             if isinstance(node, ImageNode):
                 # 使用 DOWNLOADER 下载并封装为 GraphicsContent
-                # 图文不使用九宫格
-                # 若为转发则使用九宫格
-                if is_dynamic:
-                    img_task = DOWNLOADER.download_img(node.url, ext_headers=self.headers)
-                    contents.append(ImageContent(img_task))
-                else:
-                    contents.append(self.create_graphics_content(node.url, node.alt))
+                contents.append(self.create_graphics_content(node.url, node.alt))
 
             elif isinstance(node, TextNode):
-                contents.append(node.text)
+                contents.append(escape(node.text))
                 plain_text += node.text
 
         # 提取统计数据
@@ -604,26 +596,16 @@ class BilibiliParser(BaseParser):
             "type_tag": "图文",
             "type_icon": "fa-file-pen",
             "author_id": author_mid,
-            "content_id": str(opus_data.item.id_str),
+            "content_id": opus_data.item.id_str,
         }
 
         # 优先使用basic.title作为标题，如果没有则使用提取的文本或默认值
         # 如果标题和文本内容一致，则将文本置空，避免重复展示
-        basic_title = opus_data.item.basic.title if opus_data.item.basic else None
-
-        # 提取原始标题，移除默认的"xxx的动态-哔哩哔哩"格式
-        original_title = basic_title
-        if original_title and f"{author_name}的动态 - 哔哩哔哩" in original_title:
-            original_title = None
-
-        # 确定最终标题
-        final_title = original_title or plain_text or f"{author_name}的哔哩哔哩动态"
-        # 如果标题和文本内容一致，则将文本置空
-        final_text = plain_text if plain_text and plain_text != final_title else None
+        basic_title = opus_data.title
 
         # 构建图文动态URL，用于二维码生成
-        opus_id = getattr(bili_opus, "_opus_id", None) or getattr(bili_opus, "id", None)
-        opus_url = f"https://www.bilibili.com/opus/{opus_id}" if opus_id else None
+        opus_id = bili_opus.get_opus_id()
+        opus_url = f"https://www.bilibili.com/opus/{opus_id}"
 
         # 获取评论数据 - _fetch_comments方法已经处理好所有数据
         comments = None
@@ -663,8 +645,8 @@ class BilibiliParser(BaseParser):
 
         return self.result(
             url=opus_url,
-            title=final_title,
-            text=final_text,
+            title=basic_title,
+            text=plain_text,
             author=author,
             timestamp=opus_data.timestamp,
             contents=contents,
@@ -943,89 +925,115 @@ class BilibiliParser(BaseParser):
         logger.debug(f"{desc} 获得评论: {len(replies)} 条")
         return self._process_reply_list(replies)
 
+    def _render_message_with_emote(self, raw: str, emote: dict[str, Any]) -> str:
+        """将原始 message + emote 渲染为 HTML:
+        - 普通文本用 <span> 包裹
+        - 表情用 <img> 插入
+        支持同一表情多次出现 / 连续表情。
+        仅对 raw 做一次线性扫描，减少多次 find。
+        """
+        if not raw:
+            return ""
+        if not emote:
+            return f"<span class='text'>{raw}</span>"
+
+        length = len(raw)
+        segments: list[tuple[int, int, str]] = []
+
+        for e in emote.values():
+            if e.get("type") == 4:
+                continue
+
+            text = e.get("text") or ""
+            if not text:
+                continue
+
+            size = "small" if e.get("meta", {}).get("size") == 1 else "medium"
+            img_html = f'<img class="sticker {size}" src="{e.get("url","")}">'
+
+            # 找到所有出现位置
+            start = 0
+            text = escape(text)
+            tlen = len(text)
+            while True:
+                idx = raw.find(text, start)
+                if idx == -1:
+                    break
+                end = idx + tlen
+                segments.append((idx, end, img_html))
+                start = end
+
+        if not segments:
+            return f"<span class='text'>{raw}</span>"
+
+        # 过滤非法段，排序
+        valid_segments = [(s, e, h) for s, e, h in segments if 0 <= s < e <= length]
+        if not valid_segments:
+            return f"<span class='text'>{raw}</span>"
+
+        valid_segments.sort(key=lambda x: x[0])
+
+        parts: list[str] = []
+        cursor = 0
+        for start, end, img_html in valid_segments:
+            if start > cursor:
+                if text_part := raw[cursor:start]:
+                    parts.append(f"<span class='text'>{text_part}</span>")
+            parts.append(img_html)
+            cursor = end
+
+        if cursor < length:
+            if tail := raw[cursor:]:
+                parts.append(f"<span class='text'>{tail}</span>")
+
+        return "".join(parts)
+
     def _process_reply_list(self, replies: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """将 B 站评论列表转换为前端可直接使用的格式。"""
-        processed_comments: list[dict[str, Any]] = []
 
-        for comment in replies[:10]:
-            # 主评论内容
-            content = comment.get("content") or {}
-            message = content.get("message") or ""
+        def _build_single_comment(raw: dict[str, Any]) -> dict[str, Any]:
+            content = raw.get("content") or {}
+            message = escape(content.get("message", ""))
             emote = content.get("emote") or {}
+            processed_content = self._render_message_with_emote(message, emote)
 
-            for e in emote.values():
-                if e["type"] == 4:  # 颜文字
-                    continue
-                size = "small" if e["meta"]["size"] == 1 else "medium"
-                message = message.replace(e["text"], f'<img class="sticker {size}" src="{e["url"]}">')
-
-            processed_content = message
-            if pc := content.get("pictures"):
+            if pictures := content.get("pictures"):
                 processed_content += build_images_grid(
-                    pc,
+                    pictures,
                     max_visible=3,
                     key="img_src",
                 )
 
-            created_time = comment.get("ctime", 0)
-            formatted_time = datetime.fromtimestamp(created_time).strftime("%Y-%m-%d %H:%M:%S")
+            created_ts = raw.get("ctime", 0)
+            created_str = datetime.fromtimestamp(created_ts).strftime("%Y-%m-%d %H:%M:%S")
 
+            member = raw.get("member") or {}
+            return {
+                "id": raw.get("rpid_str", ""),
+                "author": {
+                    "id": raw.get("mid", ""),
+                    "name": member.get("uname", ""),
+                    "avatar": member.get("avatar", ""),
+                },
+                "content": processed_content,
+                "created_time": created_str,
+                "like": raw.get("like", 0),
+            }
+
+        processed_comments: list[dict[str, Any]] = []
+
+        for comment in replies[:10]:
             # 子回复
             child_posts: list[dict[str, Any]] = []
-            if replies_list := comment.get("replies"):
-                for reply in replies_list[:5]:
-                    reply_content = reply.get("content") or {}
-                    reply_message = reply_content.get("message") or ""
-                    reply_emote = reply_content.get("emote") or {}
+            replies_list = comment.get("replies") or []
+            for reply in replies_list[:5]:
+                child_posts.append(_build_single_comment(reply))
 
-                    for e in reply_emote.values():
-                        if e["type"] == 4:  # 颜文字
-                            continue
-                        size = "small" if e["meta"]["size"] == 1 else "medium"
-                        reply_message = reply_message.replace(
-                            e["text"], f'<img class="sticker {size}" src="{e["url"]}">'
-                        )
+            comment_obj = _build_single_comment(comment)
+            comment_obj["replies_count"] = comment.get("count", 0)
+            comment_obj["child_posts"] = child_posts
 
-                    processed_reply_content = reply_message
-                    if rc := reply_content.get("pictures"):
-                        processed_reply_content += build_images_grid(
-                            rc,
-                            max_visible=3,
-                            key="img_src",
-                        )
-
-                    reply_created_time = reply.get("ctime", 0)
-                    reply_formatted_time = datetime.fromtimestamp(reply_created_time).strftime("%Y-%m-%d %H:%M:%S")
-
-                    child_posts.append(
-                        {
-                            "id": reply.get("rpid_str", ""),
-                            "author": {
-                                "id": reply.get("mid", ""),
-                                "name": reply.get("member", {}).get("uname", ""),
-                                "avatar": reply.get("member", {}).get("avatar", ""),
-                            },
-                            "content": processed_reply_content,
-                            "created_time": reply_formatted_time,
-                            "like": reply.get("like", 0),
-                        }
-                    )
-
-            processed_comments.append(
-                {
-                    "id": comment.get("rpid_str", ""),
-                    "author": {
-                        "id": comment.get("mid", ""),
-                        "name": comment.get("member", {}).get("uname", ""),
-                        "avatar": comment.get("member", {}).get("avatar", ""),
-                    },
-                    "content": processed_content,
-                    "created_time": formatted_time,
-                    "like": comment.get("like", 0),
-                    "replies_count": comment.get("count", 0),
-                    "child_posts": child_posts,
-                }
-            )
+            processed_comments.append(comment_obj)
 
         return processed_comments
 

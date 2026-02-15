@@ -10,7 +10,7 @@ from ..utils import LimitedSizeDict
 from ..config import pconfig
 from ..helper import UniHelper, UniMessage
 from ..parsers import BaseParser, ParseResult, BilibiliParser
-from ..renders import get_renderer
+from ..renders import RENDERER
 from ..download import DOWNLOADER
 
 
@@ -82,10 +82,8 @@ async def parser_handler(
         logger.debug(f"命中缓存: {cache_key}, 结果: {result}")
 
     # 3. 渲染内容消息并发送，保存消息ID
-    renderer = get_renderer(result.platform.name)
-    logger.debug(f"获取渲染器：{renderer}")
     try:
-        async for message in renderer.render_messages(result):
+        async for message in RENDERER.render_messages(result):
             msg_sent = await message.send()
             # 保存消息ID与解析结果的关联
             if msg_sent:
@@ -144,28 +142,6 @@ async def _(message: Message = CommandArg()):
     if pconfig.need_upload:
         await UniMessage(UniHelper.file_seg(audio_path)).send()
 
-
-from ..download import YTDLP_DOWNLOADER
-
-if YTDLP_DOWNLOADER is not None:
-    from ..parsers import YouTubeParser
-
-    @on_command("ym", priority=3, block=True).handle()
-    @UniHelper.with_reaction
-    async def _(message: Message = CommandArg()):
-        text = message.extract_plain_text()
-        parser = get_parser_by_type(YouTubeParser)
-        _, matched = parser.search_url(text)
-        if not matched:
-            await UniMessage("请发送正确的油管链接").finish()
-
-        url = matched.group(0)
-
-        audio_path = await YTDLP_DOWNLOADER.download_audio(url)
-        await UniMessage(UniHelper.record_seg(audio_path)).send()
-
-        if pconfig.need_upload:
-            await UniMessage(UniHelper.file_seg(audio_path)).send()
 
 
 @on_command("blogin", block=True, permission=SUPER_PRIVATE).handle()

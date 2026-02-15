@@ -41,7 +41,6 @@ class PlatformEnum(str, Enum):
     TWITTER = "twitter"
     WEIBO = "weibo"
     XIAOHONGSHU = "xiaohongshu"
-    YOUTUBE = "youtube"
     TAPTAP = "taptap"
     QSMUSIC = "qsmusic"
     KUWO = "kuwo"

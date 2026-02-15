@@ -22,8 +22,6 @@ _data_dir: Path = _store.get_plugin_data_dir()
 class Config(BaseModel):
     parser_bili_ck: str | None = None
     """bilibili cookies"""
-    parser_ytb_ck: str | None = None
-    """youtube cookies"""
     parser_xhs_ck: str | None = None
     """小红书 cookies"""
     parser_kugou_lzkey: str | None = None
@@ -118,11 +116,6 @@ class Config(BaseModel):
     def bili_ck(self) -> str | None:
         """bilibili cookies"""
         return self.parser_bili_ck
-
-    @property
-    def ytb_ck(self) -> str | None:
-        """youtube cookies"""
-        return self.parser_ytb_ck
 
     @property
     def xhs_ck(self) -> str | None:

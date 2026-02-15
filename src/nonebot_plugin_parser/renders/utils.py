@@ -83,11 +83,7 @@ def build_images_grid(
     )
 
 
-@overload
-async def build_content(result: ParseResult) -> tuple[str, str | None]: ...
-@overload
-async def build_content(result: ParseResult, no_cover=True) -> str: ...
-async def build_content(result: ParseResult, no_cover: bool = False) -> str | tuple[str, str | None]:
+async def build_content(result: ParseResult) -> tuple[str, str | None]:
     """构建模板可用的内容 HTML 字符串。
 
     文本、图片、表情、graphics 在这里直接拼成完整 HTML
@@ -124,17 +120,17 @@ async def build_content(result: ParseResult, no_cover: bool = False) -> str | tu
             # 任意非 image 内容会打断图片连续段
             flush_images()
 
-            # 计算“下一个是否是贴纸”
-            next_is_sticker = False
-            if idx + 1 < total and isinstance(contents_seq[idx + 1], StickerContent):
-                next_is_sticker = True
+            # 计算“前一个 / 后一个是否是贴纸”
+            prev_is_sticker = idx > 0 and isinstance(contents_seq[idx - 1], StickerContent)
+            next_is_sticker = idx + 1 < total and isinstance(contents_seq[idx + 1], StickerContent)
 
             if isinstance(cont, str):
-                # 如果后一个是贴纸，用 span，不是贴纸就用 p
-                if next_is_sticker:
+                # 只要前后任意一侧是贴纸，就用 span；否则用 p
+                if prev_is_sticker or next_is_sticker:
                     html_parts.append(f'<span class="text">{cont}</span>')
                 else:
                     html_parts.append(f'<p class="text">{cont}</p>')
+
             elif isinstance(cont, GraphicsContent):
                 g_path = await cont.get_path()
                 g_src = g_path.as_uri()
@@ -155,13 +151,11 @@ async def build_content(result: ParseResult, no_cover: bool = False) -> str | tu
                 s_src = s_path.as_uri()
                 size = cont.size or "medium"
                 # 贴纸本身用 span 包裹，从而能紧跟在文本 span 后面排在同一行
-                html_parts.append(f'<span><img class="sticker {size}" src="{s_src}"></span>')
+                html_parts.append(f'<img class="sticker {size}" src="{s_src}">')
 
     # 末尾如果还有图片段，补一次 flush
     flush_images()
 
     if not cover_path:
         cover_path = await result.cover_path
-    if no_cover:
-        return "".join(html_parts)
     return "".join(html_parts), cover_path.as_uri() if cover_path else None
