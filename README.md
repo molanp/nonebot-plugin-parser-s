@@ -17,7 +17,6 @@
 | 小红书     | 链接(含短链)/卡片                 | ✅​  | ✅​           | ❌️     |
 | 快手       | 链接(包含标准链接和短链)          | ✅​  | ✅​           | ❌️     |
 | acfun      | 链接                              | ✅​  | ❌️            | ❌️     |
-| youtube    | 链接(含短链)                      | ✅​  | ❌️            | ✅​    |
 | tiktok     | 链接                              | ✅​  | ❌️            | ❌️     |
 | twitter    | 链接                              | ✅​  | ✅​           | ❌️     |
 | 酷狗音乐   | 链接(分享链接，歌曲链接)          | ❌️   | ❌️            | ✅​    |
@@ -66,10 +65,7 @@ parser_bili_video_quality=80
 # [可选] 小红书 Cookie, 部分链接无法解析，可填
 parser_xhs_ck=""
 
-# [可选] Youtube Cookie, Youtube 视频因人机检测下载失败，需填
-parser_ytb_ck=""
-
-# [可选] 代理, 仅作用于 youtube, tiktok 解析
+# [可选] 代理, 仅作用于 tiktok 解析
 # 推特解析会自动读取环境变量中的 http_proxy / https_proxy(代理软件通常会自动设置)
 parser_proxy=None
 
@@ -101,7 +97,7 @@ parser_max_size=90
 
 # [可选] 全局禁止的解析
 # 示例 parser_disabled_platforms=["bilibili", "douyin"] 表示禁止了哔哩哔哩和抖音
-# 可选值: ["bilibili", "douyin", "kuaishou", "twitter", "youtube", "acfun", "tiktok", "weibo", "xiaohongshu"]
+# 可选值: ["bilibili", "douyin", "kuaishou", "twitter", "acfun", "tiktok", "weibo", "xiaohongshu"]
 parser_disabled_platforms=["twitter"]
 
 # [可选] 是否在解析结果中附加原始URL
@@ -120,7 +116,6 @@ parser_need_forward_contents=True
 | 开启解析 | SUPERUSER/OWNER/ADMIN |  是   | 群聊 |     开启解析      |
 | 关闭解析 | SUPERUSER/OWNER/ADMIN |  是   | 群聊 |     关闭解析      |
 |    bm    |           -           |  否   | 群聊 |   下载 B 站音频   |
-|    ym    |           -           |  否   | 群聊 | 下载 youtube 音频 |
 |  blogin  |       SUPERUSER       |  否   | 私聊 | 扫码获取 B 站凭证 |
 
 ## 🧩 扩展
