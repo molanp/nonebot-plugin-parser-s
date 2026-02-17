@@ -1,7 +1,7 @@
 from msgspec import Struct, field
 from msgspec.json import Decoder
 
-from .common import Video, get_note_no_water_img
+from .common import Video
 
 
 class Image(Struct):
@@ -32,7 +32,7 @@ class NoteDetail(Struct):
 
     @property
     def image_urls(self) -> list[str]:
-        return [get_note_no_water_img(item.urlDefault) for item in self.imageList]
+        return [item.urlDefault for item in self.imageList]
 
     @property
     def video_url(self) -> str | None:
