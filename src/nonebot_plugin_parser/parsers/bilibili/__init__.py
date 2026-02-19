@@ -176,7 +176,7 @@ class BilibiliParser(BaseParser):
         # 转换为 msgspec struct
         video_info = convert(await video.get_info(), VideoInfo)
         # 获取简介
-        text = f"简介: {video_info.desc}" if video_info.desc else None
+        text = f"简介: {video_info.desc}" if video_info.desc else ""
         # up
         author = self.create_author(video_info.owner.name, video_info.owner.face)
         # 处理分 p
@@ -270,9 +270,8 @@ class BilibiliParser(BaseParser):
             url=url,
             title=page_info.title,
             timestamp=page_info.timestamp,
-            text=text,
             author=author,
-            contents=[video_content],
+            contents=[escape(text), video_content],
             extra=extra_data,
         )
 
@@ -700,7 +699,7 @@ class BilibiliParser(BaseParser):
             url=url,
             title=room_data.title,
             text=room_data.detail,
-            contents=contents,
+            contents=[room_data.detail, contents],
             author=author,
             extra=extra_data,
         )
