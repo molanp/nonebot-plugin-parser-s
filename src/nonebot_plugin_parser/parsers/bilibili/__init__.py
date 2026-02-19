@@ -699,7 +699,7 @@ class BilibiliParser(BaseParser):
             url=url,
             title=room_data.title,
             text=room_data.detail,
-            contents=[room_data.detail, contents],
+            contents=contents,
             author=author,
             extra=extra_data,
         )
