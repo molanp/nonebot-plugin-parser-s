@@ -131,6 +131,47 @@ class Author:
 
 
 @dataclass(repr=False, slots=True)
+class Comment:
+    """评论信息"""
+
+    author: Author
+    """作者信息"""
+    rich_content: list[MediaContent | str] | list[MediaContent]
+    """评论内容"""
+    timestamp: int = 0
+    """发布时间戳, 秒"""
+    like_count: int = 0
+    """点赞数"""
+    reply_count: int = 0
+    """回复数"""
+    location: str | None = None
+    """位置信息"""
+    replys: list["Comment"] = field(default_factory=list)
+    """子评论列表"""
+
+    def append(self, comment: "Comment"):
+        self.replys.append(comment)
+
+
+@dataclass(repr=False, slots=True)
+class State:
+    """统计信息"""
+
+    view_count: int = 0
+    """浏览数"""
+    like_count: int = 0
+    """点赞数"""
+    collecte_count: int = 0
+    """收藏数"""
+    share_count: int = 0
+    """分享数"""
+    comment_count: int = 0
+    """评论数"""
+    extra: dict[str, Any] = field(default_factory=dict)
+    """额外信息, 比如弹幕数/硬币数"""
+
+
+@dataclass(repr=False, slots=True)
 class ParseResult:
     """完整的解析结果"""
 

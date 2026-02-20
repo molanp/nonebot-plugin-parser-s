@@ -44,7 +44,7 @@ class TiebaParser(BaseParser):
             title=thread.title,
             plain_text="".join(text_parts),
             author=author,
-            rich_content=contents,  # TODO: 富文本
+            rich_content=contents,
             timestamp=thread.create_time,
             url=f"https://tieba.baidu.com/p/{post_id}",
             extra=extra,
