@@ -205,7 +205,7 @@ class Renderer:
         # env = Environment(loader=FileSystemLoader(self.templates_dir))
         # template = env.get_template(template_name)
         # # 渲染
-        # with open(f"{self.templates_dir.parent.parent}/{datetime.datetime.now().strftime('%Y-%m-%d-%H%M%S')}.html", "w", encoding="utf8") as f:
+        # with open(f"{self.templates_dir.parent.parent}/{datetime.datetime.now().strftime('%Y-%m-%d-%H%M%S')}.html", "w", encoding="utf8") as f:  # noqa: E501
         #     f.write(
         #         template.render(
         #             **{
