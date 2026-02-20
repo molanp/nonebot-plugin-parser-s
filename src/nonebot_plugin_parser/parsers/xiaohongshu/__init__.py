@@ -129,7 +129,7 @@ class XiaoHongShuParser(BaseParser):
 
         author = self.create_author(author_name, author_avatar)
 
-        return self.result(title=title, text=text, author=author, contents=contents, timestamp=timestamp)
+        return self.result(title=title, plain_text=text, author=author, rich_content=contents, timestamp=timestamp)
 
     async def parse_explore(self, url: str, note_id: str):
         init_state = await self._fetch_initial_state(url, mode="explore")

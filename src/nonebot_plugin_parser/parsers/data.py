@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Any, Literal, TypedDict
 from asyncio import Task
 from pathlib import Path
 from datetime import datetime
@@ -140,13 +140,13 @@ class ParseResult:
     """作者信息"""
     title: str | None = None
     """标题"""
-    text: str | None = None
+    plain_text: str | None = None
     """纯文本内容"""
     timestamp: int | None = None
     """发布时间戳, 秒"""
     url: str | None = None
     """来源链接"""
-    contents: list[MediaContent | str] | list[MediaContent] = field(default_factory=list)
+    rich_content: list[MediaContent | str] | list[MediaContent] = field(default_factory=list)
     """富文本内容"""
     extra: dict[str, Any] = field(default_factory=dict)
     """额外信息"""
@@ -154,16 +154,6 @@ class ParseResult:
     """转发的内容"""
     render_image: Path | None = None
     """渲染图片"""
-
-    @property
-    def header(self) -> str | None:
-        """头信息 仅用于 default render"""
-        header = self.platform.display_name
-        if self.author:
-            header += f" @{self.author.name}"
-        if self.title:
-            header += f" | {self.title}"
-        return header
 
     @property
     def display_url(self) -> str | None:
@@ -181,12 +171,12 @@ class ParseResult:
     async def cover_path(self) -> Path | None:
         """获取封面路径"""
         # 先检查视频内容
-        for cont in self.contents:
+        for cont in self.rich_content:
             if isinstance(cont, VideoContent):
                 return await cont.get_cover_path()
 
         # 检查图片内容，返回第一张图片作为封面
-        for cont in self.contents:
+        for cont in self.rich_content:
             if isinstance(cont, ImageContent):
                 return await cont.get_path()
 
@@ -210,21 +200,17 @@ class ParseResult:
             f"title: {self.title}, "
             f"url: {self.url}, "
             f"author: {self.author}, "
-            f"contents: {self.contents}, "
+            f"rich_content: {self.rich_content}, "
             f"extra: {self.extra}, "
             f"repost: {self.repost}, "
             f"render_image: {self.render_image.name if self.render_image else 'None'}"
         )
 
 
-from typing import Any, TypedDict
-from dataclasses import field, dataclass
-
-
 class ParseResultKwargs(TypedDict, total=False):
     title: str | None
-    text: str | None
-    contents: list[MediaContent | str] | list[MediaContent]
+    plain_text: str | None
+    rich_content: list[MediaContent | str] | list[MediaContent]
     timestamp: int | None
     url: str | None
     author: Author | None

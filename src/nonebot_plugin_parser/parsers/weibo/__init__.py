@@ -119,8 +119,8 @@ class WeiBoParser(BaseParser):
             title=data.title,
             author=author,
             timestamp=data.create_at_unix,
-            text=end_text,
-            contents=contents,
+            plain_text=end_text,
+            rich_content=contents,
         )
 
     async def parse_fid(self, fid: str):
@@ -153,9 +153,9 @@ class WeiBoParser(BaseParser):
 
         return self.result(
             title=play_info.title,
-            text=play_info.text,
+            plain_text=play_info.text,
             author=author,
-            contents=[video_content],
+            rich_content=[video_content],
             timestamp=play_info.real_date,
         )
 
@@ -219,9 +219,9 @@ class WeiBoParser(BaseParser):
 
         return self.result(
             title=data.title,
-            text=data.text_content,
+            plain_text=data.text_content,
             author=author,
-            contents=contents,
+            rich_content=contents,
             timestamp=data.timestamp,
             url=data.url,
             repost=repost,

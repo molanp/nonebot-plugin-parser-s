@@ -3,7 +3,6 @@ import datetime
 from io import BytesIO
 from typing import Any, ClassVar
 from pathlib import Path
-from itertools import chain
 from collections.abc import AsyncGenerator
 
 import qrcode  # pyright: ignore[reportMissingModuleSource]
@@ -63,7 +62,8 @@ class Renderer:
         forwardable_segs: list[ForwardNodeInner] = []
         dynamic_segs: list[ForwardNodeInner] = []
 
-        for cont in chain(result.contents, result.repost.contents if result.repost else ()):
+        # 不再处理被转发内容中的媒体
+        for cont in result.rich_content:
             match cont:
                 case VideoContent() | AudioContent():
                     # 立即发送模式
@@ -135,18 +135,18 @@ class Renderer:
             author_name = result.author.name if result.author else "未知用户"
 
             # 添加转发内容的标题和文本，包含原作者信息
-            if result.contents:
+            if result.rich_content:
                 if result.repost:
                     # result.repost是被转发者的内容，所以repost_author是被转发者
                     repost_author = result.repost.author.name if result.repost.author else "未知用户"
                     # 当前result是转发者的动态，所以作者是转发者
-                    forwardable_segs.append(f"{author_name}[转发{repost_author}]：{result.text}")
+                    forwardable_segs.append(f"{author_name}[转发{repost_author}]：{result.plain_text}")
 
                     repost_text = []
                     if result.repost.title:
                         repost_text.append(result.repost.title)
-                    if result.repost.text:
-                        repost_text.append(result.repost.text)
+                    if result.repost.plain_text:
+                        repost_text.append(result.repost.plain_text)
 
                     # 构造转发文本，格式为：XXXB[转发XXXA]：XXX内容 XXXA:XXX内容
                     # 其中XXXB是转发者，XXXA是被转发者
@@ -155,7 +155,7 @@ class Renderer:
                         # 被转发者：被转发者的内容
                         forwardable_segs.append(f"{repost_author}[被转作者]：{repost_content}")
                 else:
-                    forwardable_segs.append(f"{author_name}：{result.text}")
+                    forwardable_segs.append(f"{author_name}：{result.plain_text}")
 
             if pconfig.need_forward_contents or len(forwardable_segs) > 4:
                 forward_msg = UniHelper.construct_forward_message(forwardable_segs + dynamic_segs)
@@ -253,7 +253,7 @@ class Renderer:
             },
             "content": content,
             "cover_path": cover_path,
-            "text": result.text,
+            "text": result.plain_text,
         }
 
         if result.author:

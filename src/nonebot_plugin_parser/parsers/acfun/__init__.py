@@ -51,10 +51,10 @@ class AcfunParser(BaseParser):
 
         return self.result(
             title=video_info.title,
-            text=video_info.text,
+            plain_text=video_info.text,
             author=author,
             timestamp=video_info.timestamp,
-            contents=[video_content],
+            rich_content=[video_content],
         )
 
     async def parse_video_info(self, url: str):

@@ -130,10 +130,10 @@ class NGAParser(BaseParser):
 
         return self.result(
             title=title,
-            text=text,
+            plain_text=text,
             url=url,
             author=author,
-            contents=contents,
+            rich_content=contents,
             timestamp=timestamp,
         )
 

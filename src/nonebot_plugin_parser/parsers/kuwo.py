@@ -110,8 +110,8 @@ class KuWoParser(BaseParser):
                     title=music_data["title"],
                     author=self.create_author(music_data["artist"]),
                     url=share_url,
-                    text=text,
-                    contents=contents,
+                    plain_text=text,
+                    rich_content=contents,
                     extra=extra,
                 )
         except Exception as e:

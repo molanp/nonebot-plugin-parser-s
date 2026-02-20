@@ -271,7 +271,7 @@ class BilibiliParser(BaseParser):
             title=page_info.title,
             timestamp=page_info.timestamp,
             author=author,
-            contents=[escape(text), video_content],
+            rich_content=[escape(text), video_content],
             extra=extra_data,
         )
 
@@ -329,10 +329,10 @@ class BilibiliParser(BaseParser):
         return self.result(
             url=dynamic_url,
             title=dynamic_title,
-            text=plain_text,
+            plain_text=plain_text,
             timestamp=dynamic_info.timestamp,
             author=author,
-            contents=contents,
+            rich_content=contents,
             extra=extra_data,
             repost=repost_result,
         )
@@ -645,10 +645,10 @@ class BilibiliParser(BaseParser):
         return self.result(
             url=opus_url,
             title=basic_title,
-            text=plain_text,
+            plain_text=plain_text,
             author=author,
             timestamp=opus_data.timestamp,
-            contents=contents,
+            rich_content=contents,
             extra=extra_data,
         )
 
@@ -698,8 +698,8 @@ class BilibiliParser(BaseParser):
         return self.result(
             url=url,
             title=room_data.title,
-            text=room_data.detail,
-            contents=contents,
+            plain_text=room_data.detail,
+            rich_content=contents,
             author=author,
             extra=extra_data,
         )
@@ -726,7 +726,7 @@ class BilibiliParser(BaseParser):
             title=favdata.title,
             timestamp=favdata.timestamp,
             author=self.create_author(favdata.info.upper.name, favdata.info.upper.face),
-            contents=[self.create_graphics_content(fav.cover, fav.desc) for fav in favdata.medias],
+            rich_content=[self.create_graphics_content(fav.cover, fav.desc) for fav in favdata.medias],
         )
 
     async def _get_video(self, *, bvid: str | None = None, avid: int | None = None) -> Video:

@@ -225,7 +225,7 @@ class KuGouParser(BaseParser):
                 title=song_details.get("title", page_title),
                 author=self.create_author(song_details.get("singer", page_author)),
                 url=link,
-                text=text,
-                contents=contents,
+                plain_text=text,
+                rich_content=contents,
                 extra=extra,
             )

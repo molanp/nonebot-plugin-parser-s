@@ -110,7 +110,7 @@ class TwitterParser(BaseParser):
         return self.result(
             title=title,
             author=self.create_author("无用户名"),
-            contents=contents,
+            rich_content=contents,
         )
         # # 4. 提取Twitter ID
         # twitter_id_input = soup.find("input", {"id": "TwitterId"})

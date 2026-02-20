@@ -75,6 +75,6 @@ class KuaiShouParser(BaseParser):
         return self.result(
             title=photo.caption,
             author=author,
-            contents=contents,
+            rich_content=contents,
             timestamp=photo.timestamp // 1000,
         )

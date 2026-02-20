@@ -94,8 +94,8 @@ class QSMusicParser(BaseParser):
                     title=music_data["albumname"],
                     author=self.create_author(music_data["artistsname"]),
                     url=share_url,
-                    text=text,
-                    contents=contents,
+                    plain_text=text,
+                    rich_content=contents,
                     extra=extra,
                 )
         except Exception as e:

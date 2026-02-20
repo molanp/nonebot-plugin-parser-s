@@ -120,8 +120,8 @@ class ToutiaoParser(BaseParser):
                     title=video_data.get("title", "无标题"),
                     author=self.create_author(author_name, author_avatar),
                     url=share_url,
-                    text=video_data.get("description", ""),
-                    contents=contents,
+                    plain_text=video_data.get("description", ""),
+                    rich_content=contents,
                     extra=extra,
                 )
         except Exception as e:

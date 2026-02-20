@@ -104,7 +104,7 @@ async def build_content(result: ParseResult) -> tuple[str, str | None]:
             current_imgs = []
 
     # 预先看一眼“下一个内容”，用于判断文本后面是否紧跟贴纸
-    contents_seq = result.contents
+    contents_seq = result.rich_content
     total = len(contents_seq)
 
     for idx, cont in enumerate(contents_seq):

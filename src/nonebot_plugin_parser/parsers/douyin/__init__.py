@@ -102,7 +102,7 @@ class DouyinParser(BaseParser):
         return self.result(
             title=video_data.desc,
             author=author,
-            contents=contents,
+            rich_content=contents,
             timestamp=video_data.create_time,
         )
 
@@ -135,6 +135,6 @@ class DouyinParser(BaseParser):
         return self.result(
             title=slides_data.desc,
             author=author,
-            contents=contents,
+            rich_content=contents,
             timestamp=slides_data.create_time,
         )

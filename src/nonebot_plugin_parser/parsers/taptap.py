@@ -1140,7 +1140,7 @@ class TapTapParser(BaseParser):
                     topic_name = title
                     break
 
-        return self.result(title=topic_name, text=f"查看话题详情: {url}", url=url)
+        return self.result(title=topic_name, plain_text=f"查看话题详情: {url}", url=url)
 
     @handle(keyword="taptap.cn/review", pattern=r"taptap\.cn/review/(\d+)")
     async def handle_review(self, matched):
@@ -1224,11 +1224,11 @@ class TapTapParser(BaseParser):
 
         result = self.result(
             title=detail["title"],
-            text=detail.get("text", detail["summary"]),
+            plain_text=detail.get("text", detail["summary"]),
             url=detail["url"],
             author=author,
             timestamp=timestamp,
-            contents=contents,
+            rich_content=contents,
             extra=extra_data,
         )
 
