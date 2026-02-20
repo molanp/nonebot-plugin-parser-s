@@ -1,6 +1,6 @@
 from random import choice
 
-from msgspec import Struct, json, field
+from msgspec import Struct, field
 
 
 class CdnUrl(Struct):
@@ -9,16 +9,16 @@ class CdnUrl(Struct):
 
 
 class Atlas(Struct):
-    music_cdn_list: list[CdnUrl] = field(name="musicCdnList", default_factory=list)
-    cdn_list: list[CdnUrl] = field(name="cdnList", default_factory=list)
-    size: list[dict] = field(name="size", default_factory=list)
+    musicCdnList: list[CdnUrl] = field(default_factory=list)
+    cdnList: list[CdnUrl] = field(default_factory=list)
+    size: list[dict] = field(default_factory=list)
     img_route_list: list[str] = field(name="list", default_factory=list)
 
     @property
     def img_urls(self):
-        if len(self.cdn_list) == 0 or len(self.img_route_list) == 0:
+        if len(self.cdnList) == 0 or len(self.img_route_list) == 0:
             return []
-        cdn = choice(self.cdn_list).cdn
+        cdn = choice(self.cdnList).cdn
         return [f"https://{cdn}/{url}" for url in self.img_route_list]
 
 
@@ -27,36 +27,78 @@ class ExtParams(Struct):
 
 
 class Photo(Struct):
-    # 标题
     caption: str
+    """标题"""
     timestamp: int
+    """发布时间"""
     duration: int = 0
-    user_name: str = field(default="未知用户", name="userName")
-    head_url: str | None = field(default=None, name="headUrl")
-    cover_urls: list[CdnUrl] = field(name="coverUrls", default_factory=list)
-    main_mv_urls: list[CdnUrl] = field(name="mainMvUrls", default_factory=list)
-    ext_params: ExtParams = field(name="ext_params", default_factory=ExtParams)
+    """时长"""
+    userName: str = "未知用户"
+    """用户名"""
+    headUrl: str | None = None
+    """头像"""
+    likeCount: int = 0
+    """点赞数"""
+    commentCount: int = 0
+    """评论数"""
+    viewCount: int = 0
+    """浏览数"""
+    shareCount: int = 0
+    """分享数"""
+    coverUrls: list[CdnUrl] = field(default_factory=list)
+    mainMvUrls: list[CdnUrl] = field(default_factory=list)
+    ext_params: ExtParams = field(default_factory=ExtParams)
 
     @property
     def name(self) -> str:
-        return self.user_name.replace("\u3164", "").strip()
+        return self.userName.replace("\u3164", "").strip()
 
     @property
     def cover_url(self):
-        return choice(self.cover_urls).url if len(self.cover_urls) != 0 else None
+        """封面链接"""
+        return choice(self.coverUrls).url if len(self.coverUrls) != 0 else None
 
     @property
     def video_url(self):
-        return choice(self.main_mv_urls).url if len(self.main_mv_urls) != 0 else None
+        """视频链接"""
+        return choice(self.mainMvUrls).url if len(self.mainMvUrls) != 0 else None
 
     @property
     def img_urls(self):
+        """图片链接列表"""
         return self.ext_params.atlas.img_urls
 
 
-class TusjohData(Struct):
-    result: int
+class Info(Struct):
     photo: Photo | None = None
 
 
-decoder = json.Decoder(dict[str, TusjohData])
+class EmotionConfigList(Struct):
+    emojiCode: str
+    emojiUrlList: list[str]
+
+
+class SystemStartup(Struct):
+    emotionConfigList: list[EmotionConfigList]
+    """贴纸映射列表"""
+
+
+class Data(Struct):
+    """
+    若不是等待加载完成，而是直接fetch源码，则数据项只有
+
+    - `/rest/wd/system/startup` 系统信息
+    - `/rest/zt/share/w/web` 没用的信息
+    - `/rest/wd/user/profile` 链接分享者信息
+    - `/rest/wd/ugH5App/photo/simple/info` 视频/图集信息
+    - `/rest/wd/user/profile/author` 作者信息
+    """
+
+    startup: SystemStartup = field(name="/rest/wd/system/startup")
+    """系统信息"""
+    info: Info = field(name="/rest/wd/ugH5App/photo/simple/info")
+    """视频/图集信息"""
+    comments: dict | None = field(default=None, name="/rest/wd/photo/comment/list")
+    """评论信息
+    > TODO: 待完善模型
+    """

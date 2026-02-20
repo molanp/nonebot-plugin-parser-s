@@ -1,19 +1,20 @@
 import re
 from typing import ClassVar
 
+import msgspec
 from httpx import AsyncClient
 
 from ..base import BaseParser, PlatformEnum, ParseException, handle
 from ..data import Platform
+from .decode import decode_init_state
+from .states import Data
 
 
 class KuaiShouParser(BaseParser):
     """快手解析器"""
 
     # 平台信息
-    platform: ClassVar[Platform] = Platform(
-        name=PlatformEnum.KUAISHOU, display_name="快手"
-    )
+    platform: ClassVar[Platform] = Platform(name=PlatformEnum.KUAISHOU, display_name="快手")
 
     def __init__(self):
         super().__init__()
@@ -24,8 +25,6 @@ class KuaiShouParser(BaseParser):
     @handle("kuaishou", r"(?:www\.)?kuaishou\.com/[A-Za-z\d._?%&+\-=/#]+")
     @handle("chenzhongtech", r"(?:v\.m\.)?chenzhongtech\.com/fw/[A-Za-z\d._?%&+\-=/#]+")
     async def _parse_v_kuaishou(self, searched: re.Match[str]):
-        from . import states
-
         # 从匹配对象中获取原始URL
         url = f"https://{searched.group(0)}"
         real_url = await self.get_redirect_url(url, headers=self.ios_headers)
@@ -36,9 +35,7 @@ class KuaiShouParser(BaseParser):
         # /fw/long-video/ 返回结果不一样, 统一替换为 /fw/photo/ 请求
         real_url = real_url.replace("/fw/long-video/", "/fw/photo/")
 
-        async with AsyncClient(
-            headers=self.ios_headers, timeout=self.timeout
-        ) as client:
+        async with AsyncClient(headers=self.ios_headers, timeout=self.timeout) as client:
             response = await client.get(real_url)
             response.raise_for_status()
             response_text = response.text
@@ -49,10 +46,10 @@ class KuaiShouParser(BaseParser):
         if not matched:
             raise ParseException("failed to parse video JSON info from HTML")
 
-        raw = matched[1].strip()
-        data_map = states.decoder.decode(raw)
+        raw = decode_init_state(matched[1].strip())
+        data_map = msgspec.convert(raw, Data)
 
-        photo = next((d.photo for d in data_map.values() if d.photo is not None), None)
+        photo = data_map.info.photo
         if photo is None:
             raise ParseException("window.init_state don't contains videos or pics")
 
@@ -61,19 +58,18 @@ class KuaiShouParser(BaseParser):
 
         # 添加视频内容
         if video_url := photo.video_url:
-            contents.append(
-                self.create_video_content(video_url, photo.cover_url, photo.duration)
-            )
+            contents.append(self.create_video_content(video_url, photo.cover_url, photo.duration))
 
         # 添加图片内容
         if img_urls := photo.img_urls:
             contents.extend(self.create_image_contents(img_urls))
 
         # 构建作者
-        author = self.create_author(photo.name, photo.head_url)
+        author = self.create_author(photo.name, photo.headUrl)
 
         return self.result(
             title=photo.caption,
+            plain_text=photo.caption,
             author=author,
             rich_content=contents,
             timestamp=photo.timestamp // 1000,

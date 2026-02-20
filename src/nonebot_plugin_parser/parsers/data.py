@@ -250,10 +250,18 @@ class ParseResult:
 
 class ParseResultKwargs(TypedDict, total=False):
     title: str | None
+    """标题"""
     plain_text: str | None
+    """纯文本内容"""
     rich_content: list[MediaContent | str] | list[MediaContent]
+    """富文本内容"""
     timestamp: int | None
+    """发布时间戳, 秒"""
     url: str | None
+    """来源链接"""
     author: Author | None
+    """作者信息"""
     extra: dict[str, Any]
+    """额外信息"""
     repost: ParseResult | None
+    """转发的内容"""

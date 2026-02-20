@@ -1,4 +1,5 @@
 import re
+import json
 
 # 预编译正则：只用于路径提取和 ID 定位
 RE_PATH = re.compile(r"0sftu[^.\-@]*")
@@ -25,6 +26,9 @@ def get_final_stable_path_ultimate(text):
     return decoded_path
 
 
-def decode_init_state_fast(input_dict: dict):
+def decode_init_state(input_dict: dict | str):
+    if isinstance(input_dict, str):
+        input_dict = json.loads(input_dict)
+    assert isinstance(input_dict, dict), "input_dict must be a dict after JSON parsing"
     # 字典推导式配合 items 迭代器
     return {get_final_stable_path_ultimate(k): v for k, v in input_dict.items()}
