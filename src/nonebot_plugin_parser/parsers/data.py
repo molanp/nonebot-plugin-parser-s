@@ -136,21 +136,25 @@ class Comment:
 
     author: Author
     """作者信息"""
-    rich_content: list[MediaContent | str] | list[MediaContent]
-    """评论内容"""
-    timestamp: int = 0
-    """发布时间戳, 秒"""
+    rich_content: list[MediaContent | str]
+    """评论内容，可以是文本或媒体对象"""
+    timestamp: int
+    """发布时间戳，单位秒"""
     like_count: int = 0
     """点赞数"""
     reply_count: int = 0
     """回复数"""
     location: str | None = None
-    """位置信息"""
-    replys: list["Comment"] = field(default_factory=list)
+    """位置信息，可选"""
+    replies: list["Comment"] = field(default_factory=list)
     """子评论列表"""
+    parent_author: Author | None = None
+    """父评论作者，用于渲染“回复 @xxx”，可选"""
 
-    def append(self, comment: "Comment"):
-        self.replys.append(comment)
+    def add_reply(self, comment: "Comment", parent: Author | None = None):
+        """添加子评论"""
+        comment.parent_author = parent or self.author
+        self.replies.append(comment)
 
 
 @dataclass(repr=False, slots=True)
