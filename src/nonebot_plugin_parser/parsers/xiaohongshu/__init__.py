@@ -1,5 +1,5 @@
 import re
-from typing import Literal, ClassVar, overload
+from typing import ClassVar
 from urllib.parse import parse_qsl
 
 from curl_cffi import AsyncSession
@@ -8,8 +8,6 @@ from ..base import Platform, BaseParser, PlatformEnum, ParseException, handle, p
 from ..data import MediaContent
 from .explore import InitialState as exploreInitialState
 from .explore import decoder as exploreDecoder
-from .discovery import InitialState as discoveryInitialState
-from .discovery import decoder as discoveryDecoder
 
 
 class XiaoHongShuParser(BaseParser):
@@ -75,20 +73,9 @@ class XiaoHongShuParser(BaseParser):
 
         full_url += f"?xsec_token={xsec_token}&xsec_source=pc_share"
 
-        # if parse_type == "explore":
-        # 测试来看似乎都可以走 explore 解析，因为fetch没有手机的尺寸，访问discovery会302
         return await self.parse_explore(full_url, note_id)
 
-        # # discovery/item
-        # return await self.parse_discovery(full_url)
-
-    @overload
-    async def _fetch_initial_state(self, url: str, mode: Literal["explore"]) -> exploreInitialState: ...
-    @overload
-    async def _fetch_initial_state(self, url: str, mode: Literal["discovery"]) -> discoveryInitialState: ...
-    async def _fetch_initial_state(
-        self, url: str, mode: Literal["explore", "discovery"]
-    ) -> exploreInitialState | discoveryInitialState:
+    async def _fetch_initial_state(self, url: str) -> exploreInitialState:
         """
         mode: "explore" | "discovery"
         """
@@ -102,10 +89,7 @@ class XiaoHongShuParser(BaseParser):
             raw = matched[1].replace("undefined", "null")
         else:
             raise ParseException("小红书分享链接失效或内容已删除")
-        if mode == "explore":
-            return exploreDecoder.decode(raw)
-        else:
-            return discoveryDecoder.decode(raw)
+        return exploreDecoder.decode(raw)
 
     def _build_result_from_note(
         self,
@@ -115,24 +99,26 @@ class XiaoHongShuParser(BaseParser):
         author_name: str,
         author_avatar: str,
         video_url: str | None,
+        live_urls: list[tuple[str, str]],
         image_urls: list[str],
         timestamp: int,
         cover_from_images: bool = True,
     ):
-        contents: list[MediaContent] = []
+        contents: list[MediaContent | str] = [text]
 
         if video_url:
             cover_url = image_urls[0] if cover_from_images and image_urls else None
-            contents.append(self.create_video_content(video_url, cover_url))
+            contents.append(self.create_video(video_url, cover_url))
         elif image_urls:
-            contents.extend(self.create_image_contents(image_urls))
+            contents.extend(self.create_images(image_urls))
 
+        contents.extend(self.create_video(live_url, live_cover_url) for live_url, live_cover_url in live_urls)
         author = self.create_author(author_name, author_avatar)
 
-        return self.result(title=title, plain_text=text, author=author, rich_content=contents, timestamp=timestamp)
+        return self.result(title=title, author=author, content=contents, timestamp=timestamp)
 
     async def parse_explore(self, url: str, note_id: str):
-        init_state = await self._fetch_initial_state(url, mode="explore")
+        init_state = await self._fetch_initial_state(url)
         note_detail = init_state.note.noteDetailMap[note_id].note
 
         return self._build_result_from_note(
@@ -141,25 +127,7 @@ class XiaoHongShuParser(BaseParser):
             author_name=note_detail.nickname,
             author_avatar=note_detail.avatar_url,
             video_url=note_detail.video_url,
+            live_urls=note_detail.live_urls,
             image_urls=note_detail.image_urls,
             timestamp=note_detail.lastUpdateTime // 1000,
         )
-
-    # async def parse_discovery(self, url: str):
-    #     init_state = await self._fetch_initial_state(url, mode="discovery")
-    #     note_data = init_state.noteData.data.noteData
-
-    #     if note_data.video_url and (preload_data := init_state.noteData.normalNotePreloadData):
-    #         img_urls = preload_data.image_urls
-    #     else:
-    #         img_urls = note_data.image_urls
-    #     return self._build_result_from_note(
-    #         title=note_data.title,
-    #         text=note_data.desc,
-    #         author_name=note_data.user.nickName,
-    #         author_avatar=note_data.user.avatar,
-    #         video_url=note_data.video_url,
-    #         image_urls=img_urls,
-    #         timestamp=note_data.time // 1000,
-    #         cover_from_images=True,
-    #     )

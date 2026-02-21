@@ -124,14 +124,19 @@ class NCMParser(BaseParser):
 
         # 解析网易云音乐
         result = await self.parse_ncm(share_url)
-        contents: list[MediaContent] = []
+        # 构建文本内容
+        text = f"{result['audio_info']}"
+        if result["lyric"]:
+            text += f"\n歌词:\n{result['lyric']}"
+
+        contents: list[MediaContent | str] = [text]
 
         # 创建音频内容
         if result["audio_url"]:
             # 创建有意义的音频文件名
             audio_name = f"{result['title']}-{result['author']}.mp3"
             contents.append(
-                self.create_audio_content(
+                self.create_audio(
                     result["audio_url"],
                     0.0,
                     audio_name=audio_name,  # 暂时无法从API获取准确时长
@@ -142,11 +147,6 @@ class NCMParser(BaseParser):
         from ..download import DOWNLOADER
 
         contents.append(ImageContent(DOWNLOADER.download_img(result["cover_url"], ext_headers=self.headers)))
-
-        # 构建文本内容
-        text = f"{result['audio_info']}"
-        if result["lyric"]:
-            text += f"\n歌词:\n{result['lyric']}"
 
         # 构建额外信息
         extra = {
@@ -160,7 +160,6 @@ class NCMParser(BaseParser):
             title=result["title"],
             author=self.create_author(result["author"]),
             url=share_url,
-            plain_text=text,
-            rich_content=contents,
+            content=contents,
             extra=extra,
         )

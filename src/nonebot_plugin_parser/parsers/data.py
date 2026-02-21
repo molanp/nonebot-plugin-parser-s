@@ -3,7 +3,7 @@ from asyncio import Task
 from pathlib import Path
 from datetime import datetime
 from dataclasses import field, dataclass
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable, Sequence, Coroutine
 
 
 def repr_path_task(
@@ -75,13 +75,6 @@ class ImageContent(MediaContent):
 
 
 @dataclass(repr=False, slots=True)
-class DynamicContent(MediaContent):
-    """动态内容 视频格式 后续转 gif"""
-
-    gif_path: Path | None = None
-
-
-@dataclass(repr=False, slots=True)
 class GraphicsContent(MediaContent):
     """图文内容 渲染时文字在前 图片在后"""
 
@@ -98,6 +91,8 @@ class StickerContent(MediaContent):
             - small: 比文字大一点
             - medium: 文字大小的两倍大一点
     """
+    desc: str | None = None
+    """贴纸描述"""
 
 
 @dataclass(slots=True)
@@ -131,33 +126,6 @@ class Author:
 
 
 @dataclass(repr=False, slots=True)
-class Comment:
-    """评论信息"""
-
-    author: Author
-    """作者信息"""
-    rich_content: list[MediaContent | str]
-    """评论内容，可以是文本或媒体对象"""
-    timestamp: int
-    """发布时间戳，单位秒"""
-    like_count: int = 0
-    """点赞数"""
-    reply_count: int = 0
-    """回复数"""
-    location: str | None = None
-    """位置信息，可选"""
-    replies: list["Comment"] = field(default_factory=list)
-    """子评论列表"""
-    parent_author: Author | None = None
-    """父评论作者，用于渲染“回复 @xxx”，可选"""
-
-    def add_reply(self, comment: "Comment", parent: Author | None = None):
-        """添加子评论"""
-        comment.parent_author = parent or self.author
-        self.replies.append(comment)
-
-
-@dataclass(repr=False, slots=True)
 class State:
     """统计信息"""
 
@@ -176,6 +144,31 @@ class State:
 
 
 @dataclass(repr=False, slots=True)
+class Comment:
+    """评论信息"""
+
+    author: Author
+    """作者信息"""
+    content: Sequence[MediaContent | str | None]
+    """评论内容，可以是文本或媒体对象"""
+    timestamp: int
+    """发布时间戳，单位秒"""
+    state: State | None = None
+    """统计信息"""
+    location: str | None = None
+    """位置信息，可选"""
+    replies: list["Comment"] = field(default_factory=list)
+    """子评论列表"""
+    parent_author: Author | None = None
+    """父评论作者，用于渲染“回复 @xxx”，可选"""
+
+    def add_reply(self, comment: "Comment", parent: Author | None = None):
+        """添加子评论"""
+        comment.parent_author = parent or self.author
+        self.replies.append(comment)
+
+
+@dataclass(repr=False, slots=True)
 class ParseResult:
     """完整的解析结果"""
 
@@ -185,14 +178,16 @@ class ParseResult:
     """作者信息"""
     title: str | None = None
     """标题"""
-    plain_text: str | None = None
-    """纯文本内容"""
     timestamp: int | None = None
     """发布时间戳, 秒"""
     url: str | None = None
     """来源链接"""
-    rich_content: list[MediaContent | str] | list[MediaContent] = field(default_factory=list)
-    """富文本内容"""
+    content: Sequence[MediaContent | str | None] = field(default_factory=list)
+    """资源/文本内容"""
+    state: State | None = None
+    """统计信息"""
+    comment: list[Comment] = field(default_factory=list)
+    """评论列表"""
     extra: dict[str, Any] = field(default_factory=dict)
     """额外信息"""
     repost: "ParseResult | None" = None
@@ -216,18 +211,13 @@ class ParseResult:
     async def cover_path(self) -> Path | None:
         """获取封面路径"""
         # 先检查视频内容
-        for cont in self.rich_content:
+        for cont in self.content:
             if isinstance(cont, VideoContent):
                 return await cont.get_cover_path()
-
-        # 检查图片内容，返回第一张图片作为封面
-        for cont in self.rich_content:
-            if isinstance(cont, ImageContent):
+            elif isinstance(cont, ImageContent):
                 return await cont.get_path()
 
         # 如果没有视频和图片内容，使用默认图片
-        from pathlib import Path
-
         default_image_path = Path(__file__).parent.parent / "renders" / "resources" / "QIQI.jpg"
         return default_image_path if default_image_path.exists() else None
 
@@ -245,7 +235,7 @@ class ParseResult:
             f"title: {self.title}, "
             f"url: {self.url}, "
             f"author: {self.author}, "
-            f"rich_content: {self.rich_content}, "
+            f"rich_content: {self.content}, "
             f"extra: {self.extra}, "
             f"repost: {self.repost}, "
             f"render_image: {self.render_image.name if self.render_image else 'None'}"
@@ -255,10 +245,8 @@ class ParseResult:
 class ParseResultKwargs(TypedDict, total=False):
     title: str | None
     """标题"""
-    plain_text: str | None
-    """纯文本内容"""
-    rich_content: list[MediaContent | str] | list[MediaContent]
-    """富文本内容"""
+    content: Sequence[MediaContent | str | None]
+    """资源/文本内容"""
     timestamp: int | None
     """发布时间戳, 秒"""
     url: str | None

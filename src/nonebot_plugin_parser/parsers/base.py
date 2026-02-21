@@ -11,8 +11,25 @@ from typing_extensions import Unpack, ParamSpec
 
 P = ParamSpec("P")
 R = TypeVar("R")
+import os
 
-from .data import Platform, ParseResult, ParseResultKwargs
+from httpx import AsyncClient
+
+from .data import (
+    State,
+    Author,
+    Comment,
+    Platform,
+    ParseResult,
+    AudioContent,
+    ImageContent,
+    MediaContent,
+    VideoContent,
+    StickerContent,
+    GraphicsContent,
+    ParseResultKwargs,
+)
+from ..utils import keep_zh_en_num
 from ..config import pconfig as pconfig
 from ..download import DOWNLOADER as DOWNLOADER
 from ..constants import IOS_HEADER, COMMON_HEADER, ANDROID_HEADER, COMMON_TIMEOUT
@@ -189,7 +206,6 @@ class BaseParser:
         headers: dict[str, str] | None = None,
     ) -> str:
         """获取重定向后的 URL, 单次重定向"""
-        from httpx import AsyncClient
 
         headers = headers or COMMON_HEADER.copy()
         async with AsyncClient(
@@ -210,7 +226,6 @@ class BaseParser:
         headers: dict[str, str] | None = None,
     ) -> str:
         """获取重定向后的 URL, 允许多次重定向"""
-        from httpx import AsyncClient
 
         headers = headers or COMMON_HEADER.copy()
         async with AsyncClient(
@@ -231,14 +246,13 @@ class BaseParser:
         description: str | None = None,
     ):
         """创建作者对象"""
-        from .data import Author
 
         avatar_task = None
         if avatar_url:
             avatar_task = DOWNLOADER.download_img(avatar_url, ext_headers=self.headers)
         return Author(name=name, avatar=avatar_task, description=description)
 
-    def create_video_content(
+    def create_video(
         self,
         url_or_task: str | Task[Path] | Callable[[], Coroutine[Any, Any, Path]],
         cover_url: str | None = None,
@@ -246,13 +260,10 @@ class BaseParser:
         video_name: str | None = None,
     ):
         """创建视频内容"""
-        from .data import VideoContent
-        from ..utils import keep_zh_en_num
 
         # 清理文件名，只保留安全字符
         if video_name:
             # 保留文件名中的后缀
-            import os
 
             base_name, ext = os.path.splitext(video_name)
             cleaned_base = keep_zh_en_num(base_name)
@@ -266,46 +277,44 @@ class BaseParser:
 
         return VideoContent(url_or_task, cover_task, duration)
 
-    def create_image_contents(
+    def create_videos(
+        self,
+        video_urls: list[str],
+    ):
+        """创建视频内容列表"""
+
+        return [self.create_video(url) for url in video_urls]
+
+    def create_images(
         self,
         image_urls: list[str],
     ):
         """创建图片内容列表"""
-        from .data import ImageContent
 
-        contents: list[ImageContent] = []
-        for url in image_urls:
-            task = DOWNLOADER.download_img(url, ext_headers=self.headers)
-            contents.append(ImageContent(task))
-        return contents
+        return [self.create_image(url) for url in image_urls]
 
-    def create_dynamic_contents(
+    def create_image(
         self,
-        dynamic_urls: list[str],
+        url_or_task: str | Task[Path],
     ):
-        """创建动态图片内容列表"""
-        from .data import DynamicContent
+        """创建图片内容"""
 
-        contents: list[DynamicContent] = []
-        for url in dynamic_urls:
-            task = DOWNLOADER.download_video(url, ext_headers=self.headers)
-            contents.append(DynamicContent(task))
-        return contents
+        if isinstance(url_or_task, str):
+            url_or_task = DOWNLOADER.download_img(url_or_task, ext_headers=self.headers)
 
-    def create_audio_content(
+        return ImageContent(url_or_task)
+
+    def create_audio(
         self,
         url_or_task: str | Task[Path],
         duration: float = 0.0,
         audio_name: str | None = None,
     ):
         """创建音频内容"""
-        from .data import AudioContent
-        from ..utils import keep_zh_en_num
 
         # 清理文件名，只保留安全字符
         if audio_name:
             # 保留文件名中的后缀
-            import os
 
             base_name, ext = os.path.splitext(audio_name)
             cleaned_base = keep_zh_en_num(base_name)
@@ -316,21 +325,21 @@ class BaseParser:
 
         return AudioContent(url_or_task, duration)
 
-    def create_graphics_content(
+    def create_graphics(
         self,
         image_url: str,
         alt: str | None = None,
     ):
         """创建图文内容 图片不能为空 文字可空 渲染时文字在前 图片在后"""
-        from .data import GraphicsContent
 
         image_task = DOWNLOADER.download_img(image_url, ext_headers=self.headers)
         return GraphicsContent(image_task, alt)
 
-    def create_sticker_content(
+    def create_sticker(
         self,
         url: str,
         size: Literal["small", "medium"] = "medium",
+        desc: str | None = None,
     ):
         """
         创建贴纸内容
@@ -340,7 +349,52 @@ class BaseParser:
             - small: 比文字大一点
             - medium: 文字大小的两倍大一点
         """
-        from .data import StickerContent
 
         image_task = DOWNLOADER.download_img(url, ext_headers=self.headers)
-        return StickerContent(image_task, size)
+        return StickerContent(image_task, size, desc)
+
+    def create_state(
+        self,
+        view_count: int = 0,
+        like_count: int = 0,
+        collect_count: int = 0,
+        share_count: int = 0,
+        comment_count: int = 0,
+        extra: dict[str, Any] | None = None,
+    ):
+        """创建统计信息"""
+        if extra is None:
+            extra = {}
+
+        return State(
+            view_count=view_count,
+            like_count=like_count,
+            collecte_count=collect_count,
+            share_count=share_count,
+            comment_count=comment_count,
+            extra=extra,
+        )
+
+    def create_comment(
+        self,
+        author: Author,
+        content: list[MediaContent | str | None],
+        timestamp: int = 0,
+        state: State | None = None,
+        location: str | None = None,
+        replies: list[Comment] | None = None,
+        parent_author: Author | None = None,
+    ):
+        """创建评论内容"""
+
+        if replies is None:
+            replies = []
+        return Comment(
+            author=author,
+            content=content,
+            timestamp=timestamp,
+            state=state,
+            location=location,
+            replies=replies,
+            parent_author=parent_author,
+        )

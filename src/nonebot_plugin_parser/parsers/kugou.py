@@ -184,13 +184,16 @@ class KuGouParser(BaseParser):
             # 创建有意义的音频文件名
             audio_name = f"{song_details.get('title', 'unknown')}-{song_details.get('singer', 'unknown')}.mp3"
 
-            audio_content = self.create_audio_content(
+            audio_content = self.create_audio(
                 audio_url, float(song_details.get("duration", 0)), audio_name=audio_name
             )
+            # 构建歌词文本
+            lyric = song_details.get("lyrics", "")
+            text = f"歌词:\n{lyric}" if lyric else ""
 
             # 创建封面图片内容
             cover_url = song_details.get("cover", "")
-            contents: list[MediaContent] = []
+            contents: list[MediaContent|str] = [text]
 
             if cover_url:
                 from ..download import DOWNLOADER
@@ -202,9 +205,6 @@ class KuGouParser(BaseParser):
 
             contents.append(audio_content)
 
-            # 构建歌词文本
-            lyric = song_details.get("lyrics", "")
-            text = f"歌词:\n{lyric}" if lyric else None
 
             # 构建链接
             hash_value = best_match.get("hash", "")
@@ -225,7 +225,6 @@ class KuGouParser(BaseParser):
                 title=song_details.get("title", page_title),
                 author=self.create_author(song_details.get("singer", page_author)),
                 url=link,
-                plain_text=text,
-                rich_content=contents,
+                content=contents,
                 extra=extra,
             )

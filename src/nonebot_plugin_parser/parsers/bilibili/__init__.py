@@ -10,7 +10,6 @@ from collections.abc import AsyncGenerator
 import httpx
 from msgspec import convert
 from nonebot import logger
-from markupsafe import escape
 from bilibili_api import HEADERS, Credential, select_client, request_settings
 from bilibili_api.live import LiveRoom
 from bilibili_api.opus import Opus
@@ -42,7 +41,7 @@ from .video import VideoInfo, AIConclusion
 from ..cookie import ck2dict
 from .dynamic import DynamicData, DynamicInfo
 from .favlist import FavData
-from ...renders.utils import build_images_grid
+from ...renders.utils import build_images
 
 # 选择客户端
 select_client("curl_cffi")
@@ -210,7 +209,7 @@ class BilibiliParser(BaseParser):
                 return await DOWNLOADER.streamd(v_url, file_name=output_path.name, ext_headers=self.headers)
 
         # 创建视频下载内容（传递下载函数而非立即执行）
-        video_content = self.create_video_content(
+        video_content = self.create_video(
             download_video,
             page_info.cover,
             page_info.duration,
@@ -271,7 +270,7 @@ class BilibiliParser(BaseParser):
             title=page_info.title,
             timestamp=page_info.timestamp,
             author=author,
-            rich_content=[escape(text), video_content],
+            content=[text, video_content],
             extra=extra_data,
         )
 
@@ -298,8 +297,8 @@ class BilibiliParser(BaseParser):
         plain_text = dynamic_text if dynamic_text and dynamic_text != dynamic_title else ""
 
         # 主体内容：文字 + 图片
-        contents = await self._build_dynamic_contents(dynamic_info)
-
+        contents: list[MediaContent | str] = [plain_text]
+        contents.extend(await self._build_dynamic_contents(dynamic_info))
         # 统计数据
         stats = self._extract_dynamic_stats(dynamic_info)
 
@@ -329,10 +328,9 @@ class BilibiliParser(BaseParser):
         return self.result(
             url=dynamic_url,
             title=dynamic_title,
-            plain_text=plain_text,
             timestamp=dynamic_info.timestamp,
             author=author,
-            rich_content=contents,
+            content=contents,
             extra=extra_data,
             repost=repost_result,
         )
@@ -344,10 +342,10 @@ class BilibiliParser(BaseParser):
             if node["type"] == "RICH_TEXT_NODE_TYPE_EMOJI":
                 e = node["emoji"]
                 size = "small" if e["size"] == 1 else "medium"
-                contents.append(self.create_sticker_content(e["icon_url"], size))
+                contents.append(self.create_sticker(e["icon_url"], size, e["text"]))
             else:
-                contents.append(escape(node.get("text", "")))
-        contents.extend(self.create_image_contents(dynamic_info.image_urls))
+                contents.append(node.get("text", ""))
+        contents.extend(self.create_images(dynamic_info.image_urls))
         return contents
 
     def _extract_dynamic_stats(self, dynamic_info: DynamicInfo) -> dict[str, str]:
@@ -558,16 +556,14 @@ class BilibiliParser(BaseParser):
 
         # 按顺序处理图文内容（参考 parse_read 的逻辑）
         contents: list[MediaContent | str] = []
-        plain_text = ""
 
         for node in opus_data.gen_text_img():
             if isinstance(node, ImageNode):
                 # 使用 DOWNLOADER 下载并封装为 GraphicsContent
-                contents.append(self.create_graphics_content(node.url, node.alt))
+                contents.append(self.create_graphics(node.url, node.alt))
 
             elif isinstance(node, TextNode):
-                contents.append(escape(node.text))
-                plain_text += node.text
+                contents.append(node.text)
 
         # 提取统计数据
         stats = {}
@@ -645,10 +641,9 @@ class BilibiliParser(BaseParser):
         return self.result(
             url=opus_url,
             title=basic_title,
-            plain_text=plain_text,
             author=author,
             timestamp=opus_data.timestamp,
-            rich_content=contents,
+            content=contents,
             extra=extra_data,
         )
 
@@ -698,8 +693,7 @@ class BilibiliParser(BaseParser):
         return self.result(
             url=url,
             title=room_data.title,
-            plain_text=room_data.detail,
-            rich_content=contents,
+            content=contents,
             author=author,
             extra=extra_data,
         )
@@ -726,7 +720,7 @@ class BilibiliParser(BaseParser):
             title=favdata.title,
             timestamp=favdata.timestamp,
             author=self.create_author(favdata.info.upper.name, favdata.info.upper.face),
-            rich_content=[self.create_graphics_content(fav.cover, fav.desc) for fav in favdata.medias],
+            content=[self.create_graphics(fav.cover, fav.desc) for fav in favdata.medias],
         )
 
     async def _get_video(self, *, bvid: str | None = None, avid: int | None = None) -> Video:
@@ -952,7 +946,7 @@ class BilibiliParser(BaseParser):
 
             # 找到所有出现位置
             start = 0
-            text = escape(text)
+            text = text
             tlen = len(text)
             while True:
                 idx = raw.find(text, start)
@@ -992,12 +986,12 @@ class BilibiliParser(BaseParser):
 
         def _build_single_comment(raw: dict[str, Any]) -> dict[str, Any]:
             content = raw.get("content") or {}
-            message = escape(content.get("message", ""))
+            message = content.get("message", "")
             emote = content.get("emote") or {}
             processed_content = self._render_message_with_emote(message, emote)
 
             if pictures := content.get("pictures"):
-                processed_content += build_images_grid(
+                processed_content += build_images(
                     pictures,
                     max_visible=3,
                     key="img_src",

@@ -5,7 +5,7 @@ import msgspec
 from httpx import AsyncClient
 
 from ..base import BaseParser, PlatformEnum, ParseException, handle
-from ..data import Platform
+from ..data import Platform, MediaContent
 from .decode import decode_init_state
 from .states import Data
 
@@ -54,23 +54,22 @@ class KuaiShouParser(BaseParser):
             raise ParseException("window.init_state don't contains videos or pics")
 
         # 简洁的构建方式
-        contents = []
+        contents: list[MediaContent | str] = [photo.caption]
 
         # 添加视频内容
         if video_url := photo.video_url:
-            contents.append(self.create_video_content(video_url, photo.cover_url, photo.duration))
+            contents.append(self.create_video(video_url, photo.cover_url, photo.duration))
 
         # 添加图片内容
         if img_urls := photo.img_urls:
-            contents.extend(self.create_image_contents(img_urls))
+            contents.extend(self.create_images(img_urls))
 
         # 构建作者
         author = self.create_author(photo.name, photo.headUrl)
 
         return self.result(
             title=photo.caption,
-            plain_text=photo.caption,
             author=author,
-            rich_content=contents,
+            content=contents,
             timestamp=photo.timestamp // 1000,
         )

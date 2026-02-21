@@ -31,7 +31,7 @@ class TiebaParser(BaseParser):
         )
 
         # 主楼正文内容
-        contents, text_parts = build_contents(posts.objs[0], [thread.title, "\n"])
+        contents = build_contents(posts)
         comments = build_comments(posts.objs[1:], thread.user.user_id)
         extra = {
             "forum": {
@@ -42,9 +42,8 @@ class TiebaParser(BaseParser):
 
         return self.result(
             title=thread.title,
-            plain_text="".join(text_parts),
             author=author,
-            rich_content=contents,
+            content=contents,
             timestamp=thread.create_time,
             url=f"https://tieba.baidu.com/p/{post_id}",
             extra=extra,

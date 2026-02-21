@@ -88,13 +88,13 @@ class DouyinParser(BaseParser):
 
         # 添加图片内容
         if image_urls := video_data.image_urls:
-            contents.extend(self.create_image_contents(image_urls))
+            contents.extend(self.create_images(image_urls))
 
         # 添加视频内容
         elif video_url := video_data.video_url:
             cover_url = video_data.cover_url
             duration = video_data.video.duration if video_data.video else 0
-            contents.append(self.create_video_content(video_url, cover_url, duration))
+            contents.append(self.create_video(video_url, cover_url, duration))
 
         # 构建作者
         author = self.create_author(video_data.author.nickname, video_data.avatar_url)
@@ -102,7 +102,7 @@ class DouyinParser(BaseParser):
         return self.result(
             title=video_data.desc,
             author=author,
-            rich_content=contents,
+            content=contents,
             timestamp=video_data.create_time,
         )
 
@@ -123,11 +123,11 @@ class DouyinParser(BaseParser):
 
         # 添加图片内容
         if image_urls := slides_data.image_urls:
-            contents.extend(self.create_image_contents(image_urls))
+            contents.extend(self.create_images(image_urls))
 
         # 添加动态内容
         if dynamic_urls := slides_data.dynamic_urls:
-            contents.extend(self.create_dynamic_contents(dynamic_urls))
+            contents.extend(self.create_videos(dynamic_urls))
 
         # 构建作者
         author = self.create_author(slides_data.name, slides_data.avatar_url)
@@ -135,6 +135,6 @@ class DouyinParser(BaseParser):
         return self.result(
             title=slides_data.desc,
             author=author,
-            rich_content=contents,
+            content=contents,
             timestamp=slides_data.create_time,
         )

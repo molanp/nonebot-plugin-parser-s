@@ -16,9 +16,7 @@ from ..constants import COMMON_HEADER
 
 class QSMusicParser(BaseParser):
     # 平台信息
-    platform: ClassVar[Platform] = Platform(
-        name=PlatformEnum.QSMUSIC, display_name="汽水音乐"
-    )
+    platform: ClassVar[Platform] = Platform(name=PlatformEnum.QSMUSIC, display_name="汽水音乐")
 
     @handle("qishui.douyin.com", r"https?://[^\s]*?qishui\.douyin\.com/s/[a-zA-Z0-9]+/")
     async def _parse_qsmusic_share(self, searched: Match[str]):
@@ -31,13 +29,9 @@ class QSMusicParser(BaseParser):
         # 使用API解析
         try:
             headers = COMMON_HEADER.copy()
-            headers.update(
-                {"Content-Type": "application/json", "User-Agent": "API-Client/1.0"}
-            )
+            headers.update({"Content-Type": "application/json", "User-Agent": "API-Client/1.0"})
 
-            async with AsyncClient(
-                headers=headers, verify=False, timeout=self.timeout
-            ) as client:
+            async with AsyncClient(headers=headers, verify=False, timeout=self.timeout) as client:
                 api_url = "https://api.bugpk.com/api/qsmusic"
                 params = {"url": share_url}
                 resp = await client.get(api_url, params=params)
@@ -49,9 +43,7 @@ class QSMusicParser(BaseParser):
                     raise ParseException(f"汽水音乐接口返回错误: {data.get('msg')}")
 
                 music_data = data["data"]
-                logger.info(
-                    f"汽水音乐解析成功: {music_data['albumname']} - {music_data['artistsname']}"
-                )
+                logger.info(f"汽水音乐解析成功: {music_data['albumname']} - {music_data['artistsname']}")
 
                 # 创建音频内容
                 audio_url = music_data["url"]
@@ -59,25 +51,20 @@ class QSMusicParser(BaseParser):
                     raise ParseException("无效音乐URL")
 
                 # 创建有意义的音频文件名
-                audio_name = (
-                    f"{music_data['albumname']}-{music_data['artistsname']}.mp3"
-                )
+                audio_name = f"{music_data['albumname']}-{music_data['artistsname']}.mp3"
 
                 # 由于API没有返回音频时长，我们设置为0.0
-                audio_content = self.create_audio_content(
-                    audio_url, 0.0, audio_name=audio_name
-                )
-
+                audio_content = self.create_audio(audio_url, 0.0, audio_name=audio_name)
+                # 构建文本内容
+                text = f"专辑: {music_data['albumname']}\n音质: {music_data['Format']} | 大小: {music_data['Size']}"
                 # 创建封面图片内容（如果有）
-                contents: list[MediaContent] = [audio_content]
+                contents: list[MediaContent | str] = [text, audio_content]
 
                 # 清理歌词，去除时间标记
                 def clean_lyrics(lyrics: str) -> str:
                     # 移除<>中的时间标记
                     return re.sub(r"<[^>]+>", "", lyrics)
 
-                # 构建文本内容
-                text = f"专辑: {music_data['albumname']}\n音质: {music_data['Format']} | 大小: {music_data['Size']}"
                 if music_data.get("lyric"):
                     cleaned_lyrics = clean_lyrics(music_data["lyric"])
                     text += f"\n歌词:\n{cleaned_lyrics}"
@@ -94,8 +81,7 @@ class QSMusicParser(BaseParser):
                     title=music_data["albumname"],
                     author=self.create_author(music_data["artistsname"]),
                     url=share_url,
-                    plain_text=text,
-                    rich_content=contents,
+                    content=contents,
                     extra=extra,
                 )
         except Exception as e:

@@ -1,23 +1,29 @@
 from typing import Any, cast, overload
-from pathlib import Path
 from collections.abc import Mapping, Sequence
 
-from ..parsers.data import ParseResult, ImageContent, StickerContent, GraphicsContent
+from markupsafe import escape
+
+from ..parsers.data import (
+    ImageContent,
+    MediaContent,
+    StickerContent,
+    GraphicsContent,
+)
 
 
 @overload
-def build_images_grid(
+def build_images(
     img_list: list[str],
     max_visible: int = 9,
 ) -> str: ...
 @overload
-def build_images_grid(
+def build_images(
     img_list: list[Mapping[str, Any]],
     max_visible: int = 9,
     *,
     key: str,
 ) -> str: ...
-def build_images_grid(
+def build_images(
     img_list: list[str] | list[Mapping[str, Any]],
     max_visible: int = 9,
     *,
@@ -83,14 +89,13 @@ def build_images_grid(
     )
 
 
-async def build_content(result: ParseResult) -> tuple[str, str | None]:
+async def build_html(content: Sequence[MediaContent | str | None]) -> str:
     """构建模板可用的内容 HTML 字符串。
 
     文本、图片、表情、graphics 在这里直接拼成完整 HTML
 
-    :return: HTML, cover_path
+    :return: HTML
     """
-    cover_path: Path | None = None
     html_parts: list[str] = []
 
     # 当前图片段相关状态：用于处理“连续图片合并为宫格”
@@ -100,29 +105,25 @@ async def build_content(result: ParseResult) -> tuple[str, str | None]:
         """结束当前连续图片段并写入 HTML."""
         nonlocal current_imgs
         if current_imgs:
-            html_parts.append(build_images_grid(current_imgs))
+            html_parts.append(build_images(current_imgs))
             current_imgs = []
 
     # 预先看一眼“下一个内容”，用于判断文本后面是否紧跟贴纸
-    contents_seq = result.rich_content
-    total = len(contents_seq)
+    total = len(content)
 
-    for idx, cont in enumerate(contents_seq):
+    for idx, cont in enumerate(content):
         # 处理图片内容
         if isinstance(cont, ImageContent):
             path = await cont.get_path()
             src = path.as_uri()
             current_imgs.append(src)
-            # 将第一个图片内容作为封面
-            if not cover_path:
-                cover_path = path
         else:
             # 任意非 image 内容会打断图片连续段
             flush_images()
 
             # 计算“前一个 / 后一个是否是贴纸”
-            prev_is_sticker = idx > 0 and isinstance(contents_seq[idx - 1], StickerContent)
-            next_is_sticker = idx + 1 < total and isinstance(contents_seq[idx + 1], StickerContent)
+            prev_is_sticker = idx > 0 and isinstance(content[idx - 1], StickerContent)
+            next_is_sticker = idx + 1 < total and isinstance(content[idx + 1], StickerContent)
 
             if isinstance(cont, str):
                 # 只要前后任意一侧是贴纸，就用 span；否则用 p
@@ -144,8 +145,6 @@ async def build_content(result: ParseResult) -> tuple[str, str | None]:
                     f'<center><span class="text">{alt}</span></center>'
                     "</div>"
                 )
-                if not cover_path:
-                    cover_path = g_path
             elif isinstance(cont, StickerContent):
                 s_path = await cont.get_path()
                 s_src = s_path.as_uri()
@@ -155,7 +154,10 @@ async def build_content(result: ParseResult) -> tuple[str, str | None]:
 
     # 末尾如果还有图片段，补一次 flush
     flush_images()
+    return "".join(html_parts)
 
-    if not cover_path:
-        cover_path = await result.cover_path
-    return "".join(html_parts), cover_path.as_uri() if cover_path else None
+
+def build_plain_text(content: Sequence[MediaContent | str | None]) -> str:
+    """构建纯文本内容"""
+
+    return "".join("\n" + escape(c) for c in content if isinstance(c, str) and c)

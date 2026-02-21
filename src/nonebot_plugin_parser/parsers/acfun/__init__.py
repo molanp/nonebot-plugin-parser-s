@@ -21,6 +21,7 @@ from ..base import (
     handle,
     pconfig,
 )
+from .video import decoder
 
 
 class AcfunParser(BaseParser):
@@ -47,14 +48,13 @@ class AcfunParser(BaseParser):
             )
         )
 
-        video_content = self.create_video_content(video_task, cover_url=video_info.coverUrl)
+        video_content = self.create_video(video_task, cover_url=video_info.coverUrl)
 
         return self.result(
             title=video_info.title,
-            plain_text=video_info.text,
             author=author,
             timestamp=video_info.timestamp,
-            rich_content=[video_content],
+            content=[video_info.text or "", video_content],
         )
 
     async def parse_video_info(self, url: str):
@@ -66,7 +66,6 @@ class AcfunParser(BaseParser):
         Returns:
             video.VideoInfo
         """
-        from . import video
 
         # 拼接查询参数
         url = f"{url}?quickViewId=videoInfo_new&ajaxpipe=1"
@@ -83,7 +82,7 @@ class AcfunParser(BaseParser):
         raw = str(matched[1])
         raw = re.sub(r'\\{1,4}"', '"', raw)
         raw = raw.replace('"{', "{").replace('}"', "}")
-        return video.decoder.decode(raw)
+        return decoder.decode(raw)
 
     async def download_video(self, m3u8_url: str, file_name: str, duration: int) -> Path:
         """下载acfun视频

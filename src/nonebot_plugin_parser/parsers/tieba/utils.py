@@ -92,56 +92,41 @@ async def get_post(tid: int) -> Posts:
     return parse_res(data)
 
 
-def build_contents(post: Post, text_parts: list[str]) -> tuple[list[MediaContent | str], list[str]]:
+def build_contents(posts: Posts) -> list[MediaContent | str]:
     """
     构建帖子内容
 
-    :param post: 帖子数据
-    :param text_parts: 需要追加的文本片段列表，无则不返回
+    :param posts: Posts数据
 
-    :return: 帖子内容(HTML), 纯文本片段列表)
+    :return: 富文本内容列表
     """
-    text_parts.append("\n")
-    contents: list[MediaContent | str] = []
+    contents: list[MediaContent | str] = [posts.thread.title]
 
     # 提取帖子正文
-    for part in post.contents.objs:
+    for part in posts.objs[0].contents.objs:
         if isinstance(part, FragText):
             contents.append(part.text)
-            text_parts.append(part.text)
         elif isinstance(part, FragEmoji):
             sticker_task = DOWNLOADER.download_img(
                 f"https://tb3.bdstatic.com/emoji/{part.id}@2x.png",
                 ext_headers=headers,
             )
-            contents.append(StickerContent(sticker_task, "small"))
-            text_parts.append(f"#({part.desc})")
+            contents.append(StickerContent(sticker_task, "small", part.desc))
         elif isinstance(part, FragImage):
             image_task = DOWNLOADER.download_img(part.origin_src, ext_headers=headers)
             contents.append(GraphicsContent(image_task))
-            text_parts.append("[图片]")
         elif isinstance(part, FragAt):
             # 如果上一项是文本，则追加到上一项末尾
             if contents and isinstance(contents[-1], str):
                 contents[-1] += f"@{part.text}&nbsp;"  # &nbsp;
             else:
                 contents.append(f"@{part.text}&nbsp;")
-            # 纯文本同样追加到上一段
-            if text_parts:
-                text_parts[-1] += f"@{part.text} "
-            else:
-                text_parts.append(f"@{part.text} ")
         elif isinstance(part, FragLink):
             url_str = str(part.url)
             if contents and isinstance(contents[-1], str):
                 contents[-1] += url_str
             else:
                 contents.append(url_str)
-            if text_parts:
-                text_parts[-1] += url_str
-            else:
-                text_parts.append(url_str)
-
         elif isinstance(part, FragVideo):
             video_task = DOWNLOADER.download_video(part.src, ext_headers=headers)
             cover_task = DOWNLOADER.download_img(part.cover_src, ext_headers=headers)
@@ -153,7 +138,7 @@ def build_contents(post: Post, text_parts: list[str]) -> tuple[list[MediaContent
         #     audio_task = DOWNLOADER.download_audio(part.md5, ext_headers=headers)
         #     contents.append(post.create_audio_content(audio_task, part.duration))
 
-    return contents, text_parts
+    return contents
 
 
 def build_comment_content(contents: Contents) -> str:

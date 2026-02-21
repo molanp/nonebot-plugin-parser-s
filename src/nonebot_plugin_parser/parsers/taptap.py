@@ -9,7 +9,7 @@ import httpx
 from nonebot import logger, require
 
 from .base import BaseParser, handle
-from .data import Platform, VideoContent
+from .data import Platform
 from ..constants import PlatformEnum
 from ..exception import ParseException
 
@@ -1140,7 +1140,7 @@ class TapTapParser(BaseParser):
                     topic_name = title
                     break
 
-        return self.result(title=topic_name, plain_text=f"查看话题详情: {url}", url=url)
+        return self.result(title=topic_name, content=[f"查看话题详情: {url}"], url=url)
 
     @handle(keyword="taptap.cn/review", pattern=r"taptap\.cn/review/(\d+)")
     async def handle_review(self, matched):
@@ -1151,20 +1151,17 @@ class TapTapParser(BaseParser):
 
     def _build_result(self, detail: dict[str, Any]):
         """构建解析结果"""
-        contents = []
-        media_contents = []
+        contents = [detail.get("text", detail["summary"])]
 
         # 添加图片
         for img_url in detail["images"]:
-            contents.append(self.create_image_contents([img_url])[0])
+            contents.append(self.create_image(img_url))
 
         # 添加视频
         for video_url in detail["videos"]:
             # 简单处理，不获取封面和时长
-            video_content = self.create_video_content(video_url)
+            video_content = self.create_video(video_url)
             contents.append(video_content)
-            # 将视频添加到media_contents中，用于延迟发送
-            media_contents.append((VideoContent, video_content))
 
         # 构建作者对象
         author = None
@@ -1224,18 +1221,17 @@ class TapTapParser(BaseParser):
 
         result = self.result(
             title=detail["title"],
-            plain_text=detail.get("text", detail["summary"]),
             url=detail["url"],
             author=author,
             timestamp=timestamp,
-            rich_content=contents,
+            content=contents,
             extra=extra_data,
         )
 
         # 设置media_contents，用于延迟发送
         logger.debug(
             f"构建解析结果完成: title={detail['title']}, images={len(detail['images'])}, "
-            f"videos={len(detail['videos'])}, media_contents={len(media_contents)}"
+            f"videos={len(detail['videos'])}"
         )
 
         return result

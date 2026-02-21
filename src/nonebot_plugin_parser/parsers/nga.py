@@ -117,23 +117,21 @@ class NGAParser(BaseParser):
             timestamp = int(time.mktime(time.strptime(timestr, "%Y-%m-%d %H:%M")))
 
         # 提取文本 - postcontent0
-        text = None
         content_tag = soup.find(id="postcontent0")
-        contents: list[MediaContent] = []
+        contents: list[MediaContent|str] = []
         if content_tag and isinstance(content_tag, Tag):
             text = content_tag.get_text("\n", strip=True)
             # 清理 BBCode 标签并限制长度
             img_urls: list[str] = re.findall(r"\[img\](.*?)\[/img\]", text)
             img_urls = [self.base_img_url + url[1:] for url in img_urls]
-            contents.extend(self.create_image_contents(img_urls))
-            text = self.clean_nga_text(text)
+            contents.extend(self.create_images(img_urls))
+            contents.insert(0, self.clean_nga_text(text))
 
         return self.result(
             title=title,
-            plain_text=text,
             url=url,
             author=author,
-            rich_content=contents,
+            content=contents,
             timestamp=timestamp,
         )
 

@@ -88,8 +88,7 @@ class WeiBoParser(BaseParser):
         data = detail.data
 
         soup = BeautifulSoup(data.content, "html.parser")
-        contents: list[MediaContent ] = []
-        text_buffer: list[str] = []
+        contents: list[MediaContent | str] = []
 
         for element in soup.find_all(["p", "img"]):
             if not isinstance(element, Tag):
@@ -97,30 +96,24 @@ class WeiBoParser(BaseParser):
 
             if element.name == "p":
                 text = element.get_text()
-                # 去除零宽空格
-                text = text.replace("\u200b", "")
-                if text:
-                    text_buffer.append(text)
+                if text := text.replace("\u200b", ""):
+                    contents.append(text)
             elif element.name == "img":
                 src = element.get("src")
                 if isinstance(src, str):
-                    contents.extend(self.create_image_contents([src]))
-                    text_buffer.append("[图片]")
+                    contents.append(self.create_image(src))
 
         author = self.create_author(
             data.userinfo.screen_name,
             data.userinfo.profile_image_url,
         )
 
-        end_text = "\n\n".join(text_buffer) if text_buffer else None
-
         return self.result(
             url=data.url,
             title=data.title,
             author=author,
             timestamp=data.create_at_unix,
-            plain_text=end_text,
-            rich_content=contents,
+            content=contents,
         )
 
     async def parse_fid(self, fid: str):
@@ -146,16 +139,15 @@ class WeiBoParser(BaseParser):
             play_info.avatar,
             play_info.description,
         )
-        video_content = self.create_video_content(
+        video_content = self.create_video(
             play_info.video_url,
             play_info.cover_url,
         )
 
         return self.result(
             title=play_info.title,
-            plain_text=play_info.text,
             author=author,
-            rich_content=[video_content],
+            content=[play_info.text, video_content],
             timestamp=play_info.real_date,
         )
 
@@ -200,16 +192,16 @@ class WeiBoParser(BaseParser):
         return self._collect_result(weibo_data)
 
     def _collect_result(self, data: common.WeiboData):
-        contents = []
+        contents: list[MediaContent | str] = [data.text_content]
 
         # 添加视频内容
         if video_url := data.video_url:
             cover_url = data.cover_url
-            contents.append(self.create_video_content(video_url, cover_url))
+            contents.append(self.create_video(video_url, cover_url))
 
         # 添加图片内容
         if image_urls := data.image_urls:
-            contents.extend(self.create_image_contents(image_urls))
+            contents.extend(self.create_images(image_urls))
 
         # 构建作者
         author = self.create_author(data.display_name, data.user.profile_image_url)
@@ -219,9 +211,8 @@ class WeiBoParser(BaseParser):
 
         return self.result(
             title=data.title,
-            plain_text=data.text_content,
             author=author,
-            rich_content=contents,
+            content=contents,
             timestamp=data.timestamp,
             url=data.url,
             repost=repost,

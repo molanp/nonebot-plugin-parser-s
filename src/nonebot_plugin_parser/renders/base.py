@@ -8,7 +8,7 @@ from collections.abc import AsyncGenerator
 import qrcode  # pyright: ignore[reportMissingModuleSource]
 from nonebot import logger, require
 
-from .utils import build_content
+from .utils import build_html, build_plain_text
 from ..config import pconfig, _nickname
 from ..helper import UniHelper, UniMessage, ForwardNodeInner
 from ..exception import DownloadException, ZeroSizeException, DownloadLimitException
@@ -17,7 +17,6 @@ from ..parsers.data import (
     AudioContent,
     ImageContent,
     VideoContent,
-    DynamicContent,
     GraphicsContent,
 )
 
@@ -63,7 +62,7 @@ class Renderer:
         dynamic_segs: list[ForwardNodeInner] = []
 
         # 不再处理被转发内容中的媒体
-        for cont in result.rich_content:
+        for cont in result.content:
             match cont:
                 case VideoContent() | AudioContent():
                     # 立即发送模式
@@ -107,15 +106,6 @@ class Renderer:
                     except DownloadException:
                         failed_count += 1
                         continue
-                case DynamicContent():
-                    try:
-                        path = await cont.get_path()
-                        dynamic_segs.append(UniHelper.video_seg(path))
-                    except (DownloadLimitException, ZeroSizeException):
-                        continue
-                    except DownloadException:
-                        failed_count += 1
-                        continue
                 case GraphicsContent() as graphics:
                     try:
                         path = await cont.get_path()
@@ -135,18 +125,18 @@ class Renderer:
             author_name = result.author.name if result.author else "未知用户"
 
             # 添加转发内容的标题和文本，包含原作者信息
-            if result.rich_content:
+            if result.content:
                 if result.repost:
                     # result.repost是被转发者的内容，所以repost_author是被转发者
                     repost_author = result.repost.author.name if result.repost.author else "未知用户"
                     # 当前result是转发者的动态，所以作者是转发者
-                    forwardable_segs.append(f"{author_name}[转发{repost_author}]：{result.plain_text}")
+                    forwardable_segs.append(f"{author_name}[转发{repost_author}]：{build_plain_text(result.content)}")
 
                     repost_text = []
                     if result.repost.title:
                         repost_text.append(result.repost.title)
-                    if result.repost.plain_text:
-                        repost_text.append(result.repost.plain_text)
+                    if result.repost.content:
+                        repost_text.append(build_plain_text(result.repost.content))
 
                     # 构造转发文本，格式为：XXXB[转发XXXA]：XXX内容 XXXA:XXX内容
                     # 其中XXXB是转发者，XXXA是被转发者
@@ -155,7 +145,7 @@ class Renderer:
                         # 被转发者：被转发者的内容
                         forwardable_segs.append(f"{repost_author}[被转作者]：{repost_content}")
                 else:
-                    forwardable_segs.append(f"{author_name}：{result.plain_text}")
+                    forwardable_segs.append(f"{author_name}：{build_plain_text(result.content)}")
 
             if pconfig.need_forward_contents or len(forwardable_segs) > 4:
                 forward_msg = UniHelper.construct_forward_message(forwardable_segs + dynamic_segs)
@@ -235,7 +225,7 @@ class Renderer:
         """解析 ParseResult 为模板可用的字典数据"""
 
         logo_path = Path(__file__).parent / "resources" / f"{result.platform.name}.png"
-        content, cover_path = await build_content(result)
+        content = build_html(result.content)
 
         # if ori := result.extra.get("origin"):
         #     if oric := ori.get("contents"):
@@ -252,8 +242,8 @@ class Renderer:
                 "logo_path": (logo_path.as_uri() if logo_path.exists() else None),
             },
             "content": content,
-            "cover_path": cover_path,
-            "text": result.plain_text,
+            "cover_path": await result.cover_path,
+            "text": build_plain_text(result.content),
         }
 
         if result.author:

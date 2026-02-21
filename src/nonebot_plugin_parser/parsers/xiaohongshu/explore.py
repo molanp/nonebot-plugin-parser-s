@@ -4,8 +4,49 @@ from msgspec.json import Decoder
 from .common import Video
 
 
+class StreamUrl(Struct):
+    """Wrapper for stream url"""
+
+    masterUrl: str
+    """主链接"""
+    backupUrls: list[str]
+    """备选链接"""
+
+
+class ImageStream(Struct):
+    """Wrapper for image stream"""
+
+    h264: list[StreamUrl] = field(default_factory=list)
+    h265: list[StreamUrl] = field(default_factory=list)
+    h266: list[StreamUrl] = field(default_factory=list)
+    av1: list[StreamUrl] = field(default_factory=list)
+
+    @property
+    def stream_url(self) -> str:
+        """获取第一个非空流列表中的第一个可用URL，优先级为h264 > h265 > h266 > av1"""
+        return next(
+            (stream_list[0].masterUrl for stream_list in [self.h264, self.h265, self.h266, self.av1] if stream_list),
+            "",
+        )
+
+
 class Image(Struct):
     urlDefault: str
+    livePhoto: bool
+    """是否为动态图片(即视频)"""
+    stream: ImageStream = field(default_factory=ImageStream)
+    """图片流信息(若为动态图片，应从此获取图片mp4)"""
+
+    @property
+    def live_url(self) -> tuple[str, str] | None:
+        """
+        获取live图片地址
+
+        :return: live视频地址, live图片底图
+        """
+        if self.livePhoto:
+            return (self.stream.stream_url, self.urlDefault) if self.livePhoto else None
+        return None
 
 
 class User(Struct):
@@ -15,8 +56,11 @@ class User(Struct):
 
 class NoteDetail(Struct):
     type: str
+    """类型，一般是normal/video"""
     title: str
+    """标题"""
     desc: str
+    """简介"""
     user: User
     lastUpdateTime: int
     imageList: list[Image] = field(default_factory=list)
@@ -32,11 +76,16 @@ class NoteDetail(Struct):
 
     @property
     def image_urls(self) -> list[str]:
-        return [item.urlDefault for item in self.imageList]
+        return [image.urlDefault for image in self.imageList]
 
     @property
     def video_url(self) -> str | None:
-        return None if self.type != "video" or not self.video else self.video.video_url
+        if self.video:
+            return self.video.video_url
+
+    @property
+    def live_urls(self) -> list[tuple[str, str]]:
+        return [image.live_url for image in self.imageList if image.live_url]
 
 
 class NoteDetailWrapper(Struct):
