@@ -379,7 +379,7 @@ class BaseParser:
         self,
         author: Author,
         content: list[MediaContent | str | None],
-        timestamp: int = 0,
+        timestamp: int | None = None,
         state: State | None = None,
         location: str | None = None,
         replies: list[Comment] | None = None,

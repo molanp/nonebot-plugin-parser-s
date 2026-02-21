@@ -151,7 +151,7 @@ class Comment:
     """作者信息"""
     content: Sequence[MediaContent | str | None]
     """评论内容，可以是文本或媒体对象"""
-    timestamp: int
+    timestamp: int | None
     """发布时间戳，单位秒"""
     state: State | None = None
     """统计信息"""
@@ -166,6 +166,13 @@ class Comment:
         """添加子评论"""
         comment.parent_author = parent or self.author
         self.replies.append(comment)
+
+    @property
+    def formatted_datetime(self) -> str | None:
+        """格式化时间戳"""
+        if self.timestamp is None:
+            return None
+        return datetime.fromtimestamp(self.timestamp).strftime("%Y-%m-%d %H:%M:%S")
 
 
 @dataclass(repr=False, slots=True)
@@ -194,6 +201,8 @@ class ParseResult:
     """转发的内容"""
     render_image: Path | None = None
     """渲染图片"""
+    media_contents: list[MediaContent | Path] = field(default_factory=list)
+    """延迟发送的媒体内容"""
 
     @property
     def display_url(self) -> str | None:

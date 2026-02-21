@@ -1,9 +1,10 @@
 import re
 from typing import TypeVar
+from pathlib import Path
 
-from nonebot import logger, get_driver, on_command
-from nonebot.params import CommandArg
-from nonebot.adapters import Message
+from nonebot import logger, get_driver
+from nonebot_plugin_alconna import Args, Match, Alconna, on_alconna
+from nonebot.adapters.onebot.v11 import NoticeEvent
 
 from .rule import SUPER_PRIVATE, Searched, SearchResult, on_keyword_regex
 from ..utils import LimitedSizeDict
@@ -12,6 +13,7 @@ from ..helper import UniHelper, UniMessage
 from ..parsers import BaseParser, ParseResult, BilibiliParser
 from ..renders import RENDERER
 from ..download import DOWNLOADER
+from ..parsers.data import AudioContent, VideoContent
 
 
 def _get_enabled_parser_classes() -> list[type[BaseParser]]:
@@ -117,10 +119,10 @@ async def parser_handler(
     _RESULT_CACHE[cache_key] = result
 
 
-@on_command("bm", priority=3, block=True).handle()
+@on_alconna(Alconna("bm", Args["bv?", str, ""]), priority=3, block=True).handle()
 @UniHelper.with_reaction
-async def _(message: Message = CommandArg()):
-    text = message.extract_plain_text()
+async def _(bv: Match[str]):
+    text = bv.result
     matched = re.search(r"(BV[A-Za-z0-9]{10})(\s\d{1,3})?", text)
     if not matched:
         await UniMessage("请发送正确的 BV 号").finish()
@@ -143,11 +145,223 @@ async def _(message: Message = CommandArg()):
         await UniMessage(UniHelper.file_seg(audio_path)).send()
 
 
-
-@on_command("blogin", block=True, permission=SUPER_PRIVATE).handle()
+@on_alconna(Alconna("blogin"), block=True, permission=SUPER_PRIVATE).handle()
 async def _():
     parser = get_parser_by_type(BilibiliParser)
     qrcode = await parser.login_with_qrcode()
     await UniMessage(UniHelper.img_seg(raw=qrcode)).send()
     async for msg in parser.check_qr_state():
         await UniMessage(msg).send()
+
+
+# 监听特定表情，触发延迟发送的媒体内容
+# group_msg_emoji_like事件
+from nonebot import on_notice
+from nonebot_plugin_alconna.uniseg import message_reaction
+
+on_notice_ = on_notice(priority=1, block=False)
+
+
+@on_notice_.handle()
+async def handle_group_msg_emoji_like(event: NoticeEvent):
+    from ..helper import UniHelper, UniMessage
+
+    # 检查是否是group_msg_emoji_like事件
+    is_group_emoji_like = False
+    emoji_id = 0
+    liked_message_id = 0
+    is_add = True  # 默认值，避免Pylance警告
+
+    # 处理不同形式的事件对象（字典或对象）
+    if isinstance(event, dict):
+        # 字典形式的事件
+        if event.get("notice_type") == "group_msg_emoji_like":
+            is_group_emoji_like = True
+            emoji_id = event["likes"][0]["emoji_id"]
+            liked_message_id = event["message_id"]
+            is_add = event.get("is_add", True)
+    elif hasattr(event, "notice_type") and event.notice_type == "group_msg_emoji_like":
+        is_group_emoji_like = True
+        if likes := getattr(event, "likes", None):
+            emoji_id = likes[0].get("emoji_id", "") if isinstance(likes[0], dict) else likes[0].emoji_id
+        if msg_id := getattr(event, "message_id", None):
+            liked_message_id = msg_id
+        is_add = getattr(event, "is_add", True)
+    emoji_id = int(emoji_id)
+    liked_message_id = int(liked_message_id)
+    logger.debug(f"emoji_id:{emoji_id} | liked_message_id:{liked_message_id} | is_add:{is_add}")
+    # 检查是否是group_msg_emoji_like事件且表情ID有效
+    if not is_group_emoji_like or not emoji_id:
+        return
+
+    # 只有当is_add为True时才处理点赞事件，忽略取消点赞事件
+    if not is_add:
+        return
+
+    # 检查表情ID是否在配置列表中
+    if emoji_id not in pconfig.delay_send_emoji_ids:
+        return
+
+    # 发送"听到需求"的表情（使用用户指定的表情ID 282）
+    try:
+        # 只有当liked_message_id有效时，才发送表情反馈
+        if liked_message_id:
+            await message_reaction("282", message_id=str(liked_message_id))
+    except Exception as e:
+        logger.warning(f"Failed to send resolving reaction: {e}")
+
+    try:
+        logger.debug(f"收到表情点赞事件: emoji_id={emoji_id}, message_id={liked_message_id}, event={event}")
+        logger.debug(f"当前_MSG_ID_RESULT_MAP: {list(_MSG_ID_RESULT_MAP.keys())}")
+
+        # 根据消息ID获取对应的解析结果
+        result = _MSG_ID_RESULT_MAP.get(str(liked_message_id))
+        if not result:
+            # 发送"失败"的表情（使用用户指定的表情ID 10060）
+            logger.debug(f"未找到消息ID {liked_message_id} 对应的解析结果")
+            try:
+                if liked_message_id:
+                    await message_reaction("10060", message_id=str(liked_message_id))
+            except Exception as e:
+                logger.warning(f"Failed to send fail reaction: {e}")
+            return
+
+        # 尝试获取媒体内容，无论media_contents是否为空
+        sent = False
+        remaining_media = []
+        current_sent = False  # 记录当前媒体是否发送成功
+
+        # 检查result的contents属性，看看是否有媒体内容
+        if not result.media_contents:
+            # 如果media_contents为空，尝试从result.contents中获取媒体内容
+            logger.debug("尝试从result.contents中获取媒体内容")
+            for content in result.content:
+                if isinstance(content, VideoContent):
+                    result.media_contents.append(content)
+                    logger.debug("添加VideoContent到media_contents")
+                elif isinstance(content, AudioContent):
+                    result.media_contents.append(content)
+                    logger.debug("添加AudioContent到media_contents")
+
+        # 如果仍然没有媒体内容，返回但不移除消息ID
+        if not result.media_contents:
+            logger.debug(f"消息ID {liked_message_id} 对应的解析结果中没有可发送的媒体内容")
+            # 发送"失败"的表情（使用用户指定的表情ID 10060）
+            try:
+                if liked_message_id:
+                    await message_reaction("10060", message_id=str(liked_message_id))
+            except Exception as e:
+                logger.warning(f"Failed to send fail reaction: {e}")
+            # 不删除消息ID，等待媒体下载完成
+            return
+
+        # 发送延迟的媒体内容
+        for media_item in result.media_contents:
+            try:
+                path = None
+                is_media_ready = False
+
+                # 检查媒体是否已经准备好发送
+                if isinstance(media_item, Path):
+                    # 已经是 Path 类型，直接使用
+                    path = media_item
+                    is_media_ready = True
+                    logger.debug(f"发送已下载的延迟媒体: {path}")
+                else:
+                    # 是 MediaContent 类型，使用get_path()方法统一处理下载状态
+                    try:
+                        path = await media_item.get_path()
+                        is_media_ready = True
+                        logger.debug(f"获取延迟媒体路径成功: {path}")
+                    except Exception as e:
+                        logger.error(f"获取延迟媒体路径失败: {e}")
+                        # 添加到剩余媒体列表，以便后续重试
+                        remaining_media.append(media_item)
+                        continue
+
+                if is_media_ready and path:
+                    if isinstance(media_item, VideoContent):
+                        try:
+                            # 尝试直接发送视频
+                            await UniMessage(UniHelper.video_seg(path)).send()
+                            # 如果需要上传视频文件，且没有因为大小问题发送失败
+                            if pconfig.need_upload_video:
+                                await UniMessage(UniHelper.file_seg(path)).send()
+                            current_sent = True
+                        except Exception as e:
+                            # 直接发送失败，可能是因为文件太大，尝试使用群文件发送
+                            logger.debug(f"直接发送视频失败，尝试使用群文件发送: {e}")
+                            try:
+                                await UniMessage(UniHelper.file_seg(path)).send()
+                                current_sent = True
+                            except Exception as file_e:
+                                logger.error(f"使用群文件发送视频失败: {file_e}")
+                                current_sent = False
+                    elif isinstance(media_item, AudioContent):
+                        try:
+                            # 尝试直接发送音频
+                            await UniMessage(UniHelper.record_seg(path)).send()
+                            # 如果需要上传音频文件，且没有因为大小问题发送失败
+                            if pconfig.need_upload_audio:
+                                await UniMessage(UniHelper.file_seg(path)).send()
+                            current_sent = True
+                        except Exception as e:
+                            # 直接发送失败，可能是因为文件太大，尝试使用群文件发送
+                            logger.debug(f"直接发送音频失败，尝试使用群文件发送: {e}")
+                            try:
+                                await UniMessage(UniHelper.file_seg(path)).send()
+                                current_sent = True
+                            except Exception as file_e:
+                                logger.error(f"使用群文件发送音频失败: {file_e}")
+                                current_sent = False
+
+                    if current_sent:
+                        sent = True
+                    else:
+                        # 发送失败，添加到剩余媒体列表，以便后续重试
+                        remaining_media.append(media_item)
+                else:
+                    # 媒体未准备好，添加到剩余媒体列表
+                    remaining_media.append(media_item)
+            except Exception as e:
+                logger.error(f"发送延迟媒体失败: {e}")
+                # 添加到剩余媒体列表，以便后续重试
+                remaining_media.append(media_item)
+
+        # 更新媒体内容列表，保留未发送成功的媒体
+        result.media_contents = remaining_media
+
+        logger.debug(f"处理完成，剩余媒体数量: {len(remaining_media)}")
+
+        # 只有当所有媒体都发送成功时，才从缓存中移除消息ID
+        if remaining_media:
+            # 如果还有未发送成功的媒体，更新缓存中的解析结果
+            _MSG_ID_RESULT_MAP[str(liked_message_id)] = result
+            logger.debug(f"更新_MSG_ID_RESULT_MAP中的消息ID: {liked_message_id}（剩余{len(remaining_media)}个媒体）")
+
+        elif str(liked_message_id) in _MSG_ID_RESULT_MAP:
+            del _MSG_ID_RESULT_MAP[str(liked_message_id)]
+            logger.debug(f"从_MSG_ID_RESULT_MAP中移除消息ID: {liked_message_id}（所有媒体发送成功）")
+        # 发送对应的表情
+        if sent:
+            # 发送"完成"的表情（使用用户指定的表情ID 124）
+            try:
+                if liked_message_id:
+                    await message_reaction("124", message_id=str(liked_message_id))
+            except Exception as e:
+                logger.warning(f"Failed to send done reaction: {e}")
+        else:
+            # 没有可发送的媒体内容，发送"失败"的表情（使用用户指定的表情ID 10060）
+            try:
+                if liked_message_id:
+                    await message_reaction("10060", message_id=str(liked_message_id))
+            except Exception as e:
+                logger.warning(f"Failed to send fail reaction: {e}")
+    except Exception as e:
+        # 发送"失败"的表情（使用用户指定的表情ID 10060）
+        try:
+            if liked_message_id:
+                await message_reaction("10060", message_id=str(liked_message_id))
+        except Exception as reaction_e:
+            logger.warning(f"Failed to send fail reaction: {reaction_e}")
+        logger.error(f"Failed to send media content: {e}")

@@ -16,6 +16,7 @@ from ..parsers.data import (
     ParseResult,
     AudioContent,
     ImageContent,
+    MediaContent,
     VideoContent,
     GraphicsContent,
 )
@@ -33,12 +34,19 @@ class Renderer:
     async def render_messages(self, result: ParseResult) -> AsyncGenerator[UniMessage[Any], None]:
         """渲染消息
 
-        Args:
-            result (ParseResult): 解析结果
+        :param result: 解析结果
         """
-        image_seg = await self.cache_or_render_image(result)
+        # 尝试获取图片路径，以便在直接发送失败时使用文件发送
+        try:
+            # 复用 cache_or_render_image 方法获取图片段，同时确保图片已保存
+            image_seg = await self.cache_or_render_image(result)
+            # 获取图片路径
+        except Exception as e:
+            logger.error(f"获取图片路径失败: {e}")
+            image_seg = None
 
-        msg = UniMessage(image_seg)
+        # 尝试直接发送图片
+        msg = UniMessage(image_seg) if image_seg else UniMessage("图片渲染失败")
         if self.append_url:
             urls = (result.display_url, result.repost_display_url)
             msg += "\n".join(url for url in urls if url)
@@ -61,42 +69,17 @@ class Renderer:
         forwardable_segs: list[ForwardNodeInner] = []
         dynamic_segs: list[ForwardNodeInner] = []
 
-        # 不再处理被转发内容中的媒体
+        # 用于存储延迟发送的媒体内容
+        media_contents: list[MediaContent | Path] = []
+
         for cont in result.content:
             match cont:
                 case VideoContent() | AudioContent():
-                    # 立即发送模式
-                    try:
-                        path = await cont.get_path()
-                        logger.debug(f"立即发送{type(cont).__name__}: {path}")
-
-                        if isinstance(cont, VideoContent):
-                            try:
-                                # 尝试直接发送视频
-                                yield UniMessage(UniHelper.video_seg(path))
-                                # 如果需要上传视频文件，且没有因为大小问题发送失败
-                                if pconfig.need_upload_video:
-                                    await UniMessage(UniHelper.file_seg(path)).send()
-                            except Exception as e:
-                                # 直接发送失败，可能是因为文件太大，尝试使用群文件发送
-                                logger.debug(f"直接发送视频失败，尝试使用群文件发送: {e}")
-                                await UniMessage(UniHelper.file_seg(path)).send()
-                        elif isinstance(cont, AudioContent):
-                            try:
-                                # 尝试直接发送音频
-                                yield UniMessage(UniHelper.record_seg(path))
-                                # 如果需要上传音频文件，且没有因为大小问题发送失败
-                                if pconfig.need_upload_audio:
-                                    await UniMessage(UniHelper.file_seg(path)).send()
-                            except Exception as e:
-                                # 直接发送失败，可能是因为文件太大，尝试使用群文件发送
-                                logger.debug(f"直接发送音频失败，尝试使用群文件发送: {e}")
-                                await UniMessage(UniHelper.file_seg(path)).send()
-                    except (DownloadLimitException, ZeroSizeException):
-                        continue
-                    except DownloadException:
-                        failed_count += 1
-                        continue
+                    need_delay = pconfig.delay_send_media or pconfig.delay_send_lazy_download
+                    failed, media = await self._handle_media_content(cont, need_delay)
+                    failed_count += failed
+                    if media is not None:
+                        media_contents.append(media)
                 case ImageContent():
                     try:
                         path = await cont.get_path()
@@ -119,33 +102,11 @@ class Renderer:
                         failed_count += 1
                         continue
 
+        if media_contents and (pconfig.delay_send_media or pconfig.delay_send_lazy_download):
+            result.media_contents = media_contents
+
         if forwardable_segs:
-            # 添加原始动态的文本，包含作者信息
-            # 对于转发动态，当前result是转发者的动态，result.repost是被转发者的内容
-            author_name = result.author.name if result.author else "未知用户"
-
-            # 添加转发内容的标题和文本，包含原作者信息
-            if result.content:
-                if result.repost:
-                    # result.repost是被转发者的内容，所以repost_author是被转发者
-                    repost_author = result.repost.author.name if result.repost.author else "未知用户"
-                    # 当前result是转发者的动态，所以作者是转发者
-                    forwardable_segs.append(f"{author_name}[转发{repost_author}]：{build_plain_text(result.content)}")
-
-                    repost_text = []
-                    if result.repost.title:
-                        repost_text.append(result.repost.title)
-                    if result.repost.content:
-                        repost_text.append(build_plain_text(result.repost.content))
-
-                    # 构造转发文本，格式为：XXXB[转发XXXA]：XXX内容 XXXA:XXX内容
-                    # 其中XXXB是转发者，XXXA是被转发者
-                    if repost_text:
-                        repost_content = "\n".join(repost_text)
-                        # 被转发者：被转发者的内容
-                        forwardable_segs.append(f"{repost_author}[被转作者]：{repost_content}")
-                else:
-                    forwardable_segs.append(f"{author_name}：{build_plain_text(result.content)}")
+            self._append_forward_text_segments(result, forwardable_segs)
 
             if pconfig.need_forward_contents or len(forwardable_segs) > 4:
                 forward_msg = UniHelper.construct_forward_message(forwardable_segs + dynamic_segs)
@@ -160,6 +121,92 @@ class Renderer:
             message = f"{failed_count} 项媒体下载失败"
             yield UniMessage(message)
             raise DownloadException(message)
+
+    async def _handle_media_content(
+        self, cont: MediaContent, need_delay: bool
+    ) -> tuple[int, MediaContent | Path | None]:
+        """处理单个音视频内容，返回失败次数增量和可能的延迟发送内容。"""
+        logger.debug(
+            f"处理{type(cont).__name__}，" f"need_delay={need_delay}, lazy_download={pconfig.delay_send_lazy_download}"
+        )
+
+        if need_delay:
+            return await self._handle_delayed_media(cont)
+        return await self._handle_immediate_media(cont)
+
+    async def _handle_delayed_media(self, cont: MediaContent) -> tuple[int, MediaContent | Path | None]:
+        """处理延迟发送的音视频内容。"""
+        if pconfig.delay_send_lazy_download:
+            logger.debug(f"延迟发送{type(cont).__name__}，缓存MediaContent对象，不立即下载")
+            return 0, cont
+
+        try:
+            path = await cont.get_path()
+            logger.debug(f"延迟发送{type(cont).__name__}，已下载，缓存路径: {path}")
+            return 0, path
+        except (DownloadLimitException, ZeroSizeException):
+            return 0, None
+        except DownloadException:
+            return 1, None
+
+    async def _handle_immediate_media(self, cont: MediaContent) -> tuple[int, None]:
+        """处理立即发送的音视频内容。"""
+        try:
+            path = await cont.get_path()
+            logger.debug(f"立即发送{type(cont).__name__}: {path}")
+
+            if isinstance(cont, VideoContent):
+                if pconfig.need_upload_video:
+                    await UniMessage(UniHelper.file_seg(path)).send()
+                else:
+                    await UniMessage(UniHelper.video_seg(path)).send()
+            elif isinstance(cont, AudioContent):
+                try:
+                    if pconfig.need_upload_audio:
+                        await UniMessage(UniHelper.file_seg(path)).send()
+                    else:
+                        await UniMessage(UniHelper.record_seg(path)).send()
+                except Exception as e:
+                    logger.debug(f"直接发送音频失败，尝试使用群文件发送: {e}")
+                    await UniMessage(UniHelper.file_seg(path)).send()
+            return 0, None
+        except (DownloadLimitException, ZeroSizeException):
+            return 0, None
+        except DownloadException:
+            return 1, None
+
+    def _append_forward_text_segments(
+        self,
+        result: ParseResult,
+        forwardable_segs: list[ForwardNodeInner],
+    ) -> None:
+        """追加转发消息中的文本片段（作者、转发信息等）。"""
+        if not forwardable_segs or not result.content:
+            return
+
+        author_name = result.author.name if result.author else "未知用户"
+
+        if result.repost:
+            self._build_result_with_repost(result, forwardable_segs, author_name)
+        else:
+            forwardable_segs.append(f"{author_name}：{build_plain_text(result.content)}")
+
+    def _build_result_with_repost(
+        self, result: ParseResult, forwardable_segs: list[ForwardNodeInner], author_name: str
+    ):
+        assert result.repost
+        repost_author = result.repost.author.name if result.repost.author else "未知用户"
+        forwardable_segs.append(f"{author_name}[转发{repost_author}]：{build_plain_text(result.content)}")
+
+        repost_text: list[str] = []
+        if result.repost.title:
+            repost_text.append(result.repost.title)
+        if result.repost.content:
+            repost_text.append(build_plain_text(result.repost.content))
+
+        if repost_text:
+            repost_content = "\n".join(repost_text)
+            forwardable_segs.append(f"{repost_author}[被转作者]：{repost_content}")
 
     @property
     def append_url(self) -> bool:

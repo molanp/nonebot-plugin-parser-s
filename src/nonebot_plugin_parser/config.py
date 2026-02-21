@@ -66,6 +66,14 @@ class Config(BaseModel):
     """B站视频清晰度"""
     parser_need_forward_contents: bool = True
     """是否需要转发原文内容"""
+    parser_delay_send_media: bool = False
+    """是否延迟发送视频/音频，需要用户发送特定表情或点赞特定表情后才发送"""
+    parser_delay_send_emoji: str = "👍"
+    """触发延迟发送视频的表情"""
+    parser_delay_send_emoji_ids: list[int] = []
+    """触发延迟发送视频的表情ID列表，用于监听group_msg_emoji_like事件"""
+    parser_delay_send_lazy_download: bool = False
+    """是否开启懒下载模式，仅在用户请求时才下载视频"""
 
     @property
     def nickname(self) -> str:
@@ -191,6 +199,21 @@ class Config(BaseModel):
     def kugou_lzkey(self) -> str | None:
         """酷狗音乐API密钥"""
         return self.parser_kugou_lzkey
+
+    @property
+    def delay_send_media(self) -> bool:
+        """是否延迟发送视频/音频"""
+        return self.parser_delay_send_media
+
+    @property
+    def delay_send_emoji_ids(self) -> list[int]:
+        """触发延迟发送视频的表情ID列表"""
+        return self.parser_delay_send_emoji_ids
+
+    @property
+    def delay_send_lazy_download(self) -> bool:
+        """是否开启懒下载模式"""
+        return self.parser_delay_send_lazy_download
 
 
 # 定义插件元数据
