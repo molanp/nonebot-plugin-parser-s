@@ -1,0 +1,2 @@
+# 在项目的根目录下执行，统一使用当前目录作为搜索起点
+protoc -I . --include_imports --descriptor_set_out=all.desc ./path/to/your/main.proto
