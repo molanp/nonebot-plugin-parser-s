@@ -1,0 +1,1475 @@
+{
+  "code": 100000,
+  "data": {
+    "data": {
+      "threaded_conversation_with_injections_v2": {
+        "instructions": [
+          {
+            "type": "TimelineClearCache"
+          },
+          {
+            "entries": [
+              {
+                "content": {
+                  "__typename": "TimelineTimelineItem",
+                  "clientEventInfo": {
+                    "component": "tweet",
+                    "element": "tweet"
+                  },
+                  "entryType": "TimelineTimelineItem",
+                  "itemContent": {
+                    "__typename": "TimelineTweet",
+                    "itemType": "TimelineTweet",
+                    "tweetDisplayType": "Tweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "affiliates_highlighted_label": {},
+                              "has_graduated_access": true,
+                              "id": "VXNlcjoxNDU5NDkwMjI2MDk1OTQzNjg1",
+                              "is_blue_verified": true,
+                              "legacy": {
+                                "blocked_by": false,
+                                "blocking": false,
+                                "can_dm": true,
+                                "can_media_tag": false,
+                                "created_at": "Sat Nov 13 11:56:07 +0000 2021",
+                                "default_profile": true,
+                                "default_profile_image": false,
+                                "description": "26년 5월까지 외주마감26年5月までのご依頼の受付を停止しております\\nAI🚫\\nKR/JP \\nemail seet100r@gmail.com\\nFA-#miratsu_art",
+                                "entities": {
+                                  "description": {
+                                    "urls": []
+                                  },
+                                  "url": {
+                                    "urls": [
+                                      {
+                                        "display_url": "lit.link/miratsu169",
+                                        "expanded_url": "https://lit.link/miratsu169",
+                                        "indices": [
+                                          0,
+                                          23
+                                        ],
+                                        "url": "https://t.co/kkI42PSvxE"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "fast_followers_count": 0,
+                                "favourites_count": 1071,
+                                "follow_request_sent": false,
+                                "followed_by": false,
+                                "followers_count": 95708,
+                                "following": false,
+                                "friends_count": 95,
+                                "has_custom_timelines": false,
+                                "is_translator": false,
+                                "listed_count": 257,
+                                "location": "hp",
+                                "media_count": 724,
+                                "muting": false,
+                                "name": "みらつ/밋다다@依頼停止中",
+                                "normal_followers_count": 95708,
+                                "notifications": false,
+                                "pinned_tweet_ids_str": [
+                                  "2024811688336527718"
+                                ],
+                                "possibly_sensitive": false,
+                                "profile_banner_url": "https://pbs.twimg.com/profile_banners/1459490226095943685/1768833686",
+                                "profile_image_url_https": "https://pbs.twimg.com/profile_images/1970586023940820992/1nAf9En0_normal.jpg",
+                                "profile_interstitial_type": "",
+                                "protected": false,
+                                "screen_name": "miratsu169",
+                                "statuses_count": 885,
+                                "translator_type": "none",
+                                "url": "https://t.co/kkI42PSvxE",
+                                "verified": false,
+                                "want_retweets": false,
+                                "withheld_in_countries": []
+                              },
+                              "profile_image_shape": "Circle",
+                              "rest_id": "1459490226095943685",
+                              "super_follow_eligible": false,
+                              "super_followed_by": false,
+                              "super_following": false,
+                              "tipjar_settings": {}
+                            }
+                          }
+                        },
+                        "edit_control": {
+                          "edit_control_initial": {
+                            "edit_tweet_ids": [
+                              "2024881033901121564",
+                              "2024885071745081496"
+                            ],
+                            "editable_until_msecs": "1771607833000",
+                            "edits_remaining": "4",
+                            "is_edit_eligible": true
+                          },
+                          "initial_tweet_id": "2024881033901121564"
+                        },
+                        "has_birdwatch_notes": false,
+                        "is_translatable": true,
+                        "legacy": {
+                          "bookmark_count": 10,
+                          "bookmarked": false,
+                          "conversation_id_str": "2024885071745081496",
+                          "created_at": "Fri Feb 20 16:33:16 +0000 2026",
+                          "display_text_range": [
+                            0,
+                            25
+                          ],
+                          "entities": {
+                            "hashtags": [],
+                            "media": [
+                              {
+                                "display_url": "pic.x.com/ZtEJpLJkLG",
+                                "expanded_url": "https://x.com/miratsu169/status/2024885071745081496/photo/1",
+                                "ext_media_availability": {
+                                  "status": "Available"
+                                },
+                                "features": {
+                                  "large": {
+                                    "faces": [
+                                      {
+                                        "h": 105,
+                                        "w": 105,
+                                        "x": 1707,
+                                        "y": 853
+                                      },
+                                      {
+                                        "h": 215,
+                                        "w": 215,
+                                        "x": 1627,
+                                        "y": 901
+                                      }
+                                    ]
+                                  },
+                                  "medium": {
+                                    "faces": [
+                                      {
+                                        "h": 62,
+                                        "w": 62,
+                                        "x": 1000,
+                                        "y": 500
+                                      },
+                                      {
+                                        "h": 126,
+                                        "w": 126,
+                                        "x": 953,
+                                        "y": 528
+                                      }
+                                    ]
+                                  },
+                                  "orig": {
+                                    "faces": [
+                                      {
+                                        "h": 149,
+                                        "w": 149,
+                                        "x": 2401,
+                                        "y": 1200
+                                      },
+                                      {
+                                        "h": 303,
+                                        "w": 303,
+                                        "x": 2289,
+                                        "y": 1268
+                                      }
+                                    ]
+                                  },
+                                  "small": {
+                                    "faces": [
+                                      {
+                                        "h": 35,
+                                        "w": 35,
+                                        "x": 566,
+                                        "y": 283
+                                      },
+                                      {
+                                        "h": 71,
+                                        "w": 71,
+                                        "x": 540,
+                                        "y": 299
+                                      }
+                                    ]
+                                  }
+                                },
+                                "id_str": "2024880320412295168",
+                                "indices": [
+                                  26,
+                                  49
+                                ],
+                                "media_key": "3_2024880320412295168",
+                                "media_results": {
+                                  "result": {
+                                    "media_key": "3_2024880320412295168"
+                                  }
+                                },
+                                "media_url_https": "https://pbs.twimg.com/media/HBnR7FLaoAANkeT.jpg",
+                                "original_info": {
+                                  "focus_rects": [
+                                    {
+                                      "h": 1613,
+                                      "w": 2880,
+                                      "x": 0,
+                                      "y": 547
+                                    },
+                                    {
+                                      "h": 2160,
+                                      "w": 2160,
+                                      "x": 0,
+                                      "y": 0
+                                    },
+                                    {
+                                      "h": 2160,
+                                      "w": 1895,
+                                      "x": 0,
+                                      "y": 0
+                                    },
+                                    {
+                                      "h": 2160,
+                                      "w": 1080,
+                                      "x": 396,
+                                      "y": 0
+                                    },
+                                    {
+                                      "h": 2160,
+                                      "w": 2880,
+                                      "x": 0,
+                                      "y": 0
+                                    }
+                                  ],
+                                  "height": 2160,
+                                  "width": 2880
+                                },
+                                "sizes": {
+                                  "large": {
+                                    "h": 1536,
+                                    "resize": "fit",
+                                    "w": 2048
+                                  },
+                                  "medium": {
+                                    "h": 900,
+                                    "resize": "fit",
+                                    "w": 1200
+                                  },
+                                  "small": {
+                                    "h": 510,
+                                    "resize": "fit",
+                                    "w": 680
+                                  },
+                                  "thumb": {
+                                    "h": 150,
+                                    "resize": "crop",
+                                    "w": 150
+                                  }
+                                },
+                                "type": "photo",
+                                "url": "https://t.co/ZtEJpLJkLG"
+                              }
+                            ],
+                            "symbols": [],
+                            "timestamps": [],
+                            "urls": [],
+                            "user_mentions": []
+                          },
+                          "extended_entities": {
+                            "media": [
+                              {
+                                "display_url": "pic.x.com/ZtEJpLJkLG",
+                                "expanded_url": "https://x.com/miratsu169/status/2024885071745081496/photo/1",
+                                "ext_media_availability": {
+                                  "status": "Available"
+                                },
+                                "features": {
+                                  "large": {
+                                    "faces": [
+                                      {
+                                        "h": 105,
+                                        "w": 105,
+                                        "x": 1707,
+                                        "y": 853
+                                      },
+                                      {
+                                        "h": 215,
+                                        "w": 215,
+                                        "x": 1627,
+                                        "y": 901
+                                      }
+                                    ]
+                                  },
+                                  "medium": {
+                                    "faces": [
+                                      {
+                                        "h": 62,
+                                        "w": 62,
+                                        "x": 1000,
+                                        "y": 500
+                                      },
+                                      {
+                                        "h": 126,
+                                        "w": 126,
+                                        "x": 953,
+                                        "y": 528
+                                      }
+                                    ]
+                                  },
+                                  "orig": {
+                                    "faces": [
+                                      {
+                                        "h": 149,
+                                        "w": 149,
+                                        "x": 2401,
+                                        "y": 1200
+                                      },
+                                      {
+                                        "h": 303,
+                                        "w": 303,
+                                        "x": 2289,
+                                        "y": 1268
+                                      }
+                                    ]
+                                  },
+                                  "small": {
+                                    "faces": [
+                                      {
+                                        "h": 35,
+                                        "w": 35,
+                                        "x": 566,
+                                        "y": 283
+                                      },
+                                      {
+                                        "h": 71,
+                                        "w": 71,
+                                        "x": 540,
+                                        "y": 299
+                                      }
+                                    ]
+                                  }
+                                },
+                                "id_str": "2024880320412295168",
+                                "indices": [
+                                  26,
+                                  49
+                                ],
+                                "media_key": "3_2024880320412295168",
+                                "media_results": {
+                                  "result": {
+                                    "media_key": "3_2024880320412295168"
+                                  }
+                                },
+                                "media_url_https": "https://pbs.twimg.com/media/HBnR7FLaoAANkeT.jpg",
+                                "original_info": {
+                                  "focus_rects": [
+                                    {
+                                      "h": 1613,
+                                      "w": 2880,
+                                      "x": 0,
+                                      "y": 547
+                                    },
+                                    {
+                                      "h": 2160,
+                                      "w": 2160,
+                                      "x": 0,
+                                      "y": 0
+                                    },
+                                    {
+                                      "h": 2160,
+                                      "w": 1895,
+                                      "x": 0,
+                                      "y": 0
+                                    },
+                                    {
+                                      "h": 2160,
+                                      "w": 1080,
+                                      "x": 396,
+                                      "y": 0
+                                    },
+                                    {
+                                      "h": 2160,
+                                      "w": 2880,
+                                      "x": 0,
+                                      "y": 0
+                                    }
+                                  ],
+                                  "height": 2160,
+                                  "width": 2880
+                                },
+                                "sizes": {
+                                  "large": {
+                                    "h": 1536,
+                                    "resize": "fit",
+                                    "w": 2048
+                                  },
+                                  "medium": {
+                                    "h": 900,
+                                    "resize": "fit",
+                                    "w": 1200
+                                  },
+                                  "small": {
+                                    "h": 510,
+                                    "resize": "fit",
+                                    "w": 680
+                                  },
+                                  "thumb": {
+                                    "h": 150,
+                                    "resize": "crop",
+                                    "w": 150
+                                  }
+                                },
+                                "type": "photo",
+                                "url": "https://t.co/ZtEJpLJkLG"
+                              }
+                            ]
+                          },
+                          "favorite_count": 139,
+                          "favorited": false,
+                          "full_text": "드디어 오늘~~~!voc03\\n잘부탁드리겠습니다 https://t.co/ZtEJpLJkLG",
+                          "id_str": "2024885071745081496",
+                          "is_quote_status": true,
+                          "lang": "ko",
+                          "possibly_sensitive": false,
+                          "possibly_sensitive_editable": true,
+                          "quote_count": 0,
+                          "quoted_status_id_str": "2018917617936069110",
+                          "quoted_status_permalink": {
+                            "display": "x.com/miratsu169/sta…",
+                            "expanded": "https://twitter.com/miratsu169/status/2018917617936069110",
+                            "url": "https://t.co/cIb7RE5csV"
+                          },
+                          "reply_count": 0,
+                          "retweet_count": 13,
+                          "retweeted": false,
+                          "user_id_str": "1459490226095943685"
+                        },
+                        "previous_counts": {
+                          "bookmark_count": 2,
+                          "favorite_count": 38,
+                          "quote_count": 0,
+                          "reply_count": 0,
+                          "retweet_count": 1
+                        },
+                        "quick_promote_eligibility": {
+                          "eligibility": "IneligibleNotProfessional"
+                        },
+                        "quoted_status_result": {
+                          "result": {
+                            "__typename": "Tweet",
+                            "core": {
+                              "user_results": {
+                                "result": {
+                                  "__typename": "User",
+                                  "affiliates_highlighted_label": {},
+                                  "has_graduated_access": true,
+                                  "id": "VXNlcjoxNDU5NDkwMjI2MDk1OTQzNjg1",
+                                  "is_blue_verified": true,
+                                  "legacy": {
+                                    "blocked_by": false,
+                                    "blocking": false,
+                                    "can_dm": true,
+                                    "can_media_tag": false,
+                                    "created_at": "Sat Nov 13 11:56:07 +0000 2021",
+                                    "default_profile": true,
+                                    "default_profile_image": false,
+                                    "description": "26년 5월까지 외주마감26年5月までのご依頼の受付を停止しております\\nAI🚫\\nKR/JP \\nemail seet100r@gmail.com\\nFA-#miratsu_art",
+                                    "entities": {
+                                      "description": {
+                                        "urls": []
+                                      },
+                                      "url": {
+                                        "urls": [
+                                          {
+                                            "display_url": "lit.link/miratsu169",
+                                            "expanded_url": "https://lit.link/miratsu169",
+                                            "indices": [
+                                              0,
+                                              23
+                                            ],
+                                            "url": "https://t.co/kkI42PSvxE"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "fast_followers_count": 0,
+                                    "favourites_count": 1071,
+                                    "follow_request_sent": false,
+                                    "followed_by": false,
+                                    "followers_count": 95708,
+                                    "following": false,
+                                    "friends_count": 95,
+                                    "has_custom_timelines": false,
+                                    "is_translator": false,
+                                    "listed_count": 257,
+                                    "location": "hp",
+                                    "media_count": 724,
+                                    "muting": false,
+                                    "name": "みらつ/밋다다@依頼停止中",
+                                    "normal_followers_count": 95708,
+                                    "notifications": false,
+                                    "pinned_tweet_ids_str": [
+                                      "2024811688336527718"
+                                    ],
+                                    "possibly_sensitive": false,
+                                    "profile_banner_url": "https://pbs.twimg.com/profile_banners/1459490226095943685/1768833686",
+                                    "profile_image_url_https": "https://pbs.twimg.com/profile_images/1970586023940820992/1nAf9En0_normal.jpg",
+                                    "profile_interstitial_type": "",
+                                    "protected": false,
+                                    "screen_name": "miratsu169",
+                                    "statuses_count": 885,
+                                    "translator_type": "none",
+                                    "url": "https://t.co/kkI42PSvxE",
+                                    "verified": false,
+                                    "want_retweets": false,
+                                    "withheld_in_countries": []
+                                  },
+                                  "profile_image_shape": "Circle",
+                                  "rest_id": "1459490226095943685",
+                                  "super_follow_eligible": false,
+                                  "super_followed_by": false,
+                                  "super_following": false,
+                                  "tipjar_settings": {}
+                                }
+                              }
+                            },
+                            "edit_control": {
+                              "edit_control_initial": {
+                                "edit_tweet_ids": [
+                                  "2018908880395542564",
+                                  "2018915831695180016",
+                                  "2018917617936069110"
+                                ],
+                                "editable_until_msecs": "1770183961000",
+                                "edits_remaining": "3",
+                                "is_edit_eligible": false
+                              },
+                              "initial_tweet_id": "2018908880395542564"
+                            },
+                            "has_birdwatch_notes": false,
+                            "is_translatable": true,
+                            "legacy": {
+                              "bookmark_count": 145,
+                              "bookmarked": false,
+                              "conversation_id_str": "2018917617936069110",
+                              "created_at": "Wed Feb 04 05:20:44 +0000 2026",
+                              "display_text_range": [
+                                0,
+                                106
+                              ],
+                              "entities": {
+                                "hashtags": [],
+                                "media": [
+                                  {
+                                    "display_url": "pic.x.com/zr1UZ92GlD",
+                                    "expanded_url": "https://x.com/miratsu169/status/2018917617936069110/photo/1",
+                                    "ext_media_availability": {
+                                      "status": "Available"
+                                    },
+                                    "features": {
+                                      "large": {
+                                        "faces": [
+                                          {
+                                            "h": 99,
+                                            "w": 99,
+                                            "x": 756,
+                                            "y": 1067
+                                          }
+                                        ]
+                                      },
+                                      "medium": {
+                                        "faces": [
+                                          {
+                                            "h": 58,
+                                            "w": 58,
+                                            "x": 447,
+                                            "y": 631
+                                          }
+                                        ]
+                                      },
+                                      "orig": {
+                                        "faces": [
+                                          {
+                                            "h": 99,
+                                            "w": 99,
+                                            "x": 756,
+                                            "y": 1067
+                                          }
+                                        ]
+                                      },
+                                      "small": {
+                                        "faces": [
+                                          {
+                                            "h": 33,
+                                            "w": 33,
+                                            "x": 253,
+                                            "y": 357
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "id_str": "2018915828327206912",
+                                    "indices": [
+                                      107,
+                                      130
+                                    ],
+                                    "media_key": "3_2018915828327206912",
+                                    "media_results": {
+                                      "result": {
+                                        "media_key": "3_2018915828327206912"
+                                      }
+                                    },
+                                    "media_url_https": "https://pbs.twimg.com/media/HAShP8rbUAAQh2q.jpg",
+                                    "original_info": {
+                                      "focus_rects": [
+                                        {
+                                          "h": 672,
+                                          "w": 1200,
+                                          "x": 0,
+                                          "y": 424
+                                        },
+                                        {
+                                          "h": 1200,
+                                          "w": 1200,
+                                          "x": 0,
+                                          "y": 160
+                                        },
+                                        {
+                                          "h": 1368,
+                                          "w": 1200,
+                                          "x": 0,
+                                          "y": 76
+                                        },
+                                        {
+                                          "h": 2029,
+                                          "w": 1015,
+                                          "x": 0,
+                                          "y": 0
+                                        },
+                                        {
+                                          "h": 2029,
+                                          "w": 1200,
+                                          "x": 0,
+                                          "y": 0
+                                        }
+                                      ],
+                                      "height": 2029,
+                                      "width": 1200
+                                    },
+                                    "sizes": {
+                                      "large": {
+                                        "h": 2029,
+                                        "resize": "fit",
+                                        "w": 1200
+                                      },
+                                      "medium": {
+                                        "h": 1200,
+                                        "resize": "fit",
+                                        "w": 710
+                                      },
+                                      "small": {
+                                        "h": 680,
+                                        "resize": "fit",
+                                        "w": 402
+                                      },
+                                      "thumb": {
+                                        "h": 150,
+                                        "resize": "crop",
+                                        "w": 150
+                                      }
+                                    },
+                                    "type": "photo",
+                                    "url": "https://t.co/zr1UZ92GlD"
+                                  },
+                                  {
+                                    "display_url": "pic.x.com/zr1UZ92GlD",
+                                    "expanded_url": "https://x.com/miratsu169/status/2018917617936069110/photo/1",
+                                    "ext_media_availability": {
+                                      "status": "Available"
+                                    },
+                                    "features": {
+                                      "large": {
+                                        "faces": [
+                                          {
+                                            "h": 70,
+                                            "w": 70,
+                                            "x": 783,
+                                            "y": 1246
+                                          },
+                                          {
+                                            "h": 188,
+                                            "w": 188,
+                                            "x": 341,
+                                            "y": 552
+                                          }
+                                        ]
+                                      },
+                                      "medium": {
+                                        "faces": [
+                                          {
+                                            "h": 59,
+                                            "w": 59,
+                                            "x": 665,
+                                            "y": 1059
+                                          },
+                                          {
+                                            "h": 159,
+                                            "w": 159,
+                                            "x": 289,
+                                            "y": 469
+                                          }
+                                        ]
+                                      },
+                                      "orig": {
+                                        "faces": [
+                                          {
+                                            "h": 70,
+                                            "w": 70,
+                                            "x": 783,
+                                            "y": 1246
+                                          },
+                                          {
+                                            "h": 188,
+                                            "w": 188,
+                                            "x": 341,
+                                            "y": 552
+                                          }
+                                        ]
+                                      },
+                                      "small": {
+                                        "faces": [
+                                          {
+                                            "h": 33,
+                                            "w": 33,
+                                            "x": 377,
+                                            "y": 600
+                                          },
+                                          {
+                                            "h": 90,
+                                            "w": 90,
+                                            "x": 164,
+                                            "y": 266
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "id_str": "2018917615817850880",
+                                    "indices": [
+                                      107,
+                                      130
+                                    ],
+                                    "media_key": "3_2018917615817850880",
+                                    "media_results": {
+                                      "result": {
+                                        "media_key": "3_2018917615817850880"
+                                      }
+                                    },
+                                    "media_url_https": "https://pbs.twimg.com/media/HASi3_maAAAD7Md.jpg",
+                                    "original_info": {
+                                      "focus_rects": [
+                                        {
+                                          "h": 560,
+                                          "w": 1000,
+                                          "x": 0,
+                                          "y": 0
+                                        },
+                                        {
+                                          "h": 1000,
+                                          "w": 1000,
+                                          "x": 0,
+                                          "y": 0
+                                        },
+                                        {
+                                          "h": 1140,
+                                          "w": 1000,
+                                          "x": 0,
+                                          "y": 0
+                                        },
+                                        {
+                                          "h": 1412,
+                                          "w": 706,
+                                          "x": 294,
+                                          "y": 0
+                                        },
+                                        {
+                                          "h": 1412,
+                                          "w": 1000,
+                                          "x": 0,
+                                          "y": 0
+                                        }
+                                      ],
+                                      "height": 1412,
+                                      "width": 1000
+                                    },
+                                    "sizes": {
+                                      "large": {
+                                        "h": 1412,
+                                        "resize": "fit",
+                                        "w": 1000
+                                      },
+                                      "medium": {
+                                        "h": 1200,
+                                        "resize": "fit",
+                                        "w": 850
+                                      },
+                                      "small": {
+                                        "h": 680,
+                                        "resize": "fit",
+                                        "w": 482
+                                      },
+                                      "thumb": {
+                                        "h": 150,
+                                        "resize": "crop",
+                                        "w": 150
+                                      }
+                                    },
+                                    "type": "photo",
+                                    "url": "https://t.co/zr1UZ92GlD"
+                                  },
+                                  {
+                                    "display_url": "pic.x.com/zr1UZ92GlD",
+                                    "expanded_url": "https://x.com/miratsu169/status/2018917617936069110/photo/1",
+                                    "ext_media_availability": {
+                                      "status": "Available"
+                                    },
+                                    "features": {
+                                      "large": {
+                                        "faces": [
+                                          {
+                                            "h": 93,
+                                            "w": 93,
+                                            "x": 373,
+                                            "y": 1698
+                                          },
+                                          {
+                                            "h": 99,
+                                            "w": 99,
+                                            "x": 45,
+                                            "y": 103
+                                          }
+                                        ]
+                                      },
+                                      "medium": {
+                                        "faces": [
+                                          {
+                                            "h": 54,
+                                            "w": 54,
+                                            "x": 218,
+                                            "y": 995
+                                          },
+                                          {
+                                            "h": 58,
+                                            "w": 58,
+                                            "x": 26,
+                                            "y": 60
+                                          }
+                                        ]
+                                      },
+                                      "orig": {
+                                        "faces": [
+                                          {
+                                            "h": 128,
+                                            "w": 128,
+                                            "x": 510,
+                                            "y": 2320
+                                          },
+                                          {
+                                            "h": 136,
+                                            "w": 136,
+                                            "x": 62,
+                                            "y": 141
+                                          }
+                                        ]
+                                      },
+                                      "small": {
+                                        "faces": [
+                                          {
+                                            "h": 31,
+                                            "w": 31,
+                                            "x": 123,
+                                            "y": 563
+                                          },
+                                          {
+                                            "h": 33,
+                                            "w": 33,
+                                            "x": 15,
+                                            "y": 34
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "id_str": "2018908876482260993",
+                                    "indices": [
+                                      107,
+                                      130
+                                    ],
+                                    "media_key": "3_2018908876482260993",
+                                    "media_results": {
+                                      "result": {
+                                        "media_key": "3_2018908876482260993"
+                                      }
+                                    },
+                                    "media_url_https": "https://pbs.twimg.com/media/HASa7TCbsAET1--.jpg",
+                                    "original_info": {
+                                      "focus_rects": [
+                                        {
+                                          "h": 1180,
+                                          "w": 2107,
+                                          "x": 0,
+                                          "y": 178
+                                        },
+                                        {
+                                          "h": 2107,
+                                          "w": 2107,
+                                          "x": 0,
+                                          "y": 0
+                                        },
+                                        {
+                                          "h": 2402,
+                                          "w": 2107,
+                                          "x": 0,
+                                          "y": 0
+                                        },
+                                        {
+                                          "h": 2796,
+                                          "w": 1398,
+                                          "x": 709,
+                                          "y": 0
+                                        },
+                                        {
+                                          "h": 2796,
+                                          "w": 2107,
+                                          "x": 0,
+                                          "y": 0
+                                        }
+                                      ],
+                                      "height": 2796,
+                                      "width": 2107
+                                    },
+                                    "sizes": {
+                                      "large": {
+                                        "h": 2048,
+                                        "resize": "fit",
+                                        "w": 1543
+                                      },
+                                      "medium": {
+                                        "h": 1200,
+                                        "resize": "fit",
+                                        "w": 904
+                                      },
+                                      "small": {
+                                        "h": 680,
+                                        "resize": "fit",
+                                        "w": 512
+                                      },
+                                      "thumb": {
+                                        "h": 150,
+                                        "resize": "crop",
+                                        "w": 150
+                                      }
+                                    },
+                                    "type": "photo",
+                                    "url": "https://t.co/zr1UZ92GlD"
+                                  }
+                                ],
+                                "symbols": [],
+                                "timestamps": [],
+                                "urls": [],
+                                "user_mentions": []
+                              },
+                              "extended_entities": {
+                                "media": [
+                                  {
+                                    "display_url": "pic.x.com/zr1UZ92GlD",
+                                    "expanded_url": "https://x.com/miratsu169/status/2018917617936069110/photo/1",
+                                    "ext_media_availability": {
+                                      "status": "Available"
+                                    },
+                                    "features": {
+                                      "large": {
+                                        "faces": [
+                                          {
+                                            "h": 99,
+                                            "w": 99,
+                                            "x": 756,
+                                            "y": 1067
+                                          }
+                                        ]
+                                      },
+                                      "medium": {
+                                        "faces": [
+                                          {
+                                            "h": 58,
+                                            "w": 58,
+                                            "x": 447,
+                                            "y": 631
+                                          }
+                                        ]
+                                      },
+                                      "orig": {
+                                        "faces": [
+                                          {
+                                            "h": 99,
+                                            "w": 99,
+                                            "x": 756,
+                                            "y": 1067
+                                          }
+                                        ]
+                                      },
+                                      "small": {
+                                        "faces": [
+                                          {
+                                            "h": 33,
+                                            "w": 33,
+                                            "x": 253,
+                                            "y": 357
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "id_str": "2018915828327206912",
+                                    "indices": [
+                                      107,
+                                      130
+                                    ],
+                                    "media_key": "3_2018915828327206912",
+                                    "media_results": {
+                                      "result": {
+                                        "media_key": "3_2018915828327206912"
+                                      }
+                                    },
+                                    "media_url_https": "https://pbs.twimg.com/media/HAShP8rbUAAQh2q.jpg",
+                                    "original_info": {
+                                      "focus_rects": [
+                                        {
+                                          "h": 672,
+                                          "w": 1200,
+                                          "x": 0,
+                                          "y": 424
+                                        },
+                                        {
+                                          "h": 1200,
+                                          "w": 1200,
+                                          "x": 0,
+                                          "y": 160
+                                        },
+                                        {
+                                          "h": 1368,
+                                          "w": 1200,
+                                          "x": 0,
+                                          "y": 76
+                                        },
+                                        {
+                                          "h": 2029,
+                                          "w": 1015,
+                                          "x": 0,
+                                          "y": 0
+                                        },
+                                        {
+                                          "h": 2029,
+                                          "w": 1200,
+                                          "x": 0,
+                                          "y": 0
+                                        }
+                                      ],
+                                      "height": 2029,
+                                      "width": 1200
+                                    },
+                                    "sizes": {
+                                      "large": {
+                                        "h": 2029,
+                                        "resize": "fit",
+                                        "w": 1200
+                                      },
+                                      "medium": {
+                                        "h": 1200,
+                                        "resize": "fit",
+                                        "w": 710
+                                      },
+                                      "small": {
+                                        "h": 680,
+                                        "resize": "fit",
+                                        "w": 402
+                                      },
+                                      "thumb": {
+                                        "h": 150,
+                                        "resize": "crop",
+                                        "w": 150
+                                      }
+                                    },
+                                    "type": "photo",
+                                    "url": "https://t.co/zr1UZ92GlD"
+                                  },
+                                  {
+                                    "display_url": "pic.x.com/zr1UZ92GlD",
+                                    "expanded_url": "https://x.com/miratsu169/status/2018917617936069110/photo/1",
+                                    "ext_media_availability": {
+                                      "status": "Available"
+                                    },
+                                    "features": {
+                                      "large": {
+                                        "faces": [
+                                          {
+                                            "h": 70,
+                                            "w": 70,
+                                            "x": 783,
+                                            "y": 1246
+                                          },
+                                          {
+                                            "h": 188,
+                                            "w": 188,
+                                            "x": 341,
+                                            "y": 552
+                                          }
+                                        ]
+                                      },
+                                      "medium": {
+                                        "faces": [
+                                          {
+                                            "h": 59,
+                                            "w": 59,
+                                            "x": 665,
+                                            "y": 1059
+                                          },
+                                          {
+                                            "h": 159,
+                                            "w": 159,
+                                            "x": 289,
+                                            "y": 469
+                                          }
+                                        ]
+                                      },
+                                      "orig": {
+                                        "faces": [
+                                          {
+                                            "h": 70,
+                                            "w": 70,
+                                            "x": 783,
+                                            "y": 1246
+                                          },
+                                          {
+                                            "h": 188,
+                                            "w": 188,
+                                            "x": 341,
+                                            "y": 552
+                                          }
+                                        ]
+                                      },
+                                      "small": {
+                                        "faces": [
+                                          {
+                                            "h": 33,
+                                            "w": 33,
+                                            "x": 377,
+                                            "y": 600
+                                          },
+                                          {
+                                            "h": 90,
+                                            "w": 90,
+                                            "x": 164,
+                                            "y": 266
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "id_str": "2018917615817850880",
+                                    "indices": [
+                                      107,
+                                      130
+                                    ],
+                                    "media_key": "3_2018917615817850880",
+                                    "media_results": {
+                                      "result": {
+                                        "media_key": "3_2018917615817850880"
+                                      }
+                                    },
+                                    "media_url_https": "https://pbs.twimg.com/media/HASi3_maAAAD7Md.jpg",
+                                    "original_info": {
+                                      "focus_rects": [
+                                        {
+                                          "h": 560,
+                                          "w": 1000,
+                                          "x": 0,
+                                          "y": 0
+                                        },
+                                        {
+                                          "h": 1000,
+                                          "w": 1000,
+                                          "x": 0,
+                                          "y": 0
+                                        },
+                                        {
+                                          "h": 1140,
+                                          "w": 1000,
+                                          "x": 0,
+                                          "y": 0
+                                        },
+                                        {
+                                          "h": 1412,
+                                          "w": 706,
+                                          "x": 294,
+                                          "y": 0
+                                        },
+                                        {
+                                          "h": 1412,
+                                          "w": 1000,
+                                          "x": 0,
+                                          "y": 0
+                                        }
+                                      ],
+                                      "height": 1412,
+                                      "width": 1000
+                                    },
+                                    "sizes": {
+                                      "large": {
+                                        "h": 1412,
+                                        "resize": "fit",
+                                        "w": 1000
+                                      },
+                                      "medium": {
+                                        "h": 1200,
+                                        "resize": "fit",
+                                        "w": 850
+                                      },
+                                      "small": {
+                                        "h": 680,
+                                        "resize": "fit",
+                                        "w": 482
+                                      },
+                                      "thumb": {
+                                        "h": 150,
+                                        "resize": "crop",
+                                        "w": 150
+                                      }
+                                    },
+                                    "type": "photo",
+                                    "url": "https://t.co/zr1UZ92GlD"
+                                  },
+                                  {
+                                    "display_url": "pic.x.com/zr1UZ92GlD",
+                                    "expanded_url": "https://x.com/miratsu169/status/2018917617936069110/photo/1",
+                                    "ext_media_availability": {
+                                      "status": "Available"
+                                    },
+                                    "features": {
+                                      "large": {
+                                        "faces": [
+                                          {
+                                            "h": 93,
+                                            "w": 93,
+                                            "x": 373,
+                                            "y": 1698
+                                          },
+                                          {
+                                            "h": 99,
+                                            "w": 99,
+                                            "x": 45,
+                                            "y": 103
+                                          }
+                                        ]
+                                      },
+                                      "medium": {
+                                        "faces": [
+                                          {
+                                            "h": 54,
+                                            "w": 54,
+                                            "x": 218,
+                                            "y": 995
+                                          },
+                                          {
+                                            "h": 58,
+                                            "w": 58,
+                                            "x": 26,
+                                            "y": 60
+                                          }
+                                        ]
+                                      },
+                                      "orig": {
+                                        "faces": [
+                                          {
+                                            "h": 128,
+                                            "w": 128,
+                                            "x": 510,
+                                            "y": 2320
+                                          },
+                                          {
+                                            "h": 136,
+                                            "w": 136,
+                                            "x": 62,
+                                            "y": 141
+                                          }
+                                        ]
+                                      },
+                                      "small": {
+                                        "faces": [
+                                          {
+                                            "h": 31,
+                                            "w": 31,
+                                            "x": 123,
+                                            "y": 563
+                                          },
+                                          {
+                                            "h": 33,
+                                            "w": 33,
+                                            "x": 15,
+                                            "y": 34
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "id_str": "2018908876482260993",
+                                    "indices": [
+                                      107,
+                                      130
+                                    ],
+                                    "media_key": "3_2018908876482260993",
+                                    "media_results": {
+                                      "result": {
+                                        "media_key": "3_2018908876482260993"
+                                      }
+                                    },
+                                    "media_url_https": "https://pbs.twimg.com/media/HASa7TCbsAET1--.jpg",
+                                    "original_info": {
+                                      "focus_rects": [
+                                        {
+                                          "h": 1180,
+                                          "w": 2107,
+                                          "x": 0,
+                                          "y": 178
+                                        },
+                                        {
+                                          "h": 2107,
+                                          "w": 2107,
+                                          "x": 0,
+                                          "y": 0
+                                        },
+                                        {
+                                          "h": 2402,
+                                          "w": 2107,
+                                          "x": 0,
+                                          "y": 0
+                                        },
+                                        {
+                                          "h": 2796,
+                                          "w": 1398,
+                                          "x": 709,
+                                          "y": 0
+                                        },
+                                        {
+                                          "h": 2796,
+                                          "w": 2107,
+                                          "x": 0,
+                                          "y": 0
+                                        }
+                                      ],
+                                      "height": 2796,
+                                      "width": 2107
+                                    },
+                                    "sizes": {
+                                      "large": {
+                                        "h": 2048,
+                                        "resize": "fit",
+                                        "w": 1543
+                                      },
+                                      "medium": {
+                                        "h": 1200,
+                                        "resize": "fit",
+                                        "w": 904
+                                      },
+                                      "small": {
+                                        "h": 680,
+                                        "resize": "fit",
+                                        "w": 512
+                                      },
+                                      "thumb": {
+                                        "h": 150,
+                                        "resize": "crop",
+                                        "w": 150
+                                      }
+                                    },
+                                    "type": "photo",
+                                    "url": "https://t.co/zr1UZ92GlD"
+                                  }
+                                ]
+                              },
+                              "favorite_count": 576,
+                              "favorited": false,
+                              "full_text": "📌2월 일러스타페스 10 인포\\n 📌위치:Vo3-Vo6 양일\\n 📌부스명:폿핏폿핏포폿핏포피이잇\\n 📌장르:하츠네 미쿠,보컬로이드\\n\\n 쭐어,땅비,250님과\\n 함께하는 윤회미쿠 전문부스입니당(_ _) https://t.co/zr1UZ92GlD",
+                              "id_str": "2018917617936069110",
+                              "is_quote_status": false,
+                              "lang": "ko",
+                              "possibly_sensitive": false,
+                              "possibly_sensitive_editable": true,
+                              "quote_count": 27,
+                              "reply_count": 9,
+                              "retweet_count": 108,
+                              "retweeted": false,
+                              "user_id_str": "1459490226095943685"
+                            },
+                            "previous_counts": {
+                              "bookmark_count": 22,
+                              "favorite_count": 96,
+                              "quote_count": 1,
+                              "reply_count": 2,
+                              "retweet_count": 6
+                            },
+                            "rest_id": "2018917617936069110",
+                            "source": "<a href=\\\"http://twitter.com/download/android\\\" rel=\\\"nofollow\\\">Twitter for Android</a>",
+                            "unmention_data": {},
+                            "views": {
+                              "count": "62291",
+                              "state": "EnabledWithCount"
+                            }
+                          }
+                        },
+                        "rest_id": "2024885071745081496",
+                        "source": "<a href=\\\"http://twitter.com/download/android\\\" rel=\\\"nofollow\\\">Twitter for Android</a>",
+                        "unmention_data": {},
+                        "views": {
+                          "count": "6045",
+                          "state": "EnabledWithCount"
+                        }
+                      }
+                    }
+                  }
+                },
+                "entryId": "tweet-2024885071745081496",
+                "sortIndex": "2025074138430832640"
+              },
+              {
+                "_": "这里面没看出来是啥，反正不是推文内容，不用管。一大串我直接删了"
+              },
+              {
+                "content": {
+                  "__typename": "TimelineTimelineCursor",
+                  "cursorType": "Bottom",
+                  "entryType": "TimelineTimelineCursor",
+                  "value": "DAAKCgABHBqCMxj___MLAAIAAABQRW1QQzZ3QUFBZlEvZ0dKTjB2R3AvQUFBQUFVY0dtQ0hMOXJCT0J3WmhDME0yaEVZSEJuV1BwUmJZSmdjR2xVbmVadUJpaHdhWTN5N0c3Ri8IAAMAAAACCwAEAAAABkJvdHRvbQAA"
+                },
+                "entryId": "cursor-bottom-2025074138430832629",
+                "sortIndex": "2025074138430832629"
+              }
+            ],
+            "type": "TimelineAddEntries"
+          },
+          {
+            "direction": "Top",
+            "type": "TimelineTerminateTimeline"
+          },
+          {
+            "direction": "Bottom",
+            "type": "TimelineTerminateTimeline"
+          }
+        ],
+        "metadata": {
+          "scribeConfig": {
+            "page": "ranked_replies"
+          }
+        }
+      }
+    }
+  },
+  "message": "Request Success"
+}
